@@ -15,16 +15,17 @@ import { ApiService } from '../../services/api.service';
 
       <div *ngIf="!loading && channel">
         <div class="d-flex align-items-center mb-4">
-          <button class="btn btn-outline-secondary me-3" (click)="goBack()">
-            <i class="fas fa-arrow-left"></i>
-          </button>
           <div>
             <h2 class="mb-0" style="margin-left: 48px;">
               <i class="fas fa-tv me-2"></i>
               {{ channel.name }}
             </h2>
-            <small class="text-muted">{{ channel.yt_id }}</small>
+<!--            <small class="text-muted">{{ channel.yt_id }}</small>-->
           </div>
+            <div class="d-flex flex-row flex-grow-1"></div>
+          <button class="btn btn-outline-secondary me-3" (click)="goBack()">
+              <i class="fas fa-arrow-left"></i>
+          </button>
         </div>
 
         <div *ngIf="loadingVideos" class="text-center py-3">
@@ -43,13 +44,15 @@ import { ApiService } from '../../services/api.service';
               </div>
               <div class="card-body">
                 <h6 class="card-title">{{ video.title }}</h6>
-                <p class="card-text text-muted small">
-                  <i class="fas fa-calendar me-1"></i>
-                  {{ video.upload_date | date:'mediumDate' }}
-                </p>
+<!--                <p class="card-text text-muted small">-->
+<!--                  <i class="fas fa-calendar me-1"></i>-->
+<!--                  {{ video.upload_date | date:'mediumDate' }}-->
+<!--                </p>-->
                 <p class="card-text text-muted small" *ngIf="video.duration">
                   <i class="fas fa-clock me-1"></i>
                   {{ formatDuration(video.duration) }}
+                    <i class="fas fa-eye me-1"></i>  
+                    {{ video.view_count }}
                 </p>
               </div>
             </div>

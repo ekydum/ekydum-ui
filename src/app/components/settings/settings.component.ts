@@ -1,6 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
@@ -8,103 +6,102 @@ import { map } from 'rxjs';
 
 @Component({
   selector: 'app-settings',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
+  standalone: false,
   template: `
-    <div class="container">
-      <h2 class="mb-4" style="margin-left: 48px;">
-        <i class="fas fa-cog me-2"></i>
-        Settings
-      </h2>
+      <div class="container">
+          <h2 class="mb-4" style="margin-left: 48px;">
+              <i class="fas fa-cog me-2"></i>
+              Settings
+          </h2>
 
-      <div class="card mb-4">
-        <div class="card-header">
-          <h5 class="mb-0">Server Configuration</h5>
-        </div>
-        <div class="card-body">
-          <div class="mb-3">
-            <label class="form-label">Server URL</label>
-            <input 
-              type="text" 
-              class="form-control" 
-              [(ngModel)]="serverUrl"
-              placeholder="http://localhost:3000">
-            <small class="form-text text-muted">Ekydum server URL</small>
+          <div class="card mb-4">
+              <div class="card-header">
+                  <h5 class="mb-0">Server Configuration</h5>
+              </div>
+              <div class="card-body">
+                  <div class="mb-3">
+                      <label class="form-label">Server URL</label>
+                      <input
+                              type="text"
+                              class="form-control"
+                              [(ngModel)]="serverUrl"
+                              placeholder="http://localhost:3000">
+                      <small class="form-text text-muted">Ekydum server URL</small>
+                  </div>
+
+                  <div class="mb-3">
+                      <label class="form-label">Account Token</label>
+                      <input
+                              type="password"
+                              class="form-control"
+                              [(ngModel)]="accountToken"
+                              placeholder="Enter your account token">
+                      <small class="form-text text-muted">Token from server admin</small>
+                  </div>
+
+                  <div class="d-flex gap-2">
+                      <button class="btn btn-primary" (click)="saveConnection()" [disabled]="saving">
+                          <i class="fas fa-save me-2"></i>
+                          {{ saving ? 'Saving...' : 'Save & Connect' }}
+                      </button>
+                      <button
+                              class="btn btn-danger"
+                              (click)="disconnect()"
+                              [disabled]="!isConnected">
+                          <i class="fas fa-sign-out-alt me-2"></i>
+                          Disconnect
+                      </button>
+                  </div>
+
+                  <div class="alert alert-success mt-3" *ngIf="accountInfo">
+                      <i class="fas fa-check-circle me-2"></i>
+                      Connected as: <strong>{{ accountInfo.name }}</strong>
+                  </div>
+              </div>
           </div>
 
-          <div class="mb-3">
-            <label class="form-label">Account Token</label>
-            <input 
-              type="password" 
-              class="form-control" 
-              [(ngModel)]="accountToken"
-              placeholder="Enter your account token">
-            <small class="form-text text-muted">Token from server admin</small>
-          </div>
+          <div class="card" *ngIf="isConnected">
+              <div class="card-header">
+                  <h5 class="mb-0">User Preferences</h5>
+              </div>
+              <div class="card-body">
+                  <div *ngIf="loadingSettings" class="text-center py-3">
+                      <div class="spinner-border text-primary" role="status"></div>
+                  </div>
 
-          <div class="d-flex gap-2">
-            <button class="btn btn-primary" (click)="saveConnection()" [disabled]="saving">
-              <i class="fas fa-save me-2"></i>
-              {{ saving ? 'Saving...' : 'Save & Connect' }}
-            </button>
-            <button 
-              class="btn btn-danger" 
-              (click)="disconnect()" 
-              [disabled]="!isConnected">
-              <i class="fas fa-sign-out-alt me-2"></i>
-              Disconnect
-            </button>
-          </div>
+                  <div *ngIf="!loadingSettings">
+                      <div class="mb-3">
+                          <label class="form-label">Default Quality</label>
+                          <select class="form-select" [(ngModel)]="defaultQuality" (change)="updateQuality()">
+                              <option value="min">Minimum</option>
+                              <option value="360p">360p</option>
+                              <option value="480p">480p</option>
+                              <option value="720p">720p (Recommended)</option>
+                              <option value="1080p">1080p</option>
+                              <option value="2k">2K</option>
+                              <option value="4k">4K</option>
+                              <option value="max">Maximum</option>
+                          </select>
+                      </div>
 
-          <div class="alert alert-success mt-3" *ngIf="accountInfo">
-            <i class="fas fa-check-circle me-2"></i>
-            Connected as: <strong>{{ accountInfo.name }}</strong>
+                      <div class="mb-3">
+                          <label class="form-label">Page Size</label>
+                          <select class="form-select" [(ngModel)]="pageSize" (change)="updatePageSize()">
+                              <option [value]="10">10</option>
+                              <option [value]="20">20</option>
+                              <option [value]="30">30</option>
+                              <option [value]="50">50</option>
+                              <option [value]="100">100</option>
+                              <option [value]="200">200</option>
+                              <option [value]="300">300</option>
+                              <option [value]="500">500</option>
+                          </select>
+                          <small class="form-text text-muted">Number of videos per page</small>
+                      </div>
+                  </div>
+              </div>
           </div>
-        </div>
       </div>
-
-      <div class="card" *ngIf="isConnected">
-        <div class="card-header">
-          <h5 class="mb-0">User Preferences</h5>
-        </div>
-        <div class="card-body">
-          <div *ngIf="loadingSettings" class="text-center py-3">
-            <div class="spinner-border text-primary" role="status"></div>
-          </div>
-
-          <div *ngIf="!loadingSettings">
-            <div class="mb-3">
-              <label class="form-label">Default Quality</label>
-              <select class="form-select" [(ngModel)]="defaultQuality" (change)="updateQuality()">
-                <option value="min">Minimum</option>
-                <option value="360p">360p</option>
-                <option value="480p">480p</option>
-                <option value="720p">720p (Recommended)</option>
-                <option value="1080p">1080p</option>
-                <option value="2k">2K</option>
-                <option value="4k">4K</option>
-                <option value="max">Maximum</option>
-              </select>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label">Page Size</label>
-              <select class="form-select" [(ngModel)]="pageSize" (change)="updatePageSize()">
-                <option [value]="10">10</option>
-                <option [value]="20">20</option>
-                <option [value]="30">30</option>
-                <option [value]="50">50</option>
-                <option [value]="100">100</option>
-                <option [value]="200">200</option>
-                <option [value]="300">300</option>
-                <option [value]="500">500</option>
-              </select>
-              <small class="form-text text-muted">Number of videos per page</small>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   `
 })
 export class SettingsComponent implements OnInit {

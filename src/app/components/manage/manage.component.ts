@@ -1,161 +1,159 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-manage',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
+  standalone: false,
   template: `
-    <div class="container">
-      <h2 class="mb-4" style="margin-left: 48px;">
-        <i class="fas fa-users-cog me-2"></i>
-        Manage Accounts
-      </h2>
+      <div class="container">
+          <h2 class="mb-4" style="margin-left: 48px;">
+              <i class="fas fa-users-cog me-2"></i>
+              Manage Accounts
+          </h2>
 
-      <div class="card mb-4">
-        <div class="card-header">
-          <h5 class="mb-0">Admin Authentication</h5>
-        </div>
-        <div class="card-body">
-          <div class="mb-3">
-            <label class="form-label">Admin Token</label>
-            <input 
-              type="password" 
-              class="form-control" 
-              [(ngModel)]="adminToken"
-              placeholder="Enter admin token"
-              [disabled]="isAdmin">
-          </div>
-
-          <div class="d-flex gap-2">
-            <button 
-              class="btn btn-primary" 
-              (click)="saveAdminToken()" 
-              [disabled]="isAdmin || !adminToken">
-              <i class="fas fa-save me-2"></i>
-              Save & Login
-            </button>
-            <button 
-              class="btn btn-danger" 
-              (click)="adminLogout()" 
-              [disabled]="!isAdmin">
-              <i class="fas fa-sign-out-alt me-2"></i>
-              Admin Logout
-            </button>
-          </div>
-
-          <div class="alert alert-success mt-3" *ngIf="isAdmin">
-            <i class="fas fa-check-circle me-2"></i>
-            Admin access granted
-          </div>
-        </div>
-      </div>
-
-      <div *ngIf="isAdmin">
-        <div class="card mb-4">
-          <div class="card-header">
-            <h5 class="mb-0">Create New Account</h5>
-          </div>
-          <div class="card-body">
-            <div class="row g-2">
-              <div class="col">
-                <input 
-                  type="text" 
-                  class="form-control" 
-                  [(ngModel)]="newAccountName"
-                  placeholder="Account name">
+          <div class="card mb-4">
+              <div class="card-header">
+                  <h5 class="mb-0">Admin Authentication</h5>
               </div>
-              <div class="col-auto">
-                <button class="btn btn-success" (click)="createAccount()" [disabled]="!newAccountName || creating">
-                  <i class="fas fa-plus me-2"></i>
-                  {{ creating ? 'Creating...' : 'Create' }}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+              <div class="card-body">
+                  <div class="mb-3">
+                      <label class="form-label">Admin Token</label>
+                      <input
+                              type="password"
+                              class="form-control"
+                              [(ngModel)]="adminToken"
+                              placeholder="Enter admin token"
+                              [disabled]="isAdmin">
+                  </div>
 
-        <div class="card">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Accounts</h5>
-            <button class="btn btn-sm btn-outline-primary" (click)="loadAccounts()">
-              <i class="fas fa-sync me-1"></i>
-              Refresh
-            </button>
-          </div>
-          <div class="card-body">
-            <div *ngIf="loading" class="text-center py-3">
-              <div class="spinner-border text-primary" role="status"></div>
-            </div>
-
-            <div *ngIf="!loading && accounts.length === 0" class="alert alert-info">
-              No accounts found
-            </div>
-
-            <div class="table-responsive" *ngIf="!loading && accounts.length > 0">
-              <table class="table table-hover">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Token</th>
-                    <th>Created</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let account of accounts">
-                    <td>
-                      <div *ngIf="editingId !== account.id">
-                        {{ account.name }}
-                      </div>
-                      <input 
-                        *ngIf="editingId === account.id"
-                        type="text" 
-                        class="form-control form-control-sm" 
-                        [(ngModel)]="editingName"
-                        (keyup.enter)="saveEdit(account.id)">
-                    </td>
-                    <td>
-                      <code class="small">{{ account.token.substring(0, 20) }}...</code>
-                      <button 
-                        class="btn btn-sm btn-link p-0 ms-2" 
-                        (click)="copyToken(account.token)">
-                        <i class="fas fa-copy"></i>
+                  <div class="d-flex gap-2">
+                      <button
+                              class="btn btn-primary"
+                              (click)="saveAdminToken()"
+                              [disabled]="isAdmin || !adminToken">
+                          <i class="fas fa-save me-2"></i>
+                          Save & Login
                       </button>
-                    </td>
-                    <td>
-                      <small>{{ account.created_at | date:'short' }}</small>
-                    </td>
-                    <td>
-                      <div class="btn-group btn-group-sm" *ngIf="editingId !== account.id">
-                        <button class="btn btn-outline-primary" (click)="startEdit(account)">
-                          <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-outline-danger" (click)="deleteAccount(account.id)">
-                          <i class="fas fa-trash"></i>
-                        </button>
-                      </div>
-                      <div class="btn-group btn-group-sm" *ngIf="editingId === account.id">
-                        <button class="btn btn-success" (click)="saveEdit(account.id)">
-                          <i class="fas fa-check"></i>
-                        </button>
-                        <button class="btn btn-secondary" (click)="cancelEdit()">
-                          <i class="fas fa-times"></i>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+                      <button
+                              class="btn btn-danger"
+                              (click)="adminLogout()"
+                              [disabled]="!isAdmin">
+                          <i class="fas fa-sign-out-alt me-2"></i>
+                          Admin Logout
+                      </button>
+                  </div>
+
+                  <div class="alert alert-success mt-3" *ngIf="isAdmin">
+                      <i class="fas fa-check-circle me-2"></i>
+                      Admin access granted
+                  </div>
+              </div>
           </div>
-        </div>
+
+          <div *ngIf="isAdmin">
+              <div class="card mb-4">
+                  <div class="card-header">
+                      <h5 class="mb-0">Create New Account</h5>
+                  </div>
+                  <div class="card-body">
+                      <div class="row g-2">
+                          <div class="col">
+                              <input
+                                      type="text"
+                                      class="form-control"
+                                      [(ngModel)]="newAccountName"
+                                      placeholder="Account name">
+                          </div>
+                          <div class="col-auto">
+                              <button class="btn btn-success" (click)="createAccount()"
+                                      [disabled]="!newAccountName || creating">
+                                  <i class="fas fa-plus me-2"></i>
+                                  {{ creating ? 'Creating...' : 'Create' }}
+                              </button>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+
+              <div class="card">
+                  <div class="card-header d-flex justify-content-between align-items-center">
+                      <h5 class="mb-0">Accounts</h5>
+                      <button class="btn btn-sm btn-outline-primary" (click)="loadAccounts()">
+                          <i class="fas fa-sync me-1"></i>
+                          Refresh
+                      </button>
+                  </div>
+                  <div class="card-body">
+                      <div *ngIf="loading" class="text-center py-3">
+                          <div class="spinner-border text-primary" role="status"></div>
+                      </div>
+
+                      <div *ngIf="!loading && accounts.length === 0" class="alert alert-info">
+                          No accounts found
+                      </div>
+
+                      <div class="table-responsive" *ngIf="!loading && accounts.length > 0">
+                          <table class="table table-hover">
+                              <thead>
+                              <tr>
+                                  <th>Name</th>
+                                  <th>Token</th>
+                                  <th>Created</th>
+                                  <th>Actions</th>
+                              </tr>
+                              </thead>
+                              <tbody>
+                              <tr *ngFor="let account of accounts">
+                                  <td>
+                                      <div *ngIf="editingId !== account.id">
+                                          {{ account.name }}
+                                      </div>
+                                      <input
+                                              *ngIf="editingId === account.id"
+                                              type="text"
+                                              class="form-control form-control-sm"
+                                              [(ngModel)]="editingName"
+                                              (keyup.enter)="saveEdit(account.id)">
+                                  </td>
+                                  <td>
+                                      <code class="small">{{ account.token.substring(0, 20) }}...</code>
+                                      <button
+                                              class="btn btn-sm btn-link p-0 ms-2"
+                                              (click)="copyToken(account.token)">
+                                          <i class="fas fa-copy"></i>
+                                      </button>
+                                  </td>
+                                  <td>
+                                      <small>{{ account.created_at | date:'short' }}</small>
+                                  </td>
+                                  <td>
+                                      <div class="btn-group btn-group-sm" *ngIf="editingId !== account.id">
+                                          <button class="btn btn-outline-primary" (click)="startEdit(account)">
+                                              <i class="fas fa-edit"></i>
+                                          </button>
+                                          <button class="btn btn-outline-danger" (click)="deleteAccount(account.id)">
+                                              <i class="fas fa-trash"></i>
+                                          </button>
+                                      </div>
+                                      <div class="btn-group btn-group-sm" *ngIf="editingId === account.id">
+                                          <button class="btn btn-success" (click)="saveEdit(account.id)">
+                                              <i class="fas fa-check"></i>
+                                          </button>
+                                          <button class="btn btn-secondary" (click)="cancelEdit()">
+                                              <i class="fas fa-times"></i>
+                                          </button>
+                                      </div>
+                                  </td>
+                              </tr>
+                              </tbody>
+                          </table>
+                      </div>
+                  </div>
+              </div>
+          </div>
       </div>
-    </div>
   `
 })
 export class ManageComponent implements OnInit {

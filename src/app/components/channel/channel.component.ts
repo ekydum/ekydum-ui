@@ -1,78 +1,72 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 
 @Component({
   selector: 'app-channel',
-  standalone: true,
-  imports: [CommonModule],
+  standalone: false,
   template: `
-    <div class="container-fluid">
-      <div *ngIf="loading" class="text-center py-5">
-        <div class="spinner-border text-primary" role="status"></div>
-      </div>
-
-      <div *ngIf="!loading && channel">
-        <div class="d-flex align-items-center mb-4">
-          <div>
-            <h2 class="mb-0" style="margin-left: 48px;">
-              <i class="fas fa-tv me-2"></i>
-              {{ channel.name }}
-            </h2>
-<!--            <small class="text-muted">{{ channel.yt_id }}</small>-->
+      <div class="container-fluid">
+          <div *ngIf="loading" class="text-center py-5">
+              <div class="spinner-border text-primary" role="status"></div>
           </div>
-            <div class="d-flex flex-row flex-grow-1"></div>
-          <button class="btn btn-outline-secondary me-3" (click)="goBack()">
-              <i class="fas fa-arrow-left"></i>
-          </button>
-        </div>
 
-        <div *ngIf="loadingVideos" class="text-center py-3">
-          <div class="spinner-border text-primary" role="status"></div>
-        </div>
-
-        <div *ngIf="!loadingVideos && videos.length === 0" class="alert alert-info">
-          No videos found for this channel.
-        </div>
-
-        <div class="row" *ngIf="!loadingVideos && videos.length > 0">
-          <div class="col-md-6 col-lg-4 col-xl-3 mb-4" *ngFor="let video of videos">
-            <div class="card video-card h-100" (click)="watchVideo(video.yt_id)">
-              <div class="video-thumbnail">
-                <img [src]="video.thumbnail" [alt]="video.title" *ngIf="video.thumbnail">
+          <div *ngIf="!loading && channel">
+              <div class="d-flex align-items-center mb-4">
+                  <div>
+                      <h2 class="mb-0" style="margin-left: 48px;">
+                          <i class="fas fa-tv me-2"></i>
+                          {{ channel.name }}
+                      </h2>
+                      <!--            <small class="text-muted">{{ channel.yt_id }}</small>-->
+                  </div>
+                  <div class="d-flex flex-row flex-grow-1"></div>
+                  <button class="btn btn-outline-secondary me-3" (click)="goBack()">
+                      <i class="fas fa-arrow-left"></i>
+                  </button>
               </div>
-              <div class="card-body">
-                <h6 class="card-title">{{ video.title }}</h6>
-<!--                <p class="card-text text-muted small">-->
-<!--                  <i class="fas fa-calendar me-1"></i>-->
-<!--                  {{ video.upload_date | date:'mediumDate' }}-->
-<!--                </p>-->
-                <p class="card-text text-muted small" *ngIf="video.duration">
-                  <i class="fas fa-clock me-1"></i>
-                  {{ formatDuration(video.duration) }}
-                    <i class="fas fa-eye me-1"></i>  
-                    {{ video.view_count }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <div class="text-center mt-4" *ngIf="videos.length > 0 && !loadingVideos">
-          <button class="btn btn-primary" (click)="loadMore()" [disabled]="loadingMore">
+              <div *ngIf="loadingVideos" class="text-center py-3">
+                  <div class="spinner-border text-primary" role="status"></div>
+              </div>
+
+              <div *ngIf="!loadingVideos && videos.length === 0" class="alert alert-info">
+                  No videos found for this channel.
+              </div>
+
+              <div class="row" *ngIf="!loadingVideos && videos.length > 0">
+                  <div class="col-md-6 col-lg-4 col-xl-3 mb-4" *ngFor="let video of videos">
+                      <div class="card video-card h-100" (click)="watchVideo(video.yt_id)">
+                          <div class="video-thumbnail">
+                              <img [src]="video.thumbnail" [alt]="video.title" *ngIf="video.thumbnail">
+                          </div>
+                          <div class="card-body">
+                              <h6 class="card-title">{{ video.title }}</h6>
+                              <p class="card-text text-muted small" *ngIf="video.duration">
+                                  <i class="fas fa-clock me-1"></i>
+                                  {{ formatDuration(video.duration) }}
+                                  <i class="fas fa-eye me-1"></i>
+                                  {{ video.view_count }}
+                              </p>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+
+              <div class="text-center mt-4" *ngIf="videos.length > 0 && !loadingVideos">
+                  <button class="btn btn-primary" (click)="loadMore()" [disabled]="loadingMore">
             <span *ngIf="!loadingMore">
               <i class="fas fa-chevron-down me-2"></i>
               Load More
             </span>
-            <span *ngIf="loadingMore">
+                      <span *ngIf="loadingMore">
               <span class="spinner-border spinner-border-sm me-2"></span>
               Loading...
             </span>
-          </button>
-        </div>
+                  </button>
+              </div>
+          </div>
       </div>
-    </div>
   `
 })
 export class ChannelComponent implements OnInit {

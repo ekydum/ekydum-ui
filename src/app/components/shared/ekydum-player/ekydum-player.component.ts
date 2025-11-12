@@ -18,6 +18,7 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy {
 
   availableLanguages: YtDlpSourceFormat['language'][] = [];
   selectedLanguage: YtDlpSourceFormat['language'] = 'en';
+  private fallbackLanguage = 'en';
 
   combinedFormats: YtDlpSourceFormat[] = [];
   // videoFormats: YtDlpSourceFormat[] = [];
@@ -158,11 +159,27 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy {
       )
     );
 
+    // todo: rework this
+    // try lang from preferences
     this.combinedFormats = formats
       .filter((f) => f.vcodec && f.vcodec !== 'none' && f.acodec && f.acodec !== 'none')
-      .filter((f) => f.language === this.selectedLanguage)
+      .filter((f) => (f.language + '').startsWith(this.selectedLanguage + ''))
       .sort((a, b) => (b.height || 0) - (a.height || 0));
-    console.log('combined format: ', this.combinedFormats);
+    // try fallback lang (en/en-XX)
+    if (this.combinedFormats.length === 0 && this.selectedLanguage !== this.fallbackLanguage) {
+      this.selectedLanguage = this.fallbackLanguage;
+      this.combinedFormats = formats
+        .filter((f) => f.vcodec && f.vcodec !== 'none' && f.acodec && f.acodec !== 'none')
+        .filter((f) => (f.language + '').startsWith(this.fallbackLanguage))
+        .sort((a, b) => (b.height || 0) - (a.height || 0));
+    }
+    // use any lang
+    if (this.combinedFormats.length === 0) {
+      this.combinedFormats = formats
+        .filter((f) => f.vcodec && f.vcodec !== 'none' && f.acodec && f.acodec !== 'none')
+        .sort((a, b) => (b.height || 0) - (a.height || 0));
+    }
+    console.log('combined formats: ', this.combinedFormats);
 
     // this.videoFormats = formats
     //   .filter((f: any) => f.vcodec && f.vcodec !== 'none' && (!f.acodec || f.acodec === 'none'))

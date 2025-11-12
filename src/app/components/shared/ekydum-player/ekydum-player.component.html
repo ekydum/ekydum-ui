@@ -40,9 +40,9 @@
         <div ngbDropdownMenu aria-labelledby="ctrlChapters" class="multi-column-dropdown" style="columns: 2;">
           <button
             ngbDropdownItem
-            *ngFor="let ch of video.chapters"
+            *ngFor="let ch of video.chapters; let i = index"
             (click)=goToChapter(ch)
-          >{{ ch.title }}</button>
+          >{{ (i + 1) }}. {{ ch.title }}</button>
         </div>
       </div>
     </div>

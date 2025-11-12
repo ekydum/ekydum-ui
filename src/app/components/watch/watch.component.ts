@@ -111,6 +111,10 @@ export class WatchComponent implements OnInit, OnDestroy {
   }
 
   goBack(): void {
-    this.router.navigate(['/subscriptions']);
+    if (this.video) {
+      this.router.navigate(['/channel', this.video.channel_id]);
+    } else {
+      this.router.navigate(['/subscriptions']);
+    }
   }
 }

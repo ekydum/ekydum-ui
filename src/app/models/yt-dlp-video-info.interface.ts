@@ -180,6 +180,12 @@ export interface YtDlpSubtitle {
   __yt_dlp_client?: string;
 }
 
+export interface YtDlpVideoChapter {
+  start_time: number;
+  title: string;
+  end_time: number;
+}
+
 export interface YtDlpVideoInfo {
   /** Video ID */
   id: string;
@@ -252,7 +258,7 @@ export interface YtDlpVideoInfo {
   comment_count?: number;
 
   /** Video chapters/sections */
-  chapters?: any | null;
+  chapters?: YtDlpVideoChapter[] | null;
 
   /** Engagement heatmap data */
   heatmap?: any | null;

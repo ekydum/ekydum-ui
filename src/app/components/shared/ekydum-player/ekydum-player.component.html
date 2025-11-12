@@ -1,6 +1,6 @@
 <div class="player-container" data-bs-theme="dark">
   <video
-    #video
+    #videoEl
     controls
     class="video-element"
     [poster]="posterUrl"
@@ -30,6 +30,19 @@
             *ngFor="let lng of availableLanguages"
             (click)="changeLang(lng)"
           >{{ formatLangLabel(lng, true) }}</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-item chapters" *ngIf="video?.chapters?.length">
+      <div ngbDropdown display="dynamic" placement="top-start" class="d-inline-block">
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="ctrlChapters" ngbDropdownToggle>Chapters</button>
+        <div ngbDropdownMenu aria-labelledby="ctrlChapters" class="multi-column-dropdown" style="columns: 2;">
+          <button
+            ngbDropdownItem
+            *ngFor="let ch of video.chapters"
+            (click)=goToChapter(ch)
+          >{{ ch.title }}</button>
         </div>
       </div>
     </div>

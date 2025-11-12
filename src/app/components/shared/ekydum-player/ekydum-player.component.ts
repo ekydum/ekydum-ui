@@ -1,7 +1,7 @@
 import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnDestroy, ViewChild } from '@angular/core';
 import { AuthService } from '../../../services/auth.service';
 import Hls from 'hls.js';
-import { YtDlpSourceFormat, YtDlpVideoInfo } from '../../../models/yt-dlp-video-info.interface';
+import { YtDlpSourceFormat, YtDlpVideoChapter, YtDlpVideoInfo } from '../../../models/yt-dlp-video-info.interface';
 import { UserPreference } from '../../../models/settings';
 
 @Component({
@@ -14,7 +14,7 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy {
   @Input() video!: YtDlpVideoInfo;
   @Input() preferences!: UserPreference[];
 
-  @ViewChild('video', { static: false }) videoElementRef!: ElementRef<HTMLVideoElement>;
+  @ViewChild('videoEl', { static: false }) videoElementRef!: ElementRef<HTMLVideoElement>;
 
   availableLanguages: YtDlpSourceFormat['language'][] = [];
   selectedLanguage: YtDlpSourceFormat['language'] = 'en';
@@ -221,5 +221,9 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy {
   formatLangLabel(lng: YtDlpSourceFormat['language'], markCurrent = false): string {
     var isCurrent = markCurrent && this.selectedLanguage && (this.selectedLanguage === lng);
     return lng + (isCurrent ? '*' : '');
+  }
+
+  goToChapter(ch: YtDlpVideoChapter): void {
+    this.player.currentTime = ch.start_time;
   }
 }

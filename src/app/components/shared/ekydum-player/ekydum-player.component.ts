@@ -1,7 +1,7 @@
 import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnDestroy, ViewChild } from '@angular/core';
 import { AuthService } from '../../../services/auth.service';
 import Hls from 'hls.js';
-import { YtDlpVideoInfo } from '../../../models/yt-dlp-video-info.interface';
+import { YtDlpSourceFormat, YtDlpVideoInfo } from '../../../models/yt-dlp-video-info.interface';
 
 @Component({
   selector: 'app-ekydum-player',
@@ -10,23 +10,29 @@ import { YtDlpVideoInfo } from '../../../models/yt-dlp-video-info.interface';
   standalone: false,
 })
 export class EkydumPlayerComponent implements AfterViewInit, OnDestroy {
-  @Input() video?: YtDlpVideoInfo;
+  @Input() video!: YtDlpVideoInfo;
   @ViewChild('video', { static: false }) videoElementRef!: ElementRef<HTMLVideoElement>;
 
-  combinedFormats: any[] = [];
-  videoFormats: any[] = [];
-  audioFormats: any[] = [];
+  availableLanguages: YtDlpSourceFormat['language'][] = [];
+  selectedLanguage: YtDlpSourceFormat['language'] = 'en';
 
-  selectedFormat: string | null = null;
-  selectedVideoFormat: string | null = null;
-  selectedAudioFormat: string | null = null;
+  combinedFormats: YtDlpSourceFormat[] = [];
+  // videoFormats: YtDlpSourceFormat[] = [];
+  // audioFormats: YtDlpSourceFormat[] = [];
+
+  selectedFormat: YtDlpSourceFormat | null = null;
+  // selectedVideoFormat: YtDlpSourceFormat | null = null;
+  // selectedAudioFormat: YtDlpSourceFormat | null = null;
 
   sourceManifestUrl = '';
   posterUrl = '';
 
-  qualities: any[] = [];
-
   private hls!: Hls;
+  private isFirstLoad = true;
+
+  private get player(): HTMLVideoElement {
+    return this.videoElementRef.nativeElement;
+  }
 
   constructor(
     private auth: AuthService,
@@ -36,11 +42,8 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy {
 
   ngAfterViewInit() {
     if (this.video) {
-      this.parseFormats(this.video);
-      this.selectDefaultFormat();
-
+      this.parseFormats();
       this.initPlayer();
-
       this.cdr.detectChanges();
     }
   }
@@ -52,7 +55,7 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy {
   }
 
   private async initPlayer() {
-    var video = this.videoElementRef.nativeElement;
+    var player = this.player;
 
     if (Hls.isSupported()) {
       this.hls = new Hls({
@@ -60,18 +63,22 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy {
         enableWorker: true,
       });
 
-      this.hls.loadSource(this.sourceManifestUrl);
-      this.hls.attachMedia(video);
+      this.selectDefaultFormat();
+      this.hls.attachMedia(player);
       this.posterUrl = this.video?.thumbnail || '';
 
-      // Когда манифест загружен
       this.hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
-        console.log('Manifest loaded', event, data);
-        this.qualities = this.hls.levels;
-        console.log('Available qualities:', this.qualities);
+        // console.log('Manifest loaded', event, data);
+        // this.qualities = this.hls.levels;
+        // console.log('Available qualities:', this.hls.levels);
+
+        // auto-play
+        if (this.isFirstLoad) {
+          this.isFirstLoad = false;
+          this.play();
+        }
       });
 
-      // Обработка ошибок
       this.hls.on(Hls.Events.ERROR, (event, data) => {
         console.error('HLS error:', data);
 
@@ -93,72 +100,54 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy {
         }
       });
 
-      // События видео
-      video.addEventListener('play', () => {
-        console.log('Playing');
-      });
+      // player.addEventListener('play', () => {
+      //   console.log('Playing');
+      // });
 
-      video.addEventListener('pause', () => {
-        console.log('Paused');
-      });
+      // player.addEventListener('pause', () => {
+      //   console.log('Paused');
+      // });
 
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      // iOS нативная поддержка HLS
-      video.src = 'https://your-proxy.com/manifest.m3u8';
     }
+    // TODO: platforms w/ native HLS support
+    // else if (player.canPlayType('application/vnd.apple.mpegurl')) {
+    //   player.src = 'https://your-proxy.com/manifest.m3u8';
+    // }
   }
 
   play() {
-    this.videoElementRef.nativeElement.play();
+    this.player.play().catch((err) => {
+      console.error('Playback Error:', err);
+    });
   }
 
   pause() {
-    this.videoElementRef.nativeElement.pause();
+    this.player.pause();
   }
 
-  parseFormats(data: any): void {
-    if (!data.formats) return;
+  parseFormats(): void {
+    var formats = this.video!.formats;
 
-    this.combinedFormats = data.formats
-      .filter((f: any) => f.vcodec && f.vcodec !== 'none' && f.acodec && f.acodec !== 'none')
-      .map((f: any) => ({
-        format_id: f.format_id,
-        quality: f.format_note || (f.height ? `${f.height}p` : f.format_id),
-        height: f.height,
-        ext: f.ext,
-        vcodec: f.vcodec,
-        acodec: f.acodec,
-        url: f.url,
-        filesize: f.filesize,
-        tbr: f.tbr,
-        container: f.container,
-      }))
-      .sort((a: any, b: any) => (b.height || 0) - (a.height || 0));
+    this.availableLanguages = Array.from(
+      new Set(
+        formats.map(
+          (f) => f.language
+        )
+      )
+    );
+
+    this.combinedFormats = formats
+      .filter((f) => f.vcodec && f.vcodec !== 'none' && f.acodec && f.acodec !== 'none')
+      .filter((f) => f.language === this.selectedLanguage)
+      .sort((a, b) => (b.height || 0) - (a.height || 0));
     console.log('combined format: ', this.combinedFormats);
 
-    this.videoFormats = data.formats
-      .filter((f: any) => f.vcodec && f.vcodec !== 'none' && (!f.acodec || f.acodec === 'none'))
-      .map((f: any) => ({
-        format_id: f.format_id,
-        quality: f.format_note || (f.height ? `${f.height}p` : f.format_id),
-        height: f.height,
-        vcodec: f.vcodec,
-        url: f.url,
-        filesize: f.filesize,
-        container: f.container,
-      }))
-      .sort((a: any, b: any) => (b.height || 0) - (a.height || 0));
+    // this.videoFormats = formats
+    //   .filter((f: any) => f.vcodec && f.vcodec !== 'none' && (!f.acodec || f.acodec === 'none'))
+    //   .sort((a: any, b: any) => (b.height || 0) - (a.height || 0));
 
-    this.audioFormats = data.formats
-      .filter((f: any) => f.acodec && f.acodec !== 'none' && (!f.vcodec || f.vcodec === 'none'))
-      .map((f: any) => ({
-        format_id: f.format_id,
-        language: f.language || 'unknown',
-        acodec: f.acodec,
-        url: f.url,
-        bitrate: Math.round(f.abr || f.tbr || 0),
-        container: f.container,
-      }));
+    // this.audioFormats = formats
+    //   .filter((f: any) => f.acodec && f.acodec !== 'none' && (!f.vcodec || f.vcodec === 'none'));
   }
 
   selectDefaultFormat(): void {
@@ -166,41 +155,43 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy {
       var bestFormat = this.combinedFormats.find((f: any) => f.height === 720) ||
         this.combinedFormats.find((f: any) => f.height === 480) ||
         this.combinedFormats[0];
-      this.selectedFormat = bestFormat.format_id;
-      this.changeQuality();
-    } else if (this.videoFormats.length > 0) {
-      var bestVideo = this.videoFormats.find((f: any) => f.height === 720) ||
-        this.videoFormats.find((f: any) => f.height === 480) ||
-        this.videoFormats[0];
-      this.selectedVideoFormat = bestVideo.format_id;
-      if (this.audioFormats.length > 0) {
-        this.selectedAudioFormat = this.audioFormats[0].format_id;
-      }
-      this.changeQuality();
+      this.changeQuality(bestFormat);
     }
   }
 
-  changeQuality(event?: any): void {
-    if (event) {
-      var levelIndex = parseInt(event.target.value);
-      this.hls.currentLevel = levelIndex;
-      console.log('Quality changed to:', this.qualities[levelIndex]);
-    }
-    // TODO ^^
+  changeLang(lng: YtDlpSourceFormat['language']): void {
+    this.selectedLanguage = lng;
+  }
+
+  changeQuality(f: YtDlpSourceFormat): void {
+    console.log('set source: ', f);
+    this.selectedFormat = f;
 
     var serverUrl = this.auth.getServerUrl() || 'http://localhost:3000';
     var accountToken = this.auth.getAccountToken();
 
-    if (this.selectedFormat) {
-      var format = this.combinedFormats.find((f: any) => f.format_id === this.selectedFormat);
-      if (format) {
-        this.sourceManifestUrl = `${serverUrl}/hls/m3u8?url=${encodeURIComponent(format.url)}&token=${accountToken}`;
-      }
-    } else if (this.selectedVideoFormat) {
-      var videoFormat = this.videoFormats.find((f: any) => f.format_id === this.selectedVideoFormat);
-      if (videoFormat) {
-        this.sourceManifestUrl = `${serverUrl}/hls/m3u8?url=${encodeURIComponent(videoFormat.url)}&token=${accountToken}`;
-      }
+    this.sourceManifestUrl = `${serverUrl}/hls/m3u8?url=${encodeURIComponent(f.url)}&token=${accountToken}`;
+
+    if (this.hls) {
+      var player = this.player;
+
+      var currentTime = player.currentTime;
+      var wasPlaying = !player.paused;
+
+      this.hls.loadSource(this.sourceManifestUrl);
+
+      this.hls.once(Hls.Events.MANIFEST_PARSED, () => {
+        player.currentTime = currentTime;
+        if (wasPlaying && !this.isFirstLoad) {
+          this.play();
+        }
+      });
     }
+  }
+
+  formatFormatLabel(f: YtDlpSourceFormat): string {
+    var p = f?.protocol + '';
+    var isHls = p && p.includes('m3u8');
+    return f ? f.height + 'p ' + (isHls ? '' : p.toUpperCase()) : '-';
   }
 }

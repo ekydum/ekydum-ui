@@ -1,3 +1,185 @@
+export interface YtDlpSourceFormatFragment {
+  /** Fragment URL */
+  url: string;
+
+  /** Fragment duration in seconds */
+  duration?: number;
+}
+
+export interface YtDlpSourceFormat {
+  /** Format identifier */
+  format_id: string;
+
+  /** Human-readable format description */
+  format_note?: string;
+
+  /** File extension */
+  ext: string;
+
+  /** Protocol used for download (https, m3u8_native, etc.) */
+  protocol: string;
+
+  /** Audio codec (opus, aac, mp4a, etc.) or 'none' */
+  acodec: string | null;
+
+  /** Video codec (h264, vp9, av01, etc.) or 'none' */
+  vcodec: string | null;
+
+  /** Direct URL to the stream */
+  url: string;
+
+  /** Video width in pixels */
+  width?: number | null;
+
+  /** Video height in pixels */
+  height?: number | null;
+
+  /** Frames per second */
+  fps?: number | null;
+
+  /** Number of rows (for storyboard formats) */
+  rows?: number;
+
+  /** Number of columns (for storyboard formats) */
+  columns?: number;
+
+  /** HLS/DASH fragments */
+  fragments?: YtDlpSourceFormatFragment[];
+
+  /** Audio file extension */
+  audio_ext: string;
+
+  /** Video file extension */
+  video_ext: string;
+
+  /** Video bitrate in kbps */
+  vbr?: number;
+
+  /** Audio bitrate in kbps */
+  abr?: number;
+
+  /** Total bitrate in kbps */
+  tbr?: number | null;
+
+  /** Resolution string (e.g., "1920x1080") */
+  resolution?: string;
+
+  /** Aspect ratio (width/height) */
+  aspect_ratio?: number | null;
+
+  /** Approximate file size in bytes */
+  filesize_approx?: number | null;
+
+  /** HTTP headers required for download */
+  http_headers?: {
+    'User-Agent'?: string;
+    'Accept'?: string;
+    'Accept-Language'?: string;
+    'Sec-Fetch-Mode'?: string;
+    [key: string]: string | undefined;
+  };
+
+  /** Full format description string */
+  format: string;
+
+  /** Audio sample rate in Hz */
+  asr?: number | null;
+
+  /** Exact file size in bytes */
+  filesize?: number | null;
+
+  /** Source preference (-1 = lower priority) */
+  source_preference?: number;
+
+  /** Number of audio channels */
+  audio_channels?: number | null;
+
+  /** Quality score */
+  quality?: number;
+
+  /** Whether format has DRM protection */
+  has_drm?: boolean;
+
+  /** Audio language code */
+  language?: string | null;
+
+  /** Language preference score */
+  language_preference?: number;
+
+  /** General preference score */
+  preference?: number | null;
+
+  /** Dynamic range (SDR, HDR, etc.) */
+  dynamic_range?: string | null;
+
+  /** Container format */
+  container?: string;
+
+  /** Unix timestamp when format became available */
+  available_at?: number;
+
+  /** Downloader-specific options */
+  downloader_options?: {
+    /** HTTP chunk size for download */
+    http_chunk_size?: number;
+    [key: string]: any;
+  };
+}
+
+export interface YtDlpVideoThumbnail {
+  /** Thumbnail URL */
+  url: string;
+
+  /** Preference score */
+  preference?: number;
+
+  /** Thumbnail ID */
+  id: string;
+
+  /** Thumbnail height */
+  height?: number;
+
+  /** Thumbnail width */
+  width?: number;
+
+  /** Resolution string */
+  resolution?: string;
+}
+
+export interface YtDlpAutomaticCaption {
+  /** Caption file extension */
+  ext: string;
+
+  /** Caption file URL */
+  url: string;
+
+  /** Language name */
+  name: string;
+
+  /** Whether impersonation is used */
+  impersonate?: boolean;
+
+  /** yt-dlp client used */
+  __yt_dlp_client?: string;
+}
+
+export interface YtDlpSubtitle {
+  /** Subtitle file extension */
+  ext: string;
+
+  /** Subtitle file URL */
+  url: string;
+
+  /** Language name */
+  name: string;
+
+  /** Whether impersonation is used */
+  impersonate?: boolean;
+
+  /** yt-dlp client used */
+  __yt_dlp_client?: string;
+}
+
 export interface YtDlpVideoInfo {
   /** Video ID */
   id: string;
@@ -6,152 +188,10 @@ export interface YtDlpVideoInfo {
   title: string;
 
   /** Available formats (video/audio streams) */
-  formats: {
-    /** Format identifier */
-    format_id: string;
-
-    /** Human-readable format description */
-    format_note?: string;
-
-    /** File extension */
-    ext: string;
-
-    /** Protocol used for download (https, m3u8_native, etc.) */
-    protocol: string;
-
-    /** Audio codec (opus, aac, mp4a, etc.) or 'none' */
-    acodec: string | null;
-
-    /** Video codec (h264, vp9, av01, etc.) or 'none' */
-    vcodec: string | null;
-
-    /** Direct URL to the stream */
-    url: string;
-
-    /** Video width in pixels */
-    width?: number | null;
-
-    /** Video height in pixels */
-    height?: number | null;
-
-    /** Frames per second */
-    fps?: number | null;
-
-    /** Number of rows (for storyboard formats) */
-    rows?: number;
-
-    /** Number of columns (for storyboard formats) */
-    columns?: number;
-
-    /** HLS/DASH fragments */
-    fragments?: {
-      /** Fragment URL */
-      url: string;
-
-      /** Fragment duration in seconds */
-      duration?: number;
-    }[];
-
-    /** Audio file extension */
-    audio_ext: string;
-
-    /** Video file extension */
-    video_ext: string;
-
-    /** Video bitrate in kbps */
-    vbr?: number;
-
-    /** Audio bitrate in kbps */
-    abr?: number;
-
-    /** Total bitrate in kbps */
-    tbr?: number | null;
-
-    /** Resolution string (e.g., "1920x1080") */
-    resolution?: string;
-
-    /** Aspect ratio (width/height) */
-    aspect_ratio?: number | null;
-
-    /** Approximate file size in bytes */
-    filesize_approx?: number | null;
-
-    /** HTTP headers required for download */
-    http_headers?: {
-      'User-Agent'?: string;
-      'Accept'?: string;
-      'Accept-Language'?: string;
-      'Sec-Fetch-Mode'?: string;
-      [key: string]: string | undefined;
-    };
-
-    /** Full format description string */
-    format: string;
-
-    /** Audio sample rate in Hz */
-    asr?: number | null;
-
-    /** Exact file size in bytes */
-    filesize?: number | null;
-
-    /** Source preference (-1 = lower priority) */
-    source_preference?: number;
-
-    /** Number of audio channels */
-    audio_channels?: number | null;
-
-    /** Quality score */
-    quality?: number;
-
-    /** Whether format has DRM protection */
-    has_drm?: boolean;
-
-    /** Audio language code */
-    language?: string | null;
-
-    /** Language preference score */
-    language_preference?: number;
-
-    /** General preference score */
-    preference?: number | null;
-
-    /** Dynamic range (SDR, HDR, etc.) */
-    dynamic_range?: string | null;
-
-    /** Container format */
-    container?: string;
-
-    /** Unix timestamp when format became available */
-    available_at?: number;
-
-    /** Downloader-specific options */
-    downloader_options?: {
-      /** HTTP chunk size for download */
-      http_chunk_size?: number;
-      [key: string]: any;
-    };
-  }[];
+  formats: YtDlpSourceFormat[];
 
   /** Available thumbnails */
-  thumbnails?: {
-    /** Thumbnail URL */
-    url: string;
-
-    /** Preference score */
-    preference?: number;
-
-    /** Thumbnail ID */
-    id: string;
-
-    /** Thumbnail height */
-    height?: number;
-
-    /** Thumbnail width */
-    width?: number;
-
-    /** Resolution string */
-    resolution?: string;
-  }[];
+  thumbnails?: YtDlpVideoThumbnail[];
 
   /** Default thumbnail URL */
   thumbnail?: string;
@@ -200,42 +240,12 @@ export interface YtDlpVideoInfo {
 
   /** Auto-generated captions by language */
   automatic_captions?: {
-    [language: string]: {
-      /** Caption file extension */
-      ext: string;
-
-      /** Caption file URL */
-      url: string;
-
-      /** Language name */
-      name: string;
-
-      /** Whether impersonation is used */
-      impersonate?: boolean;
-
-      /** yt-dlp client used */
-      __yt_dlp_client?: string;
-    }[];
+    [language: string]: YtDlpAutomaticCaption[];
   };
 
   /** Manual subtitles by language */
   subtitles?: {
-    [language: string]: {
-      /** Subtitle file extension */
-      ext: string;
-
-      /** Subtitle file URL */
-      url: string;
-
-      /** Language name */
-      name: string;
-
-      /** Whether impersonation is used */
-      impersonate?: boolean;
-
-      /** yt-dlp client used */
-      __yt_dlp_client?: string;
-    }[];
+    [language: string]: YtDlpSubtitle[];
   };
 
   /** Number of comments */
@@ -326,115 +336,7 @@ export interface YtDlpVideoInfo {
   epoch?: number;
 
   /** Selected formats for download (video + audio) */
-  requested_formats?: {
-    /** Audio sample rate */
-    asr?: number | null;
-
-    /** File size in bytes */
-    filesize?: number;
-
-    /** Format identifier */
-    format_id: string;
-
-    /** Format note */
-    format_note?: string;
-
-    /** Source preference */
-    source_preference?: number;
-
-    /** Frames per second */
-    fps?: number | null;
-
-    /** Number of audio channels */
-    audio_channels?: number | null;
-
-    /** Video height */
-    height?: number | null;
-
-    /** Quality score */
-    quality?: number;
-
-    /** DRM protection flag */
-    has_drm?: boolean;
-
-    /** Total bitrate */
-    tbr?: number;
-
-    /** Approximate file size */
-    filesize_approx?: number;
-
-    /** Stream URL */
-    url: string;
-
-    /** Video width */
-    width?: number | null;
-
-    /** Audio language */
-    language?: string | null;
-
-    /** Language preference */
-    language_preference?: number;
-
-    /** Format preference */
-    preference?: number | null;
-
-    /** File extension */
-    ext: string;
-
-    /** Video codec */
-    vcodec?: string;
-
-    /** Audio codec */
-    acodec?: string;
-
-    /** Dynamic range */
-    dynamic_range?: string | null;
-
-    /** Container format */
-    container?: string;
-
-    /** Available timestamp */
-    available_at?: number;
-
-    /** Downloader options */
-    downloader_options?: {
-      http_chunk_size?: number;
-      [key: string]: any;
-    };
-
-    /** Download protocol */
-    protocol?: string;
-
-    /** Video extension */
-    video_ext?: string;
-
-    /** Audio extension */
-    audio_ext?: string;
-
-    /** Audio bitrate */
-    abr?: number;
-
-    /** Video bitrate */
-    vbr?: number;
-
-    /** Resolution string */
-    resolution?: string;
-
-    /** Aspect ratio */
-    aspect_ratio?: number | null;
-
-    /** HTTP headers */
-    http_headers?: {
-      'User-Agent'?: string;
-      'Accept'?: string;
-      'Accept-Language'?: string;
-      'Sec-Fetch-Mode'?: string;
-      [key: string]: string | undefined;
-    };
-
-    /** Format description */
-    format: string;
-  }[];
+  requested_formats?: YtDlpSourceFormat[];
 
   /** Selected format string */
   format?: string;

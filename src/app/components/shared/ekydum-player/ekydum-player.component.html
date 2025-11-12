@@ -1,4 +1,4 @@
-<div class="player-container">
+<div class="player-container" data-bs-theme="dark">
   <video
     #video
     controls
@@ -7,12 +7,31 @@
   >
   </video>
 
-  <div class="controls">
-<!--    <select (change)="changeQuality($event)" *ngIf="qualities.length > 0">-->
-<!--      <option *ngFor="let q of qualities; let i = index" [value]="i">-->
-<!--        {{ q.height }}p-->
-<!--      </option>-->
-<!--    </select>-->
+  <div class="controls d-flex">
+    <div class="control-item quality-select">
+      <div ngbDropdown placement="top-start" class="d-inline-block">
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="ctrlQuality" ngbDropdownToggle>{{ formatFormatLabel(selectedFormat!) }}</button>
+        <div ngbDropdownMenu aria-labelledby="ctrlQuality">
+          <button
+            ngbDropdownItem
+            *ngFor="let cf of combinedFormats"
+            (click)="changeQuality(cf)"
+          >{{ formatFormatLabel(cf) }}</button>
+        </div>
+      </div>
+    </div>
 
+    <div class="control-item source-language-select">
+      <div ngbDropdown display="dynamic" placement="top-start" class="d-inline-block">
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="ctrlLang" ngbDropdownToggle>{{ selectedLanguage}}</button>
+        <div ngbDropdownMenu aria-labelledby="ctrlLang">
+          <button
+            ngbDropdownItem
+            *ngFor="let lng of availableLanguages"
+            (click)="changeLang(lng)"
+          >{{ lng }}</button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>

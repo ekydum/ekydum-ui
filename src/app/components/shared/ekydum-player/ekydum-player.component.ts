@@ -2,6 +2,7 @@ import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnDestr
 import { AuthService } from '../../../services/auth.service';
 import Hls from 'hls.js';
 import { YtDlpSourceFormat, YtDlpVideoInfo } from '../../../models/yt-dlp-video-info.interface';
+import { UserPreference } from '../../../models/settings';
 
 @Component({
   selector: 'app-ekydum-player',
@@ -11,6 +12,8 @@ import { YtDlpSourceFormat, YtDlpVideoInfo } from '../../../models/yt-dlp-video-
 })
 export class EkydumPlayerComponent implements AfterViewInit, OnDestroy {
   @Input() video!: YtDlpVideoInfo;
+  @Input() preferences!: UserPreference[];
+
   @ViewChild('video', { static: false }) videoElementRef!: ElementRef<HTMLVideoElement>;
 
   availableLanguages: YtDlpSourceFormat['language'][] = [];
@@ -30,6 +33,8 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy {
   private hls!: Hls;
   private isFirstLoad = true;
 
+  private autoPlay = true;
+
   private get player(): HTMLVideoElement {
     return this.videoElementRef.nativeElement;
   }
@@ -41,6 +46,9 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit() {
+    if (this.preferences) {
+      this.applyPreferences();
+    }
     if (this.video) {
       this.parseFormats();
       this.initPlayer();
@@ -51,6 +59,16 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy {
   ngOnDestroy() {
     if (this.hls) {
       this.hls.destroy();
+    }
+  }
+
+  private applyPreferences(): void {
+    if (Array.isArray(this.preferences)) {
+      var langPref = this.preferences.find((p) => p.key === 'LANG');
+      if (langPref) { this.selectedLanguage = (langPref.value + '').toLowerCase(); }
+
+      var autoPlayPref = this.preferences.find((p) => p.key === 'AUTO_PLAY');
+      if (autoPlayPref) { this.autoPlay = +autoPlayPref.value !== 0 }
     }
   }
 
@@ -75,7 +93,9 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy {
         // auto-play
         if (this.isFirstLoad) {
           this.isFirstLoad = false;
-          this.play();
+          if (this.autoPlay) {
+            this.play();
+          }
         }
       });
 
@@ -132,6 +152,8 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy {
       new Set(
         formats.map(
           (f) => f.language
+        ).filter(
+          (l) => !!l
         )
       )
     );
@@ -189,9 +211,15 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  formatFormatLabel(f: YtDlpSourceFormat): string {
+  formatFormatLabel(f: YtDlpSourceFormat, markCurrent = false): string {
     var p = f?.protocol + '';
     var isHls = p && p.includes('m3u8');
-    return f ? f.height + 'p ' + (isHls ? '' : p.toUpperCase()) : '-';
+    var isCurrent = markCurrent && f && this.selectedFormat && (f.format_id == this.selectedFormat.format_id);
+    return f ? f.height + 'p' + (isHls ? '' : ' ' + p.toUpperCase()) + (isCurrent ? '*' : '') : '-';
+  }
+
+  formatLangLabel(lng: YtDlpSourceFormat['language'], markCurrent = false): string {
+    var isCurrent = markCurrent && this.selectedLanguage && (this.selectedLanguage === lng);
+    return lng + (isCurrent ? '*' : '');
   }
 }

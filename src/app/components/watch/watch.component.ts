@@ -1,7 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { YtDlpVideoInfo } from '../../models/yt-dlp-video-info.interface';
+import { forkJoin, of, Subject, takeUntil, tap } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { UserPreference } from '../../models/settings';
 
 @Component({
   selector: 'app-watch',
@@ -9,10 +12,14 @@ import { YtDlpVideoInfo } from '../../models/yt-dlp-video-info.interface';
   standalone: false,
   styles: []
 })
-export class WatchComponent implements OnInit {
+export class WatchComponent implements OnInit, OnDestroy {
   videoId = '';
   video: YtDlpVideoInfo|null = null;
   loading = false;
+
+  preferences!: UserPreference[];
+
+  private alive$ = new Subject<void>();
 
   constructor(
     private route: ActivatedRoute,
@@ -24,21 +31,55 @@ export class WatchComponent implements OnInit {
   ngOnInit(): void {
     this.videoId = this.route.snapshot.paramMap.get('id') || '';
     if (this.videoId) {
-      this.loadVideo();
+      this.load();
     }
   }
 
-  loadVideo(): void {
+  ngOnDestroy(): void {
+    this.alive$.next();
+    this.alive$.complete();
+  }
+
+  private load(): void {
     this.loading = true;
-    this.api.getVideo(this.videoId).subscribe({
-      next: (data) => {
-        this.video = data;
+    forkJoin([
+      this.loadVideo(),
+      this.loadPreferences(),
+    ]).pipe(
+      takeUntil(this.alive$),
+      tap(() => { this.loading = false; }),
+      catchError((e) => {
         this.loading = false;
-      },
-      error: () => {
-        this.loading = false;
-      }
-    });
+        console.error(e);
+        return of(null);
+      })
+    ).subscribe();
+  }
+
+  private loadVideo() {
+    return this.api.getVideo(this.videoId).pipe(
+      tap((v) => {
+        // console.log('video info loaded: ', v);
+        this.video = v;
+      }),
+      catchError((e) => {
+        console.error('cannot load video info', e);
+        return of(null);
+      })
+    );
+  }
+
+  private loadPreferences() {
+    return this.api.getSettings().pipe(
+      tap((r) => {
+        // console.log('preferences loaded: ', r.settings);
+        this.preferences = r.settings;
+      }),
+      catchError((e) => {
+        console.error('cannot load preferences', e);
+        return of(null);
+      })
+    );
   }
 
   formatDate(dateStr: string): string {

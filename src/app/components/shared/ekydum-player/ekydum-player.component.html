@@ -10,13 +10,13 @@
   <div class="controls d-flex">
     <div class="control-item quality-select">
       <div ngbDropdown placement="top-start" class="d-inline-block">
-        <button type="button" class="btn btn-sm btn-outline-secondary" id="ctrlQuality" ngbDropdownToggle>{{ formatFormatLabel(selectedFormat!) }}</button>
-        <div ngbDropdownMenu aria-labelledby="ctrlQuality">
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="ctrlQuality" ngbDropdownToggle>{{ formatFormatLabel(selectedFormat!, false) }}</button>
+        <div ngbDropdownMenu aria-labelledby="ctrlQuality" class="multi-column-dropdown">
           <button
             ngbDropdownItem
             *ngFor="let cf of combinedFormats"
             (click)="changeQuality(cf)"
-          >{{ formatFormatLabel(cf) }}</button>
+          >{{ formatFormatLabel(cf, true) }}</button>
         </div>
       </div>
     </div>
@@ -24,12 +24,12 @@
     <div class="control-item source-language-select">
       <div ngbDropdown display="dynamic" placement="top-start" class="d-inline-block">
         <button type="button" class="btn btn-sm btn-outline-secondary" id="ctrlLang" ngbDropdownToggle>{{ selectedLanguage}}</button>
-        <div ngbDropdownMenu aria-labelledby="ctrlLang">
+        <div ngbDropdownMenu aria-labelledby="ctrlLang" class="multi-column-dropdown">
           <button
             ngbDropdownItem
             *ngFor="let lng of availableLanguages"
             (click)="changeLang(lng)"
-          >{{ lng }}</button>
+          >{{ formatLangLabel(lng, true) }}</button>
         </div>
       </div>
     </div>

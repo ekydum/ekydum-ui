@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { ToastService, Toast } from './services/toast.service';
-import { defineCustomElements } from 'vidstack/elements';
 
 @Component({
   selector: 'app-root',
@@ -24,9 +23,6 @@ export class AppComponent implements OnInit {
     if (window.innerWidth < 768) {
       this.sidebarCollapsed = true;
     }
-
-    defineCustomElements()
-      .catch(err => console.error(err));
   }
 
   toggleSidebar(): void {

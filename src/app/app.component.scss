@@ -3,3 +3,24 @@
   border: none;
   color: white;
 }
+
+.sidebar-header {
+  padding: 1rem;
+  background: #000;
+  color: #fff;
+  font-weight: bold;
+  font-size: 1.2rem;
+  border-bottom: 1px solid #343a40;
+  display: flex;
+  flex-direction: row;
+  cursor: default;
+  user-select: none;
+
+  .logo {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    vertical-align: middle;
+    border-radius: 2px;
+  }
+}

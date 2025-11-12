@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
+import { YtDlpVideoInfo } from '../../models/yt-dlp-video-info.interface';
 
 @Component({
   selector: 'app-watch',
@@ -10,16 +11,8 @@ import { ApiService } from '../../services/api.service';
 })
 export class WatchComponent implements OnInit {
   videoId = '';
-  video: any = null;
+  video: YtDlpVideoInfo|null = null;
   loading = false;
-
-  combinedFormats: any[] = [];
-  videoFormats: any[] = [];
-  audioFormats: any[] = [];
-
-  selectedFormat: string | null = null;
-  selectedVideoFormat: string | null = null;
-  selectedAudioFormat: string | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -46,16 +39,6 @@ export class WatchComponent implements OnInit {
         this.loading = false;
       }
     });
-  }
-
-  changeQuality(): void {
-    // TODO
-  }
-
-  formatFilesize(bytes: number): string {
-    if (!bytes) return '';
-    var mb = bytes / (1024 * 1024);
-    return mb >= 1024 ? `${(mb / 1024).toFixed(1)}GB` : `${mb.toFixed(0)}MB`;
   }
 
   formatDate(dateStr: string): string {

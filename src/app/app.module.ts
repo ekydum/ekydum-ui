@@ -1,4 +1,4 @@
-import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
+import { NgModule } from '@angular/core';
 import { AppComponent } from './app.component';
 import { SubscriptionsComponent } from './components/subscriptions/subscriptions.component';
 import { ChannelComponent } from './components/channel/channel.component';
@@ -11,7 +11,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { RouterModule } from '@angular/router';
 import { routes } from './app.routes';
 import { FormsModule } from '@angular/forms';
-import { VidstackPlayerComponent } from './components/shared/vidstack-player/vidstack-player.component';
+import { EkydumPlayerComponent } from './components/shared/ekydum-player/ekydum-player.component';
 
 @NgModule({
   declarations: [
@@ -21,7 +21,7 @@ import { VidstackPlayerComponent } from './components/shared/vidstack-player/vid
     WatchComponent,
     SettingsComponent,
     ManageComponent,
-    VidstackPlayerComponent,
+    EkydumPlayerComponent,
   ],
   imports: [
     CommonModule,
@@ -33,6 +33,5 @@ import { VidstackPlayerComponent } from './components/shared/vidstack-player/vid
     provideHttpClient(),
   ],
   bootstrap: [AppComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class AppModule { }

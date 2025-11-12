@@ -10,59 +10,10 @@
     </button>
 
     <div class="player-container mb-3">
-      <app-vidstack-custom-controls
+      <app-ekydum-player
         *ngIf="video"
         [video]="video"
-      ></app-vidstack-custom-controls>
-
-      <div class="quality-controls mt-3 p-3 bg-light rounded"
-           *ngIf="combinedFormats.length > 0 || videoFormats.length > 0">
-        <div class="row g-3">
-          <div class="col-md-12" *ngIf="combinedFormats.length > 0">
-            <label class="form-label">
-              <i class="fas fa-video me-2"></i>
-              Quality (Video + Audio)
-            </label>
-            <select class="form-select" [(ngModel)]="selectedFormat" (change)="changeQuality()">
-              <option *ngFor="let fmt of combinedFormats" [value]="fmt.format_id">
-                {{ fmt.quality }} - {{ fmt.ext }}
-                <span *ngIf="fmt.filesize">({{ formatFilesize(fmt.filesize) }})</span>
-              </option>
-            </select>
-          </div>
-
-          <div class="col-md-6" *ngIf="videoFormats.length > 0 && combinedFormats.length === 0">
-            <label class="form-label">
-              <i class="fas fa-film me-2"></i>
-              Video Quality
-            </label>
-            <select class="form-select" [(ngModel)]="selectedVideoFormat" (change)="changeQuality()">
-              <option *ngFor="let fmt of videoFormats" [value]="fmt.format_id">
-                {{ fmt.quality }} - {{ fmt.vcodec }}
-              </option>
-            </select>
-          </div>
-
-          <div class="col-md-6" *ngIf="audioFormats.length > 0 && combinedFormats.length === 0">
-            <label class="form-label">
-              <i class="fas fa-volume-up me-2"></i>
-              Audio
-            </label>
-            <select class="form-select" [(ngModel)]="selectedAudioFormat" (change)="changeQuality()">
-              <option *ngFor="let fmt of audioFormats" [value]="fmt.format_id">
-                {{ fmt.language || 'unknown' }} - {{ fmt.acodec }} ({{ fmt.bitrate }}kbps)
-              </option>
-            </select>
-          </div>
-        </div>
-
-        <div class="alert alert-warning mt-3 mb-0 small"
-             *ngIf="videoFormats.length > 0 && combinedFormats.length === 0">
-          <i class="fas fa-info-circle me-2"></i>
-          Separate video/audio streams detected. Only video will play. Audio support requires
-          server-side merging.
-        </div>
-      </div>
+      ></app-ekydum-player>
     </div>
 
     <div class="video-info">
@@ -71,7 +22,7 @@
       <div class="d-flex flex-wrap gap-3 text-muted mb-3">
             <span>
               <i class="fas fa-tv me-2"></i>
-              {{ video.channel || video.uploader }}
+              <a [routerLink]="['/channel/', video.channel_id]">{{ video.channel || video.uploader }}</a>
             </span>
         <span *ngIf="video.upload_date">
               <i class="fas fa-calendar me-2"></i>

@@ -1,0 +1,50 @@
+<div class="player-container" data-bs-theme="dark">
+  <video
+    #videoEl
+    controls
+    class="video-element"
+    [poster]="posterUrl"
+  >
+  </video>
+
+  <div class="controls d-flex">
+    <div class="control-item quality-select">
+      <div ngbDropdown placement="top-start" class="d-inline-block">
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="ctrlQuality" ngbDropdownToggle>{{ selectedFormat?.ekydum_label || '-' }}</button>
+        <div ngbDropdownMenu aria-labelledby="ctrlQuality" class="multi-column-dropdown">
+          <button
+            ngbDropdownItem
+            *ngFor="let lf of localizedFormats"
+            (click)="changeSource(lf)"
+          >{{ lf.ekydum_label }}{{ lf.ekydum_isCurrent ? "*" : "" }}</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-item source-language-select">
+      <div ngbDropdown display="dynamic" placement="top-start" class="d-inline-block">
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="ctrlLang" ngbDropdownToggle>{{ selectedLanguage }}</button>
+        <div ngbDropdownMenu aria-labelledby="ctrlLang" class="multi-column-dropdown">
+          <button
+            ngbDropdownItem
+            *ngFor="let lng of availableLanguages"
+            (click)="changeLang(lng)"
+          >{{ lng }}{{ selectedLanguage === lng ? "*" : "" }}</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-item chapters" *ngIf="video?.chapters?.length">
+      <div ngbDropdown display="dynamic" placement="top-start" class="d-inline-block">
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="ctrlChapters" ngbDropdownToggle>Chapters</button>
+        <div ngbDropdownMenu aria-labelledby="ctrlChapters" class="multi-column-dropdown" style="columns: 2;">
+          <button
+            ngbDropdownItem
+            *ngFor="let ch of video.chapters; let i = index"
+            (click)=goToChapter(ch)
+          >{{ (i + 1) }}. {{ ch.title }}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

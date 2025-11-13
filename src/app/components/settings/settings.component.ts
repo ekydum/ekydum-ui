@@ -98,6 +98,20 @@ import { map } from 'rxjs';
                           </select>
                           <small class="form-text text-muted">Number of videos per page</small>
                       </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Content Language</label>
+                      <input type="text" maxlength="2" minlength="2" class="form-control" [(ngModel)]="lang" (change)="updateLang()"/>
+                      <small class="form-text text-muted">Language code, for eg. "en", "de"</small>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Play video automatically</label>
+                      <select class="form-select" [(ngModel)]="autoPlay" (change)="updateAutoPlay()">
+                        <option [value]="1">Yes</option>
+                        <option [value]="0">No</option>
+                      </select>
+                    </div>
                   </div>
               </div>
           </div>
@@ -114,6 +128,8 @@ export class SettingsComponent implements OnInit {
   loadingSettings = false;
   defaultQuality = '720p';
   pageSize = 40;
+  lang = 'en';
+  autoPlay = 1;
 
   constructor(
     private api: ApiService,
@@ -186,12 +202,20 @@ export class SettingsComponent implements OnInit {
       next: (data) => {
         var qualitySetting = data.find((s: any) => s.key === 'DEFAULT_QUALITY');
         var pageSizeSetting = data.find((s: any) => s.key === 'PAGE_SIZE');
+        var lang = data.find((s: any) => s.key === 'LANG');
+        var autoPlay = data.find((s: any) => s.key === 'AUTO_PLAY');
 
         if (qualitySetting) {
           this.defaultQuality = qualitySetting.value;
         }
         if (pageSizeSetting) {
           this.pageSize = parseInt(pageSizeSetting.value);
+        }
+        if (lang) {
+          this.lang = lang.value;
+        }
+        if (autoPlay) {
+          this.autoPlay = +autoPlay.value || 0;
         }
 
         this.loadingSettings = false;
@@ -214,6 +238,24 @@ export class SettingsComponent implements OnInit {
     this.api.updateSetting('PAGE_SIZE', this.pageSize).subscribe({
       next: () => {
         this.toast.success('Page size updated');
+      }
+    });
+  }
+
+  updateLang(): void {
+    if (this.lang && this.lang.length === 2) {
+      this.api.updateSetting('LANG', this.lang).subscribe({
+        next: () => {
+          this.toast.success('Language updated');
+        }
+      });
+    }
+  }
+
+  updateAutoPlay(): void {
+    this.api.updateSetting('AUTO_PLAY', this.autoPlay).subscribe({
+      next: () => {
+        this.toast.success('Auto-play updated');
       }
     });
   }

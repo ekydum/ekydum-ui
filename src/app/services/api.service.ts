@@ -4,12 +4,13 @@ import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { ToastService } from './toast.service';
+import { YtDlpVideoInfo } from '../models/yt-dlp-video-info.interface';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ApiService {
-  
+
   constructor(
     private http: HttpClient,
     private auth: AuthService,
@@ -18,7 +19,7 @@ export class ApiService {
 
   private getHeaders(useAdmin: boolean = false): HttpHeaders {
     var headers = new HttpHeaders({ 'Content-Type': 'application/json' });
-    
+
     if (useAdmin) {
       var adminToken = this.auth.getAdminToken();
       if (adminToken) {
@@ -30,7 +31,7 @@ export class ApiService {
         headers = headers.set('x-account-token', accountToken);
       }
     }
-    
+
     return headers;
   }
 
@@ -69,8 +70,8 @@ export class ApiService {
       .pipe(catchError(err => this.handleError(err)));
   }
 
-  getVideo(videoId: string): Observable<any> {
-    return this.http.get(this.getUrl(`/videos/${videoId}`), { headers: this.getHeaders() })
+  getVideo(videoId: string) {
+    return this.http.get<YtDlpVideoInfo>(this.getUrl(`/videos/${videoId}`), { headers: this.getHeaders() })
       .pipe(catchError(err => this.handleError(err)));
   }
 

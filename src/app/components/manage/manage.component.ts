@@ -18,6 +18,16 @@ import { ToastService } from '../../services/toast.service';
                   <h5 class="mb-0">Admin Authentication</h5>
               </div>
               <div class="card-body">
+                <div class="mb-3">
+                  <label class="form-label">Server URL</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [(ngModel)]="serverUrl"
+                    placeholder="http://localhost:3000">
+                  <small class="form-text text-muted">Ekydum server URL</small>
+                </div>
+
                   <div class="mb-3">
                       <label class="form-label">Admin Token</label>
                       <input
@@ -157,6 +167,7 @@ import { ToastService } from '../../services/toast.service';
   `
 })
 export class ManageComponent implements OnInit {
+  serverUrl = 'http://localhost:3000';
   adminToken = '';
   isAdmin = false;
   accounts: any[] = [];
@@ -173,6 +184,11 @@ export class ManageComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    var savedUrl = this.auth.getServerUrl();
+    if (savedUrl) {
+      this.serverUrl = savedUrl;
+    }
+
     var savedToken = this.auth.getAdminToken();
     if (savedToken) {
       this.adminToken = savedToken;
@@ -182,6 +198,12 @@ export class ManageComponent implements OnInit {
   }
 
   saveAdminToken(): void {
+    if (!this.serverUrl) {
+      this.toast.error('Please enter server URL');
+      return;
+    }
+    this.auth.setServerUrl(this.serverUrl);
+
     if (!this.adminToken) {
       this.toast.error('Please enter admin token');
       return;

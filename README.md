@@ -2,45 +2,47 @@
 
 A web client for Ekydum Server.
 
-## Requirements
+## Quick Start
 
-- Node.js 18+
+1. Clone or download this repository
+
+2. Configure nginx using `nginx-reverse-proxy.example.conf` to serve files from `dist/` directory
+
+3. Open browser and navigate to your domain
+
+## Initial Setup
+
+### Server Admin Setup
+
+1. Open **Manage** page
+2. Enter Server URL and Admin Token
+3. Create first account and additional accounts as needed
+
+### User Setup
+
+1. Open **Settings** page
+2. Enter Server URL and Account Token
+3. Start using the application
+
+## Development
+
+Requirements:
+- Node.js v.22+
 - npm or yarn
 - Ekydum Server running
 
-## Quick Start
-
-1. Install dependencies:
+Start development server:
 ```bash
 npm install
-```
-
-2. Start development server:
-```bash
 npm start
 ```
 
-3. Open browser at `http://localhost:4200`
+Open browser at `http://localhost:4200`
 
-4. Configure server connection in Settings page
-
-## Features
-
-- Channel subscriptions
-- Channel video browsing
-- Video playback with HLS.js
-- HLS streaming support
-- User settings
-- Server accounts management
-
-## Build
-
-Production build:
+Build for production:
 ```bash
 npm run build
 ```
-
-Output in `dist/`
 
 ## Technologies
 

@@ -215,7 +215,7 @@ export class SettingsComponent implements OnInit {
           this.lang = lang.value;
         }
         if (autoPlay) {
-          this.autoPlay = +autoPlay.value || 1;
+          this.autoPlay = +autoPlay.value || 0;
         }
 
         this.loadingSettings = false;

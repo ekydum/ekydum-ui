@@ -1,12 +1,12 @@
-# ekydum-ui
+# Ekydum Web UI
 
-Angular client for ekydum-server (YouTube proxy).
+A web client for Ekydum Server.
 
 ## Requirements
 
 - Node.js 18+
 - npm or yarn
-- ekydum-server running
+- Ekydum Server running
 
 ## Quick Start
 
@@ -28,58 +28,10 @@ npm start
 
 - Channel subscriptions
 - Channel video browsing
-- Video playback with Plyr
+- Video playback with HLS.js
 - HLS streaming support
-- User settings (quality, page size)
-- Admin account management
-- Toast notifications
-- Responsive sidebar menu
-
-## Project Structure
-
-```
-src/
-├── app/
-│   ├── components/
-│   │   ├── subscriptions/  - Subscriptions list with search
-│   │   ├── channel/        - Channel videos
-│   │   ├── watch/          - Video player
-│   │   ├── settings/       - User & server settings
-│   │   └── manage/         - Admin account management
-│   ├── services/
-│   │   ├── api.service.ts     - API calls
-│   │   ├── auth.service.ts    - Token management
-│   │   └── toast.service.ts   - Notifications
-│   ├── app.component.ts   - Main app with sidebar
-│   └── app.routes.ts      - Routing configuration
-├── styles.css             - Global styles
-└── index.html
-```
-
-## Usage
-
-### Settings Page
-1. Enter ekydum-server URL (default: http://localhost:3000)
-2. Enter your account token (get from admin)
-3. Click "Save & Connect"
-4. Configure quality and page size preferences
-
-### Subscriptions
-1. Search for channels using the search bar
-2. Subscribe to channels from search results
-3. Click on subscribed channels to view videos
-
-### Watching Videos
-1. Navigate to channel
-2. Click on video thumbnail
-3. Video plays with Plyr player
-4. HLS streams supported automatically
-
-### Admin Management
-1. Enter admin token
-2. Click "Save & Login"
-3. Create, edit, or delete accounts
-4. Copy account tokens for users
+- User settings
+- Server accounts management
 
 ## Build
 
@@ -88,13 +40,12 @@ Production build:
 npm run build
 ```
 
-Output in `dist/ekydum-ui/`
+Output in `dist/`
 
 ## Technologies
 
 - Angular 19
-- Bootstrap 5
-- FontAwesome 6
-- Plyr 3.7
-- hls.js 1.5
-- RxJS 7
+- Bootstrap
+- FontAwesome
+- hls.js
+- RxJS

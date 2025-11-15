@@ -10,6 +10,12 @@
     </div>
     <ul class="sidebar-menu">
       <li>
+        <a routerLink="/search" routerLinkActive="active" (click)="closeSidebarOnMobile()">
+          <i class="fas fa-star"></i>
+          Search
+        </a>
+      </li>
+      <li>
         <a routerLink="/subscriptions" routerLinkActive="active" (click)="closeSidebarOnMobile()">
           <i class="fas fa-star"></i>
           Subscriptions

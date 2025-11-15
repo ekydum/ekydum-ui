@@ -13,10 +13,12 @@ import { routes } from './app.routes';
 import { FormsModule } from '@angular/forms';
 import { EkydumPlayerComponent } from './components/shared/ekydum-player/ekydum-player.component';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { SearchComponent } from './components/search/search.component';
 
 @NgModule({
   declarations: [
     AppComponent,
+    SearchComponent,
     SubscriptionsComponent,
     ChannelComponent,
     WatchComponent,

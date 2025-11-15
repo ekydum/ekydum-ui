@@ -4,9 +4,11 @@ import { ChannelComponent } from './components/channel/channel.component';
 import { WatchComponent } from './components/watch/watch.component';
 import { SettingsComponent } from './components/settings/settings.component';
 import { ManageComponent } from './components/manage/manage.component';
+import { SearchComponent } from './components/search/search.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/subscriptions', pathMatch: 'full' },
+  { path: 'search', component: SearchComponent },
   { path: 'subscriptions', component: SubscriptionsComponent },
   { path: 'channel/:id', component: ChannelComponent },
   { path: 'watch/:id', component: WatchComponent },

@@ -56,6 +56,11 @@ export class ApiService {
       .pipe(catchError(err => this.handleError(err)));
   }
 
+  searchVideos(query: string, offset: number = 0, limit: number = 20): Observable<any> {
+    return this.http.post(this.getUrl('/search/videos'), { q: query, offset, limit }, { headers: this.getHeaders() })
+      .pipe(catchError(err => this.handleError(err)));
+  }
+
   getChannel(channelId: string): Observable<any> {
     return this.http.get(this.getUrl(`/channels/${channelId}`), { headers: this.getHeaders() })
       .pipe(catchError(err => this.handleError(err)));

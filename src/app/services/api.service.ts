@@ -75,6 +75,20 @@ export class ApiService {
       .pipe(catchError(err => this.handleError(err)));
   }
 
+  getChannelPlaylists(channelId: string): Observable<any> {
+    return this.http.get(this.getUrl(`/channels/${channelId}/playlists`), { headers: this.getHeaders() })
+      .pipe(catchError(err => this.handleError(err)));
+  }
+
+  getPlaylistVideos(playlistId: string, page: number = 1, pageSize?: number): Observable<any> {
+    var params = new HttpParams().set('page', page.toString());
+    if (pageSize) {
+      params = params.set('page_size', pageSize.toString());
+    }
+    return this.http.get(this.getUrl(`/playlists/${playlistId}/videos`), { headers: this.getHeaders(), params })
+      .pipe(catchError(err => this.handleError(err)));
+  }
+
   getVideo(videoId: string) {
     return this.http.get<YtDlpVideoInfo>(this.getUrl(`/videos/${videoId}`), { headers: this.getHeaders() })
       .pipe(catchError(err => this.handleError(err)));

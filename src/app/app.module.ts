@@ -14,6 +14,7 @@ import { FormsModule } from '@angular/forms';
 import { EkydumPlayerComponent } from './components/shared/ekydum-player/ekydum-player.component';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { SearchComponent } from './components/search/search.component';
+import { PlaylistComponent } from './components/playlist/playlist.component';
 
 @NgModule({
   declarations: [
@@ -21,6 +22,7 @@ import { SearchComponent } from './components/search/search.component';
     SearchComponent,
     SubscriptionsComponent,
     ChannelComponent,
+    PlaylistComponent,
     WatchComponent,
     SettingsComponent,
     ManageComponent,

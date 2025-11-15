@@ -1,14 +1,22 @@
-<div class="container">
-  <div *ngIf="loading" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status"></div>
+<div *ngIf="loading" class="text-center py-5">
+  <div class="spinner-border text-primary" role="status"></div>
+</div>
+
+<div *ngIf="!loading && video">
+  <div class="container-fluid">
+    <div class="d-flex align-items-center mb-4">
+      <h2 class="mb-0" style="margin-left: 48px;">
+        <i class="fas fa-play-circle me-2"></i>
+        {{ video.title }}
+      </h2>
+      <div class="d-flex flex-row flex-grow-1"></div>
+      <button class="btn btn-outline-secondary me-3" (click)="goBack()">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+    </div>
   </div>
 
-  <div *ngIf="!loading && video">
-    <button class="btn btn-outline-secondary mb-3" (click)="goBack()" style="margin-left: 48px;">
-      <i class="fas fa-arrow-left me-2"></i>
-      Back
-    </button>
-
+  <div class="container">
     <div class="player-container mb-3">
       <app-ekydum-player
         [video]="video"
@@ -17,25 +25,23 @@
     </div>
 
     <div class="video-info">
-      <h3>{{ video.title }}</h3>
-
       <div class="d-flex flex-wrap gap-3 text-muted mb-3">
-            <span>
-              <i class="fas fa-tv me-2"></i>
-              <a [routerLink]="['/channel/', video.channel_id]">{{ video.channel || video.uploader }}</a>
-            </span>
+        <span>
+          <i class="fas fa-tv me-2"></i>
+          <a [routerLink]="['/channel/', video.channel_id]">{{ video.channel || video.uploader }}</a>
+        </span>
         <span *ngIf="video.upload_date">
-              <i class="fas fa-calendar me-2"></i>
+          <i class="fas fa-calendar me-2"></i>
           {{ formatDate(video.upload_date) }}
-            </span>
+        </span>
         <span *ngIf="video.duration">
-              <i class="fas fa-clock me-2"></i>
+          <i class="fas fa-clock me-2"></i>
           {{ formatDuration(video.duration) }}
-            </span>
+        </span>
         <span *ngIf="video.view_count">
-              <i class="fas fa-eye me-2"></i>
+          <i class="fas fa-eye me-2"></i>
           {{ formatViews(video.view_count) }} views
-            </span>
+        </span>
       </div>
 
       <div *ngIf="video.description" class="border rounded p-3 bg-light">

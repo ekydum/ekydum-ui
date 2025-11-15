@@ -10,6 +10,15 @@
         {{ video.title }}
       </h2>
       <div class="d-flex flex-row flex-grow-1"></div>
+      <button
+        class="btn me-2"
+        [class.btn-warning]="isStarred"
+        [class.btn-outline-warning]="!isStarred"
+        (click)="toggleStar()"
+        [disabled]="starLoading"
+      >
+        <i class="fas fa-star"></i>
+      </button>
       <button class="btn btn-outline-secondary me-3" (click)="goBack()">
         <i class="fas fa-arrow-left"></i>
       </button>

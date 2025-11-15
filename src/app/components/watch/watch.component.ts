@@ -19,6 +19,9 @@ export class WatchComponent implements OnInit, OnDestroy {
 
   preferences!: UserPreference[];
 
+  isStarred = false;
+  starLoading = false;
+
   private alive$ = new Subject<void>();
 
   constructor(
@@ -40,6 +43,51 @@ export class WatchComponent implements OnInit, OnDestroy {
     this.alive$.complete();
   }
 
+  checkStarred(): void {
+    if (!this.video?.id) return;
+
+    this.api.checkStarred(this.video.id).subscribe({
+      next: (data) => {
+        this.isStarred = data?.starred || false;
+      }
+    });
+  }
+
+  toggleStar(): void {
+    if (!this.video) return;
+
+    this.starLoading = true;
+
+    if (this.isStarred) {
+      this.api.removeStarred(this.video.id).subscribe({
+        next: () => {
+          this.isStarred = false;
+          this.starLoading = false;
+        },
+        error: () => {
+          this.starLoading = false;
+        }
+      });
+    } else {
+      this.api.addStarred(
+        this.video.id,
+        this.video.title || '',
+        this.video.thumbnail || '',
+        this.video.duration || undefined,
+        this.video.channel_id || undefined,
+        this.video.channel || this.video.uploader || undefined,
+      ).subscribe({
+        next: () => {
+          this.isStarred = true;
+          this.starLoading = false;
+        },
+        error: () => {
+          this.starLoading = false;
+        }
+      });
+    }
+  }
+
   private load(): void {
     this.loading = true;
     forkJoin([
@@ -47,7 +95,10 @@ export class WatchComponent implements OnInit, OnDestroy {
       this.loadPreferences(),
     ]).pipe(
       takeUntil(this.alive$),
-      tap(() => { this.loading = false; }),
+      tap(() => {
+        this.loading = false;
+        this.checkStarred();
+      }),
       catchError((e) => {
         this.loading = false;
         console.error(e);

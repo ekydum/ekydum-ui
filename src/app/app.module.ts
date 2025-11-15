@@ -15,6 +15,7 @@ import { EkydumPlayerComponent } from './components/shared/ekydum-player/ekydum-
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { SearchComponent } from './components/search/search.component';
 import { PlaylistComponent } from './components/playlist/playlist.component';
+import { StarredComponent } from './components/starred/starred.component';
 
 @NgModule({
   declarations: [
@@ -27,6 +28,7 @@ import { PlaylistComponent } from './components/playlist/playlist.component';
     SettingsComponent,
     ManageComponent,
     EkydumPlayerComponent,
+    StarredComponent,
   ],
   imports: [
     CommonModule,

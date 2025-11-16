@@ -22,6 +22,9 @@ export class WatchComponent implements OnInit, OnDestroy {
   isStarred = false;
   starLoading = false;
 
+  isWatchLater = false;
+  watchLaterLoading = false;
+
   private alive$ = new Subject<void>();
 
   constructor(
@@ -49,6 +52,16 @@ export class WatchComponent implements OnInit, OnDestroy {
     this.api.checkStarred(this.video.id).subscribe({
       next: (data) => {
         this.isStarred = data?.starred || false;
+      }
+    });
+  }
+
+  checkWatchLater(): void {
+    if (!this.video?.id) return;
+
+    this.api.checkWatchLater(this.video.id).subscribe({
+      next: (data) => {
+        this.isWatchLater = data?.watch_later || false;
       }
     });
   }
@@ -88,6 +101,41 @@ export class WatchComponent implements OnInit, OnDestroy {
     }
   }
 
+  toggleWatchLater(): void {
+    if (!this.video) return;
+
+    this.watchLaterLoading = true;
+
+    if (this.isWatchLater) {
+      this.api.removeWatchLater(this.video.id).subscribe({
+        next: () => {
+          this.isWatchLater = false;
+          this.watchLaterLoading = false;
+        },
+        error: () => {
+          this.watchLaterLoading = false;
+        }
+      });
+    } else {
+      this.api.addWatchLater(
+        this.video.id,
+        this.video.title || '',
+        this.video.thumbnail || '',
+        this.video.duration || undefined,
+        this.video.channel_id || undefined,
+        this.video.channel || this.video.uploader || undefined,
+      ).subscribe({
+        next: () => {
+          this.isWatchLater = true;
+          this.watchLaterLoading = false;
+        },
+        error: () => {
+          this.watchLaterLoading = false;
+        }
+      });
+    }
+  }
+
   private load(): void {
     this.loading = true;
     forkJoin([
@@ -98,6 +146,7 @@ export class WatchComponent implements OnInit, OnDestroy {
       tap(() => {
         this.loading = false;
         this.checkStarred();
+        this.checkWatchLater();
       }),
       catchError((e) => {
         this.loading = false;

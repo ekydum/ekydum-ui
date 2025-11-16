@@ -28,6 +28,13 @@ import { ApiService } from '../../services/api.service';
           <div class="card video-card h-100 text-no-select">
             <div class="video-thumbnail" (click)="watchVideo(video.yt_video_id)">
               <img [src]="video.thumbnail" [alt]="video.title" *ngIf="video.thumbnail">
+              <button
+                class="btn btn-sm btn-primary video-action-btn"
+                (click)="addToWatchLater($event, video)"
+                title="Add to Watch Later"
+              >
+                <i class="fas fa-clock"></i>
+              </button>
             </div>
             <div class="card-body">
               <h6 class="card-title" (click)="watchVideo(video.yt_video_id)">{{ video.title }}</h6>
@@ -75,6 +82,19 @@ import { ApiService } from '../../services/api.service';
       width: 100%;
       height: 100%;
       object-fit: cover;
+    }
+
+    .video-action-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 10;
+    }
+
+    .video-card:hover .video-action-btn {
+      opacity: 1;
     }
 
     .card-title {
@@ -128,6 +148,18 @@ export class StarredComponent implements OnInit {
         this.videos = this.videos.filter(v => v.yt_video_id !== videoId);
       }
     });
+  }
+
+  addToWatchLater(event: Event, video: any): void {
+    event.stopPropagation();
+    this.api.addWatchLater(
+      video.yt_video_id,
+      video.title,
+      video.thumbnail,
+      video.duration,
+      video.channel_id,
+      video.channel_name
+    ).subscribe();
   }
 
   formatDuration(seconds: number): string {

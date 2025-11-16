@@ -57,12 +57,19 @@ import { ApiService } from '../../services/api.service';
         </div>
 
         <div class="col-md-6 col-lg-4 col-xl-3 mb-4" *ngFor="let video of videos">
-          <div class="card video-card h-100" (click)="watchVideo(video.yt_id)">
-            <div class="video-thumbnail">
+          <div class="card video-card h-100">
+            <div class="video-thumbnail" (click)="watchVideo(video.yt_id)">
               <img [src]="video.thumbnail" [alt]="video.title" *ngIf="video.thumbnail">
+              <button
+                class="btn btn-sm btn-primary video-action-btn"
+                (click)="addToWatchLater($event, video)"
+                title="Add to Watch Later"
+              >
+                <i class="fas fa-clock"></i>
+              </button>
             </div>
             <div class="card-body">
-              <h6 class="card-title">{{ video.title }}</h6>
+              <h6 class="card-title" (click)="watchVideo(video.yt_id)">{{ video.title }}</h6>
               <p class="card-text text-muted small">
                 <i class="fas fa-user me-1"></i>
                 {{ video.channel_name }}
@@ -115,6 +122,7 @@ import { ApiService } from '../../services/api.service';
       padding-top: 56.25%;
       overflow: hidden;
       background: #f0f0f0;
+      cursor: pointer;
     }
 
     .video-thumbnail img {
@@ -126,6 +134,19 @@ import { ApiService } from '../../services/api.service';
       object-fit: cover;
     }
 
+    .video-action-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 10;
+    }
+
+    .video-card:hover .video-action-btn {
+      opacity: 1;
+    }
+
     .card-title {
       display: -webkit-box;
       -webkit-line-clamp: 2;
@@ -133,6 +154,7 @@ import { ApiService } from '../../services/api.service';
       overflow: hidden;
       font-weight: 600;
       margin-bottom: 0.5rem;
+      cursor: pointer;
     }
   `]
 })
@@ -193,6 +215,18 @@ export class SearchComponent {
 
   watchVideo(videoId: string): void {
     this.router.navigate(['/watch', videoId]);
+  }
+
+  addToWatchLater(event: Event, video: any): void {
+    event.stopPropagation();
+    this.api.addWatchLater(
+      video.yt_id,
+      video.title,
+      video.thumbnail,
+      video.duration,
+      video.channel_id,
+      video.channel_name
+    ).subscribe();
   }
 
   formatDuration(seconds: number): string {

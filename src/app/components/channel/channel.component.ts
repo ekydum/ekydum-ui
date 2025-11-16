@@ -51,12 +51,19 @@ import { ApiService } from '../../services/api.service';
 
           <div class="row" *ngIf="!loadingVideos && videos.length > 0">
             <div class="col-md-6 col-lg-4 col-xl-3 mb-4" *ngFor="let video of videos">
-              <div class="card video-card h-100 text-no-select" (click)="watchVideo(video.yt_id)">
-                <div class="video-thumbnail">
+              <div class="card video-card h-100 text-no-select">
+                <div class="video-thumbnail" (click)="watchVideo(video.yt_id)">
                   <img [src]="video.thumbnail" [alt]="video.title" *ngIf="video.thumbnail">
+                  <button
+                    class="btn btn-sm btn-primary video-action-btn"
+                    (click)="addToWatchLater($event, video)"
+                    title="Add to Watch Later"
+                  >
+                    <i class="fas fa-clock"></i>
+                  </button>
                 </div>
                 <div class="card-body">
-                  <h6 class="card-title">{{ video.title }}</h6>
+                  <h6 class="card-title" (click)="watchVideo(video.yt_id)">{{ video.title }}</h6>
                   <p class="card-text text-muted small" *ngIf="video.duration">
                     <i class="fas fa-clock me-1"></i>
                     {{ formatDuration(video.duration) }}
@@ -70,14 +77,14 @@ import { ApiService } from '../../services/api.service';
 
           <div class="text-center mt-4" *ngIf="videos.length > 0 && !loadingVideos">
             <button class="btn btn-primary" (click)="loadMoreVideos()" [disabled]="loadingMore">
-                          <span *ngIf="!loadingMore">
-                              <i class="fas fa-chevron-down me-2"></i>
-                              Load More
-                          </span>
+              <span *ngIf="!loadingMore">
+                <i class="fas fa-chevron-down me-2"></i>
+                Load More
+              </span>
               <span *ngIf="loadingMore">
-                              <span class="spinner-border spinner-border-sm me-2"></span>
-                              Loading...
-                          </span>
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                Loading...
+              </span>
             </button>
           </div>
         </div>
@@ -141,6 +148,19 @@ import { ApiService } from '../../services/api.service';
       width: 100%;
       height: 100%;
       object-fit: cover;
+    }
+
+    .video-action-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 10;
+    }
+
+    .video-card:hover .video-action-btn {
+      opacity: 1;
     }
 
     .playlist-badge {
@@ -269,6 +289,18 @@ export class ChannelComponent implements OnInit {
 
   watchVideo(videoId: string): void {
     this.router.navigate(['/watch', videoId]);
+  }
+
+  addToWatchLater(event: Event, video: any): void {
+    event.stopPropagation();
+    this.api.addWatchLater(
+      video.yt_id,
+      video.title,
+      video.thumbnail,
+      video.duration,
+      this.channelId,
+      this.channel?.name
+    ).subscribe();
   }
 
   goBack(): void {

@@ -16,6 +16,7 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { SearchComponent } from './components/search/search.component';
 import { PlaylistComponent } from './components/playlist/playlist.component';
 import { StarredComponent } from './components/starred/starred.component';
+import { WatchLaterComponent } from './components/watch-later/watch-later.component';
 
 @NgModule({
   declarations: [
@@ -29,6 +30,7 @@ import { StarredComponent } from './components/starred/starred.component';
     ManageComponent,
     EkydumPlayerComponent,
     StarredComponent,
+    WatchLaterComponent,
   ],
   imports: [
     CommonModule,

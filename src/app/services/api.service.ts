@@ -176,4 +176,31 @@ export class ApiService {
     return this.http.delete(this.getUrl(`/admin/accounts/${id}`), { headers: this.getHeaders(true) })
     .pipe(catchError(err => this.handleError(err)));
   }
+
+  getWatchLater(): Observable<any> {
+    return this.http.get(this.getUrl('/watch-later'), { headers: this.getHeaders() })
+    .pipe(catchError(err => this.handleError(err)));
+  }
+
+  addWatchLater(ytVideoId: string, title: string, thumbnail: string, duration?: number, ytChannelId?: string, channelName?: string): Observable<any> {
+    return this.http.post(this.getUrl('/watch-later'), {
+      yt_video_id: ytVideoId,
+      title,
+      thumbnail,
+      duration: duration || null,
+      yt_channel_id: ytChannelId || null,
+      channel_name: channelName || null
+    }, { headers: this.getHeaders() })
+    .pipe(catchError(err => this.handleError(err)));
+  }
+
+  removeWatchLater(ytVideoId: string): Observable<any> {
+    return this.http.delete(this.getUrl(`/watch-later/${ytVideoId}`), { headers: this.getHeaders() })
+    .pipe(catchError(err => this.handleError(err)));
+  }
+
+  checkWatchLater(ytVideoId: string): Observable<any> {
+    return this.http.get(this.getUrl(`/watch-later/check/${ytVideoId}`), { headers: this.getHeaders() })
+    .pipe(catchError(err => this.handleError(err)));
+  }
 }

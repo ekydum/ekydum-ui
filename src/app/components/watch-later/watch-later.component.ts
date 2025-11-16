@@ -3,14 +3,14 @@ import { Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 
 @Component({
-  selector: 'app-starred',
+  selector: 'app-watch-later',
   standalone: false,
   template: `
     <div class="container-fluid">
       <div class="d-flex align-items-center mb-4">
         <h2 class="mb-0 text-no-select" style="margin-left: 48px;">
-          <i class="fas fa-star me-2"></i>
-          Starred Videos
+          <i class="fas fa-clock me-2"></i>
+          Watch Later
         </h2>
       </div>
 
@@ -20,7 +20,7 @@ import { ApiService } from '../../services/api.service';
 
       <div *ngIf="!loading && videos.length === 0" class="alert alert-info text-center">
         <i class="fas fa-info-circle me-2"></i>
-        No starred videos yet. Click the star icon on any video to add it here!
+        No videos in Watch Later yet. Click the clock icon on any video to add it here!
       </div>
 
       <div class="row" *ngIf="!loading && videos.length > 0">
@@ -28,13 +28,6 @@ import { ApiService } from '../../services/api.service';
           <div class="card video-card h-100 text-no-select">
             <div class="video-thumbnail" (click)="watchVideo(video.yt_video_id)">
               <img [src]="video.thumbnail" [alt]="video.title" *ngIf="video.thumbnail">
-              <button
-                class="btn btn-sm btn-primary video-action-btn"
-                (click)="addToWatchLater($event, video)"
-                title="Add to Watch Later"
-              >
-                <i class="fas fa-clock"></i>
-              </button>
             </div>
             <div class="card-body">
               <h6 class="card-title" (click)="watchVideo(video.yt_video_id)">{{ video.title }}</h6>
@@ -46,8 +39,8 @@ import { ApiService } from '../../services/api.service';
                 <i class="fas fa-clock me-1"></i>
                 {{ formatDuration(video.duration) }}
               </p>
-              <button class="btn btn-sm btn-outline-danger w-100 mt-2" (click)="removeStar(video.yt_video_id)">
-                <i class="fas fa-star me-1"></i>
+              <button class="btn btn-sm btn-outline-danger w-100 mt-2" (click)="remove(video.yt_video_id)">
+                <i class="fas fa-clock me-1"></i>
                 Remove
               </button>
             </div>
@@ -84,19 +77,6 @@ import { ApiService } from '../../services/api.service';
       object-fit: cover;
     }
 
-    .video-action-btn {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      opacity: 0;
-      transition: opacity 0.2s;
-      z-index: 10;
-    }
-
-    .video-card:hover .video-action-btn {
-      opacity: 1;
-    }
-
     .card-title {
       display: -webkit-box;
       -webkit-line-clamp: 2;
@@ -112,7 +92,7 @@ import { ApiService } from '../../services/api.service';
     }
   `]
 })
-export class StarredComponent implements OnInit {
+export class WatchLaterComponent implements OnInit {
   videos: any[] = [];
   loading = false;
 
@@ -122,12 +102,12 @@ export class StarredComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadStarred();
+    this.loadWatchLater();
   }
 
-  loadStarred(): void {
+  loadWatchLater(): void {
     this.loading = true;
-    this.api.getStarred().subscribe({
+    this.api.getWatchLater().subscribe({
       next: (data) => {
         this.videos = data?.videos || [];
         this.loading = false;
@@ -142,24 +122,12 @@ export class StarredComponent implements OnInit {
     this.router.navigate(['/watch', videoId]);
   }
 
-  removeStar(videoId: string): void {
-    this.api.removeStarred(videoId).subscribe({
+  remove(videoId: string): void {
+    this.api.removeWatchLater(videoId).subscribe({
       next: () => {
         this.videos = this.videos.filter(v => v.yt_video_id !== videoId);
       }
     });
-  }
-
-  addToWatchLater(event: Event, video: any): void {
-    event.stopPropagation();
-    this.api.addWatchLater(
-      video.yt_video_id,
-      video.title,
-      video.thumbnail,
-      video.duration,
-      video.channel_id,
-      video.channel_name
-    ).subscribe();
   }
 
   formatDuration(seconds: number): string {

@@ -9,8 +9,8 @@ import { ToastService } from '../../services/toast.service';
   standalone: false,
   template: `
       <div class="container-fluid">
-          <h2 class="mb-4" style="margin-left: 48px;">
-              <i class="fas fa-star me-2"></i>
+          <h2 class="mb-4 text-no-select" style="margin-left: 48px;">
+              <i class="fas fa-users me-2"></i>
               Subscriptions
           </h2>
 

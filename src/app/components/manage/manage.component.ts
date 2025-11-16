@@ -8,28 +8,28 @@ import { ToastService } from '../../services/toast.service';
   standalone: false,
   template: `
       <div class="container">
-          <h2 class="mb-4" style="margin-left: 48px;">
+          <h2 class="mb-4 text-no-select" style="margin-left: 48px;">
               <i class="fas fa-users-cog me-2"></i>
               Manage Accounts
           </h2>
 
           <div class="card mb-4">
               <div class="card-header">
-                  <h5 class="mb-0">Admin Authentication</h5>
+                  <h5 class="mb-0 text-no-select">Admin Authentication</h5>
               </div>
               <div class="card-body">
                 <div class="mb-3">
-                  <label class="form-label">Server URL</label>
+                  <label class="form-label text-no-select">Server URL</label>
                   <input
                     type="text"
                     class="form-control"
                     [(ngModel)]="serverUrl"
                     placeholder="http://localhost:3000">
-                  <small class="form-text text-muted">Ekydum server URL</small>
+                  <small class="form-text text-muted text-no-select">Ekydum server URL</small>
                 </div>
 
                   <div class="mb-3">
-                      <label class="form-label">Admin Token</label>
+                      <label class="form-label text-no-select">Admin Token</label>
                       <input
                               type="password"
                               class="form-control"
@@ -65,7 +65,7 @@ import { ToastService } from '../../services/toast.service';
           <div *ngIf="isAdmin">
               <div class="card mb-4">
                   <div class="card-header">
-                      <h5 class="mb-0">Create New Account</h5>
+                      <h5 class="mb-0 text-no-select">Create New Account</h5>
                   </div>
                   <div class="card-body">
                       <div class="row g-2">
@@ -89,7 +89,7 @@ import { ToastService } from '../../services/toast.service';
 
               <div class="card">
                   <div class="card-header d-flex justify-content-between align-items-center">
-                      <h5 class="mb-0">Accounts</h5>
+                      <h5 class="mb-0 text-no-select">Accounts</h5>
                       <button class="btn btn-sm btn-outline-primary" (click)="loadAccounts()">
                           <i class="fas fa-sync me-1"></i>
                           Refresh
@@ -107,7 +107,7 @@ import { ToastService } from '../../services/toast.service';
                       <div class="table-responsive" *ngIf="!loading && accounts.length > 0">
                           <table class="table table-hover">
                               <thead>
-                              <tr>
+                              <tr class="text-no-select">
                                   <th>Name</th>
                                   <th>Token</th>
                                   <th>Created</th>

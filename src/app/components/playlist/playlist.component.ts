@@ -29,7 +29,7 @@ import { ApiService } from '../../services/api.service';
 
         <div class="row" *ngIf="videos.length > 0">
           <div class="col-md-6 col-lg-4 col-xl-3 mb-4" *ngFor="let video of videos">
-            <div class="card video-card h-100" (click)="watchVideo(video.yt_id)">
+            <div class="card video-card h-100 text-no-select" (click)="watchVideo(video.yt_id)">
               <div class="video-thumbnail">
                 <img [src]="video.thumbnail" [alt]="video.title" *ngIf="video.thumbnail">
               </div>

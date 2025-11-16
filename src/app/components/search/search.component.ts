@@ -8,7 +8,7 @@ import { ApiService } from '../../services/api.service';
   template: `
     <div class="container-fluid">
       <div class="d-flex align-items-center mb-4">
-        <h2 class="mb-0" style="margin-left: 48px;">
+        <h2 class="mb-0 text-no-select" style="margin-left: 48px;">
           <i class="fas fa-search me-2"></i>
           Search Videos
         </h2>

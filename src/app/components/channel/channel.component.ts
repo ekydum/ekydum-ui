@@ -25,7 +25,7 @@ import { ApiService } from '../../services/api.service';
           </button>
         </div>
 
-        <ul class="nav nav-tabs mb-4" style="margin-left: 48px;">
+        <ul class="nav nav-tabs mb-4 text-no-select" style="margin-left: 48px;">
           <li class="nav-item">
             <a class="nav-link" [class.active]="activeTab === 'videos'" (click)="switchTab('videos')">
               <i class="fas fa-video me-2"></i>
@@ -51,7 +51,7 @@ import { ApiService } from '../../services/api.service';
 
           <div class="row" *ngIf="!loadingVideos && videos.length > 0">
             <div class="col-md-6 col-lg-4 col-xl-3 mb-4" *ngFor="let video of videos">
-              <div class="card video-card h-100" (click)="watchVideo(video.yt_id)">
+              <div class="card video-card h-100 text-no-select" (click)="watchVideo(video.yt_id)">
                 <div class="video-thumbnail">
                   <img [src]="video.thumbnail" [alt]="video.title" *ngIf="video.thumbnail">
                 </div>
@@ -93,7 +93,7 @@ import { ApiService } from '../../services/api.service';
 
           <div class="row" *ngIf="!loadingPlaylists && playlists.length > 0">
             <div class="col-md-6 col-lg-4 col-xl-3 mb-4" *ngFor="let playlist of playlists">
-              <div class="card playlist-card h-100" (click)="openPlaylist(playlist.yt_id, playlist.title)">
+              <div class="card playlist-card h-100 text-no-select" (click)="openPlaylist(playlist.yt_id, playlist.title)">
                 <div class="playlist-thumbnail">
                   <img [src]="playlist.thumbnail" [alt]="playlist.title" *ngIf="playlist.thumbnail">
                   <div class="playlist-badge">
@@ -193,12 +193,8 @@ export class ChannelComponent implements OnInit {
 
     if (this.channelId) {
       this.loadChannel();
-
-      if (this.activeTab === 'videos') {
-        this.loadVideos();
-      } else if (this.activeTab === 'playlists') {
-        this.loadPlaylists();
-      }
+      this.loadVideos();
+      this.loadPlaylists();
     }
   }
 
@@ -209,10 +205,6 @@ export class ChannelComponent implements OnInit {
       queryParams: { tab: tab },
       queryParamsHandling: 'merge'
     });
-
-    if (tab === 'playlists' && this.playlists.length === 0) {
-      this.loadPlaylists();
-    }
   }
 
   loadChannel(): void {
@@ -280,7 +272,7 @@ export class ChannelComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/subscriptions']);
+    history.back();
   }
 
   formatDuration(seconds: number): string {

@@ -9,34 +9,34 @@ import { map } from 'rxjs';
   standalone: false,
   template: `
       <div class="container">
-          <h2 class="mb-4" style="margin-left: 48px;">
+          <h2 class="mb-4 text-no-select" style="margin-left: 48px;">
               <i class="fas fa-cog me-2"></i>
               Settings
           </h2>
 
           <div class="card mb-4">
               <div class="card-header">
-                  <h5 class="mb-0">Server Configuration</h5>
+                  <h5 class="mb-0 text-no-select">Server Configuration</h5>
               </div>
               <div class="card-body">
                   <div class="mb-3">
-                      <label class="form-label">Server URL</label>
+                      <label class="form-label text-no-select">Server URL</label>
                       <input
                               type="text"
                               class="form-control"
                               [(ngModel)]="serverUrl"
                               placeholder="http://localhost:3000">
-                      <small class="form-text text-muted">Ekydum server URL</small>
+                      <small class="form-text text-muted text-no-select">Ekydum server URL</small>
                   </div>
 
                   <div class="mb-3">
-                      <label class="form-label">Account Token</label>
+                      <label class="form-label text-no-select">Account Token</label>
                       <input
                               type="password"
                               class="form-control"
                               [(ngModel)]="accountToken"
                               placeholder="Enter your account token">
-                      <small class="form-text text-muted">Token from server admin</small>
+                      <small class="form-text text-muted text-no-select">Token from server admin</small>
                   </div>
 
                   <div class="d-flex gap-2">
@@ -62,7 +62,7 @@ import { map } from 'rxjs';
 
           <div class="card" *ngIf="isConnected">
               <div class="card-header">
-                  <h5 class="mb-0">User Preferences</h5>
+                  <h5 class="mb-0 text-no-select">User Preferences</h5>
               </div>
               <div class="card-body">
                   <div *ngIf="loadingSettings" class="text-center py-3">
@@ -71,7 +71,7 @@ import { map } from 'rxjs';
 
                   <div *ngIf="!loadingSettings">
                       <div class="mb-3">
-                          <label class="form-label">Default Quality</label>
+                          <label class="form-label text-no-select">Default Quality</label>
                           <select class="form-select" [(ngModel)]="defaultQuality" (change)="updateQuality()">
                               <option value="min">Minimum</option>
                               <option value="360p">360p</option>
@@ -85,7 +85,7 @@ import { map } from 'rxjs';
                       </div>
 
                       <div class="mb-3">
-                          <label class="form-label">Page Size</label>
+                          <label class="form-label text-no-select">Page Size</label>
                           <select class="form-select" [(ngModel)]="pageSize" (change)="updatePageSize()">
                               <option [value]="10">10</option>
                               <option [value]="20">20</option>
@@ -96,17 +96,17 @@ import { map } from 'rxjs';
                               <option [value]="300">300</option>
                               <option [value]="500">500</option>
                           </select>
-                          <small class="form-text text-muted">Number of videos per page</small>
+                          <small class="form-text text-muted text-no-select">Number of videos per page</small>
                       </div>
 
                     <div class="mb-3">
-                      <label class="form-label">Content Language</label>
+                      <label class="form-label text-no-select">Content Language</label>
                       <input type="text" maxlength="2" minlength="2" class="form-control" [(ngModel)]="lang" (change)="updateLang()"/>
-                      <small class="form-text text-muted">Language code, for eg. "en", "de"</small>
+                      <small class="form-text text-muted text-no-select">Language code, for eg. "en", "de"</small>
                     </div>
 
                     <div class="mb-3">
-                      <label class="form-label">Play video automatically</label>
+                      <label class="form-label text-no-select">Play video automatically</label>
                       <select class="form-select" [(ngModel)]="autoPlay" (change)="updateAutoPlay()">
                         <option [value]="1">Yes</option>
                         <option [value]="0">No</option>

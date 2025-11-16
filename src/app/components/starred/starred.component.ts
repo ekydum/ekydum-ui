@@ -8,7 +8,7 @@ import { ApiService } from '../../services/api.service';
   template: `
     <div class="container-fluid">
       <div class="d-flex align-items-center mb-4">
-        <h2 class="mb-0" style="margin-left: 48px;">
+        <h2 class="mb-0 text-no-select" style="margin-left: 48px;">
           <i class="fas fa-star me-2"></i>
           Starred Videos
         </h2>
@@ -25,7 +25,7 @@ import { ApiService } from '../../services/api.service';
 
       <div class="row" *ngIf="!loading && videos.length > 0">
         <div class="col-md-6 col-lg-4 col-xl-3 mb-4" *ngFor="let video of videos">
-          <div class="card video-card h-100">
+          <div class="card video-card h-100 text-no-select">
             <div class="video-thumbnail" (click)="watchVideo(video.yt_video_id)">
               <img [src]="video.thumbnail" [alt]="video.title" *ngIf="video.thumbnail">
             </div>

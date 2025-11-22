@@ -36,7 +36,7 @@
 
     <div class="control-item chapters" *ngIf="video?.chapters?.length">
       <div ngbDropdown display="dynamic" placement="top-start" class="d-inline-block">
-        <button type="button" class="btn btn-sm btn-outline-secondary" id="ctrlChapters" ngbDropdownToggle>Chapters</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="ctrlChapters" ngbDropdownToggle>{{ i18nStrings['chapters'] }}</button>
         <div ngbDropdownMenu aria-labelledby="ctrlChapters" class="multi-column-dropdown" style="columns: 2;">
           <button
             ngbDropdownItem

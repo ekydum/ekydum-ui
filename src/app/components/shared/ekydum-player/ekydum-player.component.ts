@@ -14,6 +14,9 @@ import { YtDlpSourceFormat, YtDlpVideoChapter, YtDlpVideoInfo } from '../../../m
 import { UserPreference } from '../../../models/user-preference.model';
 import { Ekydum_SourceFormat, Ekydum_SourceKind } from './models';
 import { Subject, takeUntil, tap, throttleTime } from 'rxjs';
+import { I18nDict, I18nLocalized, I18nMultilingual } from '../../../i18n/models/dict.models';
+import { I18nService } from '../../../i18n/services/i18n.service';
+import { dict } from '../../../i18n/dict/main.dict';
 
 @Component({
   selector: 'app-ekydum-player',
@@ -22,11 +25,14 @@ import { Subject, takeUntil, tap, throttleTime } from 'rxjs';
   standalone: false,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EkydumPlayerComponent implements AfterViewInit, OnDestroy {
+export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMultilingual {
   @Input() video!: YtDlpVideoInfo;
   @Input() preferences!: UserPreference[];
   @Input() showCustomControls = true;
   @ViewChild('videoEl', { static: false }) videoElementRef!: ElementRef<HTMLVideoElement>;
+
+  readonly i18nDict: I18nDict = dict['player'];
+  i18nStrings: I18nLocalized = {};
 
   private readonly FALLBACK_CONTENT_LANG = 'en';
   private readonly SERVER_URL: string;
@@ -69,11 +75,20 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy {
   constructor(
     private auth: AuthService,
     private cdr: ChangeDetectorRef,
+    private i18nService: I18nService,
   ) {
     this.SERVER_URL = this.auth.getServerUrl() || 'http://localhost:3000';
   }
 
   ngAfterViewInit() {
+    this.i18nService.translate(this.i18nDict).pipe(
+      takeUntil(this.alive$),
+      tap((localized) => {
+        this.i18nStrings = localized;
+        this.render$.next();
+      })
+    ).subscribe();
+
     this.discoverRuntimeCapabilities();
     this.setupRenderer();
     if (this.preferences) {

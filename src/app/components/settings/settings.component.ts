@@ -1,8 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
-import { map } from 'rxjs';
+import { map, Subject, takeUntil, tap } from 'rxjs';
+import { I18nService } from '../../i18n/services/i18n.service';
+import { LANG_CODE } from '../../i18n/models/lang-code.enum';
+import { I18nDict, I18nLocalized, I18nMultilingual } from '../../i18n/models/dict.models';
+import { dict } from '../../i18n/dict/main.dict';
 
 @Component({
   selector: 'app-settings',
@@ -11,58 +15,58 @@ import { map } from 'rxjs';
     <div class="container">
       <h2 class="mb-4 page-title text-no-select" style="margin-left: 48px;">
         <i class="fas fa-cog me-2"></i>
-        Settings
+        {{ i18nStrings['pageTitle'] }}
       </h2>
 
       <div class="card settings-card mb-4">
         <div class="card-header">
-          <h5 class="mb-0 text-no-select">Server Configuration</h5>
+          <h5 class="mb-0 text-no-select">{{ i18nStrings['serverConfig'] }}</h5>
         </div>
         <div class="card-body">
           <div class="mb-3">
-            <label class="form-label text-no-select">Server URL</label>
+            <label class="form-label text-no-select">{{ i18nStrings['serverUrl'] }}</label>
             <input
               type="text"
               class="form-control settings-input"
               [(ngModel)]="serverUrl"
               placeholder="http://localhost:3000">
-            <small class="form-text text-muted-custom text-no-select">Ekydum server URL</small>
+            <small class="form-text text-muted-custom text-no-select">{{ i18nStrings['serverUrlHint'] }}</small>
           </div>
 
           <div class="mb-3">
-            <label class="form-label text-no-select">Account Token</label>
+            <label class="form-label text-no-select">{{ i18nStrings['accountToken'] }}</label>
             <input
               type="password"
               class="form-control settings-input"
               [(ngModel)]="accountToken"
-              placeholder="Enter your account token">
-            <small class="form-text text-muted-custom text-no-select">Token from server admin</small>
+              [placeholder]="i18nStrings['accountTokenPlaceholder']">
+            <small class="form-text text-muted-custom text-no-select">{{ i18nStrings['accountTokenHint'] }}</small>
           </div>
 
           <div class="d-flex gap-2">
             <button class="btn btn-blue-glass" (click)="saveConnection()" [disabled]="saving">
               <i class="fas fa-save me-2"></i>
-              {{ saving ? 'Saving...' : 'Save & Connect' }}
+              {{ saving ? i18nStrings['btnSaving'] : i18nStrings['btnSaveConnect'] }}
             </button>
             <button
               class="btn btn-red-glass"
               (click)="disconnect()"
               [disabled]="!isConnected">
               <i class="fas fa-sign-out-alt me-2"></i>
-              Disconnect
+              {{ i18nStrings['btnDisconnect'] }}
             </button>
           </div>
 
           <div class="alert-custom alert-success-custom mt-3" *ngIf="accountInfo">
             <i class="fas fa-check-circle me-2"></i>
-            Connected as: <strong>{{ accountInfo.name }}</strong>
+            {{ i18nStrings['connectedAs'] }} <strong>{{ accountInfo.name }}</strong>
           </div>
         </div>
       </div>
 
       <div class="card settings-card" *ngIf="isConnected">
         <div class="card-header">
-          <h5 class="mb-0 text-no-select">User Preferences</h5>
+          <h5 class="mb-0 text-no-select">{{ i18nStrings['userPreferences'] }}</h5>
         </div>
         <div class="card-body">
           <div *ngIf="loadingSettings" class="text-center py-3">
@@ -71,21 +75,21 @@ import { map } from 'rxjs';
 
           <div *ngIf="!loadingSettings">
             <div class="mb-3">
-              <label class="form-label text-no-select">Default Quality</label>
+              <label class="form-label text-no-select">{{ i18nStrings['defaultQuality'] }}</label>
               <select class="form-select settings-select" [(ngModel)]="defaultQuality" (change)="updateQuality()">
-                <option value="min">Minimum</option>
+                <option value="min">{{ i18nStrings['qualityMinimum'] }}</option>
                 <option value="360p">360p</option>
                 <option value="480p">480p</option>
-                <option value="720p">720p (Recommended)</option>
+                <option value="720p">{{ i18nStrings['qualityRecommended'] }}</option>
                 <option value="1080p">1080p</option>
                 <option value="2k">2K</option>
                 <option value="4k">4K</option>
-                <option value="max">Maximum</option>
+                <option value="max">{{ i18nStrings['qualityMaximum'] }}</option>
               </select>
             </div>
 
             <div class="mb-3">
-              <label class="form-label text-no-select">Page Size</label>
+              <label class="form-label text-no-select">{{ i18nStrings['pageSize'] }}</label>
               <select class="form-select settings-select" [(ngModel)]="pageSize" (change)="updatePageSize()">
                 <option [value]="10">10</option>
                 <option [value]="20">20</option>
@@ -96,22 +100,31 @@ import { map } from 'rxjs';
                 <option [value]="300">300</option>
                 <option [value]="500">500</option>
               </select>
-              <small class="form-text text-muted-custom text-no-select">Number of videos per page</small>
+              <small class="form-text text-muted-custom text-no-select">{{ i18nStrings['pageSizeHint'] }}</small>
             </div>
 
             <div class="mb-3">
-              <label class="form-label text-no-select">Content Language</label>
-              <input type="text" maxlength="2" minlength="2" class="form-control settings-input" [(ngModel)]="lang" (change)="updateLang()"/>
-              <small class="form-text text-muted-custom text-no-select">Language code, for eg. "en", "de"</small>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label text-no-select">Play video automatically</label>
-              <select class="form-select settings-select" [(ngModel)]="autoPlay" (change)="updateAutoPlay()">
-                <option [value]="1">Yes</option>
-                <option [value]="0">No</option>
+              <label class="form-label text-no-select">Sprache | Language | Idioma | Langue | Bahasa | Lingua | 言語 | 언어 | Taal | Język | Idioma | Язык | Dil | Мова | Ngôn ngữ | 语言</label>
+              <select class="form-select settings-select" [(ngModel)]="lang" (change)="updateLang()">
+                <option [value]="LANG_CODE.de">Deutsch (DE)</option>
+                <option [value]="LANG_CODE.en">English (EN)</option>
+                <option [value]="LANG_CODE.es">Español (ES)</option>
+                <option [value]="LANG_CODE.fr">Français (FR)</option>
+                <option [value]="LANG_CODE.id">Indonesia (ID)</option>
+                <option [value]="LANG_CODE.it">Italiano (IT)</option>
+                <option [value]="LANG_CODE.ja">日本語 (JA)</option>
+                <option [value]="LANG_CODE.ko">한국어 (KO)</option>
+                <option [value]="LANG_CODE.nl">Nederlands (NL)</option>
+                <option [value]="LANG_CODE.pl">Polski (PL)</option>
+                <option [value]="LANG_CODE.pt">Português (PT)</option>
+                <option [value]="LANG_CODE.ru">Русский (RU)</option>
+                <option [value]="LANG_CODE.tr">Türkçe (TR)</option>
+                <option [value]="LANG_CODE.ua">Українська (UA)</option>
+                <option [value]="LANG_CODE.vi">Tiếng Việt (VI)</option>
+                <option [value]="LANG_CODE.zh">中文 (ZH)</option>
               </select>
             </div>
+
           </div>
         </div>
       </div>
@@ -256,7 +269,12 @@ import { map } from 'rxjs';
     }
   `]
 })
-export class SettingsComponent implements OnInit {
+export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
+  readonly i18nDict: I18nDict = dict['settings'];
+  i18nStrings: I18nLocalized = {};
+
+  readonly LANG_CODE = LANG_CODE;
+
   serverUrl = 'http://localhost:3000';
   accountToken = '';
   isConnected = false;
@@ -266,16 +284,24 @@ export class SettingsComponent implements OnInit {
   loadingSettings = false;
   defaultQuality = '720p';
   pageSize = 40;
-  lang = 'en';
+  lang: LANG_CODE = LANG_CODE.en;
   autoPlay = 1;
+
+  private alive$ = new Subject<void>();
 
   constructor(
     private api: ApiService,
     private auth: AuthService,
-    private toast: ToastService
+    private toast: ToastService,
+    private i18nService: I18nService,
   ) {}
 
   ngOnInit(): void {
+    this.i18nService.translate(this.i18nDict).pipe(
+      takeUntil(this.alive$),
+      tap((localized) => { this.i18nStrings = localized; })
+    ).subscribe();
+
     var savedUrl = this.auth.getServerUrl();
     var savedToken = this.auth.getAccountToken();
 
@@ -291,9 +317,14 @@ export class SettingsComponent implements OnInit {
     }
   }
 
+  ngOnDestroy(): void {
+    this.alive$.next();
+    this.alive$.complete();
+  }
+
   saveConnection(): void {
     if (!this.serverUrl || !this.accountToken) {
-      this.toast.error('Please fill in all fields');
+      this.toast.error(this.i18nStrings['toastFillFields'] || 'Please fill in all fields');
       return;
     }
 
@@ -306,7 +337,7 @@ export class SettingsComponent implements OnInit {
         this.accountInfo = data;
         this.isConnected = true;
         this.saving = false;
-        this.toast.success('Connected successfully');
+        this.toast.success(this.i18nStrings['toastConnectedSuccess'] || 'Connected successfully');
         this.loadSettings();
       },
       error: () => {
@@ -321,7 +352,7 @@ export class SettingsComponent implements OnInit {
     this.accountToken = '';
     this.isConnected = false;
     this.accountInfo = null;
-    this.toast.info('Disconnected');
+    this.toast.info(this.i18nStrings['toastDisconnected'] || 'Disconnected');
   }
 
   loadAccountInfo(): void {
@@ -340,8 +371,8 @@ export class SettingsComponent implements OnInit {
       next: (data) => {
         var qualitySetting = data.find((s: any) => s.key === 'DEFAULT_QUALITY');
         var pageSizeSetting = data.find((s: any) => s.key === 'PAGE_SIZE');
-        var lang = data.find((s: any) => s.key === 'LANG');
-        var autoPlay = data.find((s: any) => s.key === 'AUTO_PLAY');
+        var langSetting = data.find((s: any) => s.key === 'LANG');
+        var autoPlaySetting = data.find((s: any) => s.key === 'AUTO_PLAY');
 
         if (qualitySetting) {
           this.defaultQuality = qualitySetting.value;
@@ -349,11 +380,18 @@ export class SettingsComponent implements OnInit {
         if (pageSizeSetting) {
           this.pageSize = parseInt(pageSizeSetting.value);
         }
-        if (lang) {
-          this.lang = lang.value;
+        if (langSetting) {
+          var langValue = (langSetting.value + '').toLowerCase();
+          // Check if it's a valid LANG_CODE
+          if (Object.values(LANG_CODE).includes(langValue as LANG_CODE)) {
+            this.lang = langValue as LANG_CODE;
+          } else {
+            // Fallback to EN if stored language is not in our enum
+            this.lang = LANG_CODE.en;
+          }
         }
-        if (autoPlay) {
-          this.autoPlay = +autoPlay.value || 0;
+        if (autoPlaySetting) {
+          this.autoPlay = +autoPlaySetting.value || 0;
         }
 
         this.loadingSettings = false;
@@ -367,7 +405,7 @@ export class SettingsComponent implements OnInit {
   updateQuality(): void {
     this.api.updateSetting('DEFAULT_QUALITY', this.defaultQuality).subscribe({
       next: () => {
-        this.toast.success('Quality updated');
+        this.toast.success(this.i18nStrings['toastQualityUpdated'] || 'Quality updated');
       }
     });
   }
@@ -375,26 +413,21 @@ export class SettingsComponent implements OnInit {
   updatePageSize(): void {
     this.api.updateSetting('PAGE_SIZE', this.pageSize).subscribe({
       next: () => {
-        this.toast.success('Page size updated');
+        this.toast.success(this.i18nStrings['toastPageSizeUpdated'] || 'Page size updated');
       }
     });
   }
 
   updateLang(): void {
-    if (this.lang && this.lang.length === 2) {
-      this.api.updateSetting('LANG', this.lang).subscribe({
-        next: () => {
-          this.toast.success('Language updated');
-        }
-      });
+    if (this.lang) {
+      this.i18nService.setLang(this.lang);
+      setTimeout(() => {
+        this.api.updateSetting('LANG', this.lang).subscribe({
+          next: () => {
+            this.toast.success(this.i18nStrings['toastLanguageUpdated'] || 'Language updated');
+          }
+        });
+      }, 500);
     }
-  }
-
-  updateAutoPlay(): void {
-    this.api.updateSetting('AUTO_PLAY', this.autoPlay).subscribe({
-      next: () => {
-        this.toast.success('Auto-play updated');
-      }
-    });
   }
 }

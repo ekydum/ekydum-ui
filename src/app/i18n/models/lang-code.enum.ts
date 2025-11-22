@@ -7,6 +7,7 @@ export enum LANG_CODE {
   pt = 'pt',  // Portuguese (Brazil + Portugal)
   it = 'it',  // Italian
   pl = 'pl',  // Polish
+  ua = 'ua',  // Ukrainian
   nl = 'nl',  // Dutch
   ja = 'ja',  // Japanese
   ko = 'ko',  // Korean

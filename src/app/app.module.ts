@@ -2,7 +2,6 @@ import { NgModule } from '@angular/core';
 import { AppComponent } from './app.component';
 import { SubscriptionsComponent } from './components/subscriptions/subscriptions.component';
 import { ChannelComponent } from './components/channel/channel.component';
-import { WatchComponent } from './components/watch/watch.component';
 import { SettingsComponent } from './components/settings/settings.component';
 import { ManageComponent } from './components/manage/manage.component';
 import { BrowserModule } from '@angular/platform-browser';
@@ -28,7 +27,6 @@ import { FloatingPlayerModalComponent } from './components/shared/floating-playe
     SubscriptionsComponent,
     ChannelComponent,
     PlaylistComponent,
-    WatchComponent,
     SettingsComponent,
     ManageComponent,
     EkydumPlayerComponent,

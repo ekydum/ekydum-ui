@@ -1,8 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { PlayerService } from '../../services/player.service';
 import { VideoItemData } from '../../models/video-item.model';
+import { I18nDict, I18nLocalized, I18nMultilingual } from '../../i18n/models/dict.models';
+import { I18nService } from '../../i18n/services/i18n.service';
+import { dict } from '../../i18n/dict/main.dict';
+import { Subject, takeUntil, tap } from 'rxjs';
 
 @Component({
   selector: 'app-starred',
@@ -12,7 +16,7 @@ import { VideoItemData } from '../../models/video-item.model';
       <div class="d-flex align-items-center mb-4">
         <h2 class="mb-0 page-title text-no-select" style="margin-left: 48px;">
           <i class="fas fa-star me-2"></i>
-          Starred Videos
+          {{ i18nStrings['pageTitle'] }}
         </h2>
         <div class="d-flex flex-row flex-grow-1"></div>
         <button
@@ -21,7 +25,7 @@ import { VideoItemData } from '../../models/video-item.model';
           [disabled]="videos.length === 0"
         >
           <i class="fas fa-play me-2"></i>
-          Play All
+          {{ i18nStrings['playAll'] }}
         </button>
       </div>
 
@@ -31,7 +35,7 @@ import { VideoItemData } from '../../models/video-item.model';
 
       <div *ngIf="!loading && videos.length === 0" class="alert-custom alert-info-custom text-center">
         <i class="fas fa-info-circle me-2"></i>
-        No starred videos yet. Click the star icon on any video to add it here!
+        {{ i18nStrings['noStarred'] }}
       </div>
 
       <div class="row" *ngIf="!loading && videos.length > 0">
@@ -46,7 +50,7 @@ import { VideoItemData } from '../../models/video-item.model';
           >
             <button class="btn btn-sm btn-red-glass w-100 mt-2" (click)="removeStar(video.yt_video_id!)">
               <i class="fas fa-star me-1"></i>
-              Remove
+              {{ i18nStrings['btnRemove'] }}
             </button>
           </app-video-item>
         </div>
@@ -119,18 +123,34 @@ import { VideoItemData } from '../../models/video-item.model';
     }
   `]
 })
-export class StarredComponent implements OnInit {
+export class StarredComponent implements I18nMultilingual, OnInit, OnDestroy {
+  readonly i18nDict: I18nDict = dict['starred'];
+  i18nStrings: I18nLocalized = {};
+
   videos: VideoItemData[] = [];
   loading = false;
+
+  private alive$ = new Subject<void>();
 
   constructor(
     private router: Router,
     private api: ApiService,
-    private playerService: PlayerService
+    private playerService: PlayerService,
+    private i18nService: I18nService,
   ) {}
 
   ngOnInit(): void {
+    this.i18nService.translate(this.i18nDict).pipe(
+      takeUntil(this.alive$),
+      tap((localized) => { this.i18nStrings = localized; })
+    ).subscribe();
+
     this.loadStarred();
+  }
+
+  ngOnDestroy(): void {
+    this.alive$.next();
+    this.alive$.complete();
   }
 
   loadStarred(): void {

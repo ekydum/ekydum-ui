@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
+import { PlayerService } from '../../services/player.service';
+import { VideoItemData } from '../../models/video-item.model';
 
 @Component({
   selector: 'app-starred',
@@ -8,117 +10,123 @@ import { ApiService } from '../../services/api.service';
   template: `
     <div class="container-fluid">
       <div class="d-flex align-items-center mb-4">
-        <h2 class="mb-0 text-no-select" style="margin-left: 48px;">
+        <h2 class="mb-0 page-title text-no-select" style="margin-left: 48px;">
           <i class="fas fa-star me-2"></i>
           Starred Videos
         </h2>
+        <div class="d-flex flex-row flex-grow-1"></div>
+        <button
+          class="btn btn-blue-glass me-3"
+          (click)="playAllVideos()"
+          [disabled]="videos.length === 0"
+        >
+          <i class="fas fa-play me-2"></i>
+          Play All
+        </button>
       </div>
 
       <div *ngIf="loading" class="text-center py-5">
-        <div class="spinner-border text-primary" role="status"></div>
+        <div class="spinner-border spinner-custom" role="status"></div>
       </div>
 
-      <div *ngIf="!loading && videos.length === 0" class="alert alert-info text-center">
+      <div *ngIf="!loading && videos.length === 0" class="alert-custom alert-info-custom text-center">
         <i class="fas fa-info-circle me-2"></i>
         No starred videos yet. Click the star icon on any video to add it here!
       </div>
 
       <div class="row" *ngIf="!loading && videos.length > 0">
         <div class="col-md-6 col-lg-4 col-xl-3 mb-4" *ngFor="let video of videos">
-          <div class="card video-card h-100 text-no-select">
-            <div class="video-thumbnail" (click)="watchVideo(video.yt_video_id)">
-              <img [src]="video.thumbnail" [alt]="video.title" *ngIf="video.thumbnail">
-              <button
-                class="btn btn-sm btn-primary video-action-btn"
-                (click)="addToWatchLater($event, video)"
-                title="Add to Watch Later"
-              >
-                <i class="fas fa-clock"></i>
-              </button>
-            </div>
-            <div class="card-body">
-              <h6 class="card-title" (click)="watchVideo(video.yt_video_id)">{{ video.title }}</h6>
-              <p class="card-text text-muted small" *ngIf="video.channel_name">
-                <i class="fas fa-user me-1"></i>
-                {{ video.channel_name }}
-              </p>
-              <p class="card-text text-muted small" *ngIf="video.duration">
-                <i class="fas fa-clock me-1"></i>
-                {{ formatDuration(video.duration) }}
-              </p>
-              <button class="btn btn-sm btn-outline-danger w-100 mt-2" (click)="removeStar(video.yt_video_id)">
-                <i class="fas fa-star me-1"></i>
-                Remove
-              </button>
-            </div>
-          </div>
+          <app-video-item
+            [video]="video"
+            [showWatchLaterButton]="true"
+            [showQueueButton]="true"
+            (videoClick)="watchVideo($event)"
+            (addToQueue)="addToQueue($event)"
+            (addToWatchLater)="addToWatchLater($event)"
+          >
+            <button class="btn btn-sm btn-red-glass w-100 mt-2" (click)="removeStar(video.yt_video_id!)">
+              <i class="fas fa-star me-1"></i>
+              Remove
+            </button>
+          </app-video-item>
         </div>
       </div>
     </div>
   `,
   styles: [`
-    .video-card {
-      transition: transform 0.2s, box-shadow 0.2s;
+    .page-title {
+      color: white;
+      font-weight: 700;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     }
 
-    .video-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-
-    .video-thumbnail {
-      position: relative;
-      width: 100%;
-      padding-top: 56.25%;
-      overflow: hidden;
-      background: #f0f0f0;
-      cursor: pointer;
-    }
-
-    .video-thumbnail img {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .video-action-btn {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      opacity: 0;
-      transition: opacity 0.2s;
-      z-index: 10;
-    }
-
-    .video-card:hover .video-action-btn {
-      opacity: 1;
-    }
-
-    .card-title {
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+    .btn-blue-glass {
+      background: rgba(13, 110, 253, 0.15);
+      border: 1px solid rgba(13, 110, 253, 0.3);
+      color: white;
+      backdrop-filter: blur(10px);
+      transition: all 0.2s ease;
       font-weight: 600;
-      margin-bottom: 0.5rem;
-      cursor: pointer;
     }
 
-    .card-title:hover {
-      color: #0d6efd;
+    .btn-blue-glass:hover:not(:disabled) {
+      background: rgba(13, 110, 253, 0.25);
+      border-color: rgba(13, 110, 253, 0.5);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(13, 110, 253, 0.4);
+    }
+
+    .btn-blue-glass:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-red-glass {
+      background: rgba(198, 17, 32, 0.15);
+      border: 1px solid rgba(198, 17, 32, 0.3);
+      color: white;
+      backdrop-filter: blur(10px);
+      transition: all 0.2s ease;
+      font-weight: 600;
+    }
+
+    .btn-red-glass:hover {
+      background: rgba(198, 17, 32, 0.25);
+      border-color: rgba(198, 17, 32, 0.5);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(198, 17, 32, 0.4);
+    }
+
+    .spinner-custom {
+      color: rgba(13, 110, 253, 0.8);
+    }
+
+    .alert-custom {
+      background: rgba(26, 26, 26, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .alert-info-custom {
+      color: rgba(13, 202, 240, 0.9);
+      border-color: rgba(13, 202, 240, 0.3);
+      background: rgba(13, 202, 240, 0.1);
     }
   `]
 })
 export class StarredComponent implements OnInit {
-  videos: any[] = [];
+  videos: VideoItemData[] = [];
   loading = false;
 
   constructor(
     private router: Router,
-    private api: ApiService
+    private api: ApiService,
+    private playerService: PlayerService
   ) {}
 
   ngOnInit(): void {
@@ -138,8 +146,27 @@ export class StarredComponent implements OnInit {
     });
   }
 
-  watchVideo(videoId: string): void {
-    this.router.navigate(['/watch', videoId]);
+  watchVideo(video: VideoItemData): void {
+    this.playerService.playVideo(video);
+  }
+
+  addToWatchLater(video: VideoItemData): void {
+    this.api.addWatchLater(
+      video.yt_video_id || video.yt_id || '',
+      video.title,
+      video.thumbnail || '',
+      video.duration,
+      video.channel_id,
+      video.channel_name
+    ).subscribe();
+  }
+
+  playAllVideos(): void {
+    this.playerService.queueSet(this.videos);
+  }
+
+  addToQueue(video: VideoItemData): void {
+    this.playerService.queueAdd(video);
   }
 
   removeStar(videoId: string): void {
@@ -148,28 +175,5 @@ export class StarredComponent implements OnInit {
         this.videos = this.videos.filter(v => v.yt_video_id !== videoId);
       }
     });
-  }
-
-  addToWatchLater(event: Event, video: any): void {
-    event.stopPropagation();
-    this.api.addWatchLater(
-      video.yt_video_id,
-      video.title,
-      video.thumbnail,
-      video.duration,
-      video.channel_id,
-      video.channel_name
-    ).subscribe();
-  }
-
-  formatDuration(seconds: number): string {
-    var hours = Math.floor(seconds / 3600);
-    var minutes = Math.floor((seconds % 3600) / 60);
-    var secs = seconds % 60;
-
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
   }
 }

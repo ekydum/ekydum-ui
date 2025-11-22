@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
-import { Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
+import { PlayerService } from '../../services/player.service';
+import { VideoItemData } from '../../models/video-item.model';
+import { SearchStateService } from '../../services/search-state.service';
 
 @Component({
   selector: 'app-search',
@@ -8,7 +10,7 @@ import { ApiService } from '../../services/api.service';
   template: `
     <div class="container-fluid">
       <div class="d-flex align-items-center mb-4">
-        <h2 class="mb-0 text-no-select" style="margin-left: 48px;">
+        <h2 class="mb-0 page-title text-no-select" style="margin-left: 48px;">
           <i class="fas fa-search me-2"></i>
           Search Videos
         </h2>
@@ -16,20 +18,20 @@ import { ApiService } from '../../services/api.service';
 
       <div class="row mb-4">
         <div class="col-md-8 col-lg-6 mx-auto">
-          <div class="input-group input-group-lg">
+          <div class="input-group input-group-lg search-group">
             <input
               type="text"
-              class="form-control"
+              class="form-control search-input"
               placeholder="Search for videos..."
-              [(ngModel)]="searchQuery"
+              [(ngModel)]="st.searchQuery"
               (keyup.enter)="search()"
               [disabled]="loading"
             >
             <button
-              class="btn btn-primary"
+              class="btn btn-blue-glass"
               type="button"
               (click)="search()"
-              [disabled]="loading || !searchQuery.trim()"
+              [disabled]="loading || !st.searchQuery.trim()"
             >
               <i class="fas fa-search me-2"></i>
               Search
@@ -39,60 +41,40 @@ import { ApiService } from '../../services/api.service';
       </div>
 
       <div *ngIf="loading" class="text-center py-5">
-        <div class="spinner-border text-primary" role="status"></div>
-        <p class="mt-3 text-muted">Searching...</p>
+        <div class="spinner-border spinner-custom" role="status"></div>
+        <p class="mt-3 text-light">Searching...</p>
       </div>
 
-      <div *ngIf="!loading && searched && videos.length === 0" class="alert alert-info text-center">
+      <div *ngIf="!loading && st.searched && st.videos.length === 0" class="alert-custom alert-info-custom text-center">
         <i class="fas fa-info-circle me-2"></i>
-        No videos found for "{{ lastSearchQuery }}". Try a different search term.
+        No videos found for "{{ st.lastSearchQuery }}". Try a different search term.
       </div>
 
-      <div class="row" *ngIf="!loading && videos.length > 0">
-        <div class="col-12 mb-3">
-          <p class="text-muted">
+      <div class="row" *ngIf="!loading && st.videos.length > 0">
+        <div class="col-12 mb-3 d-flex justify-content-between align-items-center">
+          <p class="text-info mb-0">
             <i class="fas fa-video me-2"></i>
-            Found {{ videos.length }} videos for "{{ lastSearchQuery }}"
+            Found {{ st.videos.length }} videos for "{{ st.lastSearchQuery }}"
           </p>
+          <button class="btn btn-blue-glass" (click)="playAllVideos()">
+            <i class="fas fa-play me-2"></i>
+            Play All
+          </button>
         </div>
 
-        <div class="col-md-6 col-lg-4 col-xl-3 mb-4" *ngFor="let video of videos">
-          <div class="card video-card h-100">
-            <div class="video-thumbnail" (click)="watchVideo(video.yt_id)">
-              <img [src]="video.thumbnail" [alt]="video.title" *ngIf="video.thumbnail">
-              <button
-                class="btn btn-sm btn-primary video-action-btn"
-                (click)="addToWatchLater($event, video)"
-                title="Add to Watch Later"
-              >
-                <i class="fas fa-clock"></i>
-              </button>
-            </div>
-            <div class="card-body">
-              <h6 class="card-title" (click)="watchVideo(video.yt_id)">{{ video.title }}</h6>
-              <p class="card-text text-muted small">
-                <i class="fas fa-user me-1"></i>
-                {{ video.channel_name }}
-              </p>
-              <p class="card-text text-muted small" *ngIf="video.duration">
-                <i class="fas fa-clock me-1"></i>
-                {{ formatDuration(video.duration) }}
-                <span *ngIf="video.view_count" class="ms-2">
-                  <i class="fas fa-eye me-1"></i>
-                  {{ formatViewCount(video.view_count) }}
-                </span>
-              </p>
-              <p class="card-text text-muted small" *ngIf="video.upload_date">
-                <i class="fas fa-calendar me-1"></i>
-                {{ formatDate(video.upload_date) }}
-              </p>
-            </div>
-          </div>
+        <div class="col-md-6 col-lg-4 col-xl-3 mb-4" *ngFor="let video of st.videos">
+          <app-video-item
+            [video]="video"
+            [showMetadata]="true"
+            (videoClick)="watchVideo($event)"
+            (addToQueue)="addToQueue($event)"
+            (addToWatchLater)="addToWatchLater($event)"
+          ></app-video-item>
         </div>
       </div>
 
-      <div class="text-center mt-4" *ngIf="videos.length > 0 && !loading">
-        <button class="btn btn-primary" (click)="loadMore()" [disabled]="loadingMore">
+      <div class="text-center mt-4" *ngIf="st.videos.length > 0 && !loading">
+        <button class="btn btn-blue-glass" (click)="loadMore()" [disabled]="loadingMore">
           <span *ngIf="!loadingMore">
             <i class="fas fa-chevron-down me-2"></i>
             Load More
@@ -106,171 +88,167 @@ import { ApiService } from '../../services/api.service';
     </div>
   `,
   styles: [`
-    .video-card {
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
+    .page-title {
+      color: white;
+      font-weight: 700;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     }
 
-    .video-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    /* Search Input Group */
+    .search-group {
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
     }
 
-    .video-thumbnail {
-      position: relative;
-      width: 100%;
-      padding-top: 56.25%;
-      overflow: hidden;
-      background: #f0f0f0;
-      cursor: pointer;
+    .search-input {
+      background: rgba(26, 26, 26, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: white;
+      backdrop-filter: blur(20px);
+      border-radius: 12px 0 0 12px;
+      padding: 12px 20px;
+      transition: all 0.2s ease;
     }
 
-    .video-thumbnail img {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+    .search-input::placeholder {
+      color: rgba(255, 255, 255, 0.4);
     }
 
-    .video-action-btn {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      opacity: 0;
-      transition: opacity 0.2s;
-      z-index: 10;
+    .search-input:focus {
+      background: rgba(26, 26, 26, 0.9);
+      border-color: rgba(13, 110, 253, 0.5);
+      color: white;
+      box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+      outline: 0;
     }
 
-    .video-card:hover .video-action-btn {
-      opacity: 1;
+    .search-input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
 
-    .card-title {
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+    /* Blue Glass Button */
+    .btn-blue-glass {
+      background: rgba(13, 110, 253, 0.15);
+      border: 1px solid rgba(13, 110, 253, 0.3);
+      color: white;
+      backdrop-filter: blur(10px);
+      transition: all 0.2s ease;
       font-weight: 600;
-      margin-bottom: 0.5rem;
-      cursor: pointer;
+      border-radius: 0 12px 12px 0;
+      padding: 12px 24px;
+    }
+
+    .btn-blue-glass:hover:not(:disabled) {
+      background: rgba(13, 110, 253, 0.25);
+      border-color: rgba(13, 110, 253, 0.5);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(13, 110, 253, 0.4);
+    }
+
+    .btn-blue-glass:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Spinner */
+    .spinner-custom {
+      color: rgba(13, 110, 253, 0.8);
+    }
+
+    .text-light {
+      color: rgba(255, 255, 255, 0.7) !important;
+    }
+
+    /* Alerts */
+    .alert-custom {
+      background: rgba(26, 26, 26, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .alert-info-custom {
+      color: rgba(13, 202, 240, 0.9);
+      border-color: rgba(13, 202, 240, 0.3);
+      background: rgba(13, 202, 240, 0.1);
+    }
+
+    .text-info {
+      color: rgba(255, 255, 255, 0.7) !important;
     }
   `]
 })
 export class SearchComponent {
-  searchQuery = '';
-  lastSearchQuery = '';
-  videos: any[] = [];
   loading = false;
   loadingMore = false;
-  searched = false;
-  currentOffset = 0;
-  pageSize = 20;
 
   constructor(
-    private router: Router,
-    private api: ApiService
+    private api: ApiService,
+    public st: SearchStateService,
+    private playerService: PlayerService,
   ) {}
 
   search(): void {
-    if (!this.searchQuery.trim()) {
-      return;
-    }
+    if (!this.st.searchQuery.trim()) return;
 
     this.loading = true;
-    this.lastSearchQuery = this.searchQuery;
-    this.currentOffset = 0;
+    this.st.lastSearchQuery = this.st.searchQuery;
+    this.st.currentOffset = 0;
 
-    this.api.searchVideos(this.searchQuery, 0, this.pageSize).subscribe({
+    this.api.searchVideos(this.st.searchQuery, 0, this.st.pageSize).subscribe({
       next: (data) => {
-        this.videos = data?.videos || [];
+        this.st.videos = data?.videos || [];
         this.loading = false;
-        this.searched = true;
+        this.st.searched = true;
       },
       error: () => {
         this.loading = false;
-        this.searched = true;
-        this.videos = [];
+        this.st.searched = true;
+        this.st.videos = [];
       }
     });
   }
 
   loadMore(): void {
     this.loadingMore = true;
-    this.currentOffset += this.pageSize;
+    this.st.currentOffset += this.st.pageSize;
 
-    this.api.searchVideos(this.lastSearchQuery, this.currentOffset, this.pageSize).subscribe({
+    this.api.searchVideos(this.st.lastSearchQuery, this.st.currentOffset, this.st.pageSize).subscribe({
       next: (data) => {
         var newVideos = data?.videos || [];
-        this.videos = [...this.videos, ...newVideos];
+        this.st.videos = [...this.st.videos, ...newVideos];
         this.loadingMore = false;
       },
       error: () => {
         this.loadingMore = false;
-        this.currentOffset -= this.pageSize;
+        this.st.currentOffset -= this.st.pageSize;
       }
     });
   }
 
-  watchVideo(videoId: string): void {
-    this.router.navigate(['/watch', videoId]);
+  watchVideo(video: VideoItemData): void {
+    this.playerService.playVideo(video);
   }
 
-  addToWatchLater(event: Event, video: any): void {
-    event.stopPropagation();
+  addToWatchLater(video: VideoItemData): void {
     this.api.addWatchLater(
-      video.yt_id,
+      video.yt_video_id || video.yt_id || '',
       video.title,
-      video.thumbnail,
+      video.thumbnail || '',
       video.duration,
       video.channel_id,
       video.channel_name
     ).subscribe();
   }
 
-  formatDuration(seconds: number): string {
-    var hours = Math.floor(seconds / 3600);
-    var minutes = Math.floor((seconds % 3600) / 60);
-    var secs = seconds % 60;
-
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  playAllVideos(): void {
+    this.playerService.queueSet(this.st.videos);
   }
 
-  formatViewCount(count: number): string {
-    if (count >= 1000000) {
-      return (count / 1000000).toFixed(1) + 'M';
-    }
-    if (count >= 1000) {
-      return (count / 1000).toFixed(1) + 'K';
-    }
-    return count.toString();
-  }
-
-  formatDate(dateString: string): string {
-    var date = new Date(dateString);
-    var now = new Date();
-    var diff = now.getTime() - date.getTime();
-    var days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-    if (days === 0) {
-      return 'Today';
-    }
-    if (days === 1) {
-      return 'Yesterday';
-    }
-    if (days < 7) {
-      return `${days} days ago`;
-    }
-    if (days < 30) {
-      return `${Math.floor(days / 7)} weeks ago`;
-    }
-    if (days < 365) {
-      return `${Math.floor(days / 30)} months ago`;
-    }
-    return `${Math.floor(days / 365)} years ago`;
+  addToQueue(video: VideoItemData): void {
+    this.playerService.queueAdd(video);
   }
 }

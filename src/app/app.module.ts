@@ -17,6 +17,9 @@ import { SearchComponent } from './components/search/search.component';
 import { PlaylistComponent } from './components/playlist/playlist.component';
 import { StarredComponent } from './components/starred/starred.component';
 import { WatchLaterComponent } from './components/watch-later/watch-later.component';
+import { VideoItemComponent } from './components/shared/video-item/video-item.component';
+import { QueueSidebarComponent } from './components/shared/queue-sidebar/queue-sidebar.component';
+import { FloatingPlayerModalComponent } from './components/shared/floating-player-modal/floating-player-modal.component';
 
 @NgModule({
   declarations: [
@@ -31,6 +34,9 @@ import { WatchLaterComponent } from './components/watch-later/watch-later.compon
     EkydumPlayerComponent,
     StarredComponent,
     WatchLaterComponent,
+    VideoItemComponent,
+    QueueSidebarComponent,
+    FloatingPlayerModalComponent,
   ],
   imports: [
     CommonModule,

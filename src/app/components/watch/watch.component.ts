@@ -4,7 +4,7 @@ import { ApiService } from '../../services/api.service';
 import { YtDlpVideoInfo } from '../../models/yt-dlp-video-info.interface';
 import { forkJoin, of, Subject, takeUntil, tap } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { UserPreference } from '../../models/settings';
+import { UserPreference } from '../../models/user-preference.model';
 
 @Component({
   selector: 'app-watch',

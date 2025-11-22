@@ -1,26 +1,417 @@
-.toast-header {
-  background: transparent;
-  border: none;
+/* ===== COSMIC BACKGROUND ===== */
+.app-container {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+  margin: 0;
+  padding: 0;
+
+  /* Deep space cosmic background - very dark with minimal glow */
+  background:
+    radial-gradient(ellipse at 12% 23%, rgba(198, 17, 32, 0.08) 0%, transparent 25%),
+    radial-gradient(ellipse at 87% 71%, rgba(13, 110, 253, 0.07) 0%, transparent 30%),
+    radial-gradient(ellipse at 43% 89%, rgba(198, 17, 32, 0.06) 0%, transparent 28%),
+    radial-gradient(ellipse at 76% 15%, rgba(13, 110, 253, 0.09) 0%, transparent 35%),
+    radial-gradient(ellipse at 31% 54%, rgba(198, 17, 32, 0.05) 0%, transparent 22%),
+    radial-gradient(ellipse at 68% 42%, rgba(13, 110, 253, 0.06) 0%, transparent 26%),
+    radial-gradient(ellipse at 5% 78%, rgba(198, 17, 32, 0.07) 0%, transparent 24%),
+    radial-gradient(ellipse at 93% 34%, rgba(13, 110, 253, 0.05) 0%, transparent 20%),
+    #000000;
+
+  /* Bright spots (stars/nebula glow) - very subtle */
+  &::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    background:
+      radial-gradient(circle at 27% 38%, rgba(255, 255, 255, 0.08) 0%, transparent 1.5%),
+      radial-gradient(circle at 71% 64%, rgba(255, 200, 200, 0.06) 0%, transparent 2%),
+      radial-gradient(circle at 54% 19%, rgba(200, 220, 255, 0.05) 0%, transparent 1.2%),
+      radial-gradient(circle at 18% 81%, rgba(255, 255, 255, 0.04) 0%, transparent 1%),
+      radial-gradient(circle at 89% 27%, rgba(255, 200, 200, 0.07) 0%, transparent 1.8%),
+      radial-gradient(circle at 35% 67%, rgba(200, 220, 255, 0.05) 0%, transparent 1.3%);
+    pointer-events: none;
+  }
+
+  /* Distant stars */
+  &::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    background-image:
+      radial-gradient(1px 1px at 10% 20%, rgba(255, 255, 255, 0.8), transparent),
+      radial-gradient(1px 1px at 90% 80%, rgba(255, 255, 255, 0.6), transparent),
+      radial-gradient(1px 1px at 50% 50%, rgba(255, 255, 255, 0.7), transparent),
+      radial-gradient(1px 1px at 30% 70%, rgba(255, 255, 255, 0.5), transparent),
+      radial-gradient(1px 1px at 70% 30%, rgba(255, 255, 255, 0.8), transparent),
+      radial-gradient(1px 1px at 20% 90%, rgba(255, 255, 255, 0.6), transparent),
+      radial-gradient(1px 1px at 80% 10%, rgba(255, 255, 255, 0.7), transparent),
+      radial-gradient(1px 1px at 60% 60%, rgba(255, 255, 255, 0.5), transparent),
+      radial-gradient(1px 1px at 40% 40%, rgba(255, 255, 255, 0.6), transparent),
+      radial-gradient(1px 1px at 85% 45%, rgba(255, 255, 255, 0.7), transparent);
+    background-size: 100% 100%;
+    opacity: 0.5;
+    pointer-events: none;
+  }
+}
+
+/* ===== NAVBAR TOGGLE ===== */
+.navbar-toggle {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1100;
+  background: rgba(60, 60, 60, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(20px);
   color: white;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+
+  &:hover {
+    background: rgba(80, 80, 80, 0.95);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &.sidebar-collapsed {
+    left: 20px;
+  }
+
+  i {
+    font-size: 18px;
+  }
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: 240px;
+  background: rgba(26, 26, 26, 0.8);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  z-index: 1000;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+
+  &.collapsed {
+    transform: translateX(-100%);
+  }
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    backdrop-filter: blur(10px);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+  }
 }
 
 .sidebar-header {
-  padding: 1rem;
-  background: #000;
-  color: #fff;
-  font-weight: bold;
-  font-size: 1.2rem;
-  border-bottom: 1px solid #343a40;
   display: flex;
-  flex-direction: row;
-  cursor: default;
-  user-select: none;
+  align-items: center;
+  padding: 24px 20px;
+  margin: 52px 0 0 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(15, 15, 15, 0.3);
 
   .logo {
-    width: 28px;
-    height: 28px;
-    object-fit: contain;
-    vertical-align: middle;
-    border-radius: 2px;
+    filter: drop-shadow(0 2px 8px rgba(255, 255, 255, 0.1));
+    margin: 0;
+  }
+
+  .app-name {
+    font-size: 22px;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    letter-spacing: 0.5px;
+    margin: 0;
+  }
+}
+
+.sidebar-menu {
+  list-style: none;
+  padding: 12px 8px;
+  margin: 0;
+
+  li {
+    margin: 0 0 4px 0;
+    padding: 0;
+  }
+
+  .menu-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    margin: 0;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    border-radius: 10px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 15px;
+    font-weight: 500;
+    background: transparent;
+    border: 1px solid transparent;
+
+    i {
+      margin-right: 12px;
+      font-size: 16px;
+      width: 20px;
+      text-align: center;
+      opacity: 0.8;
+    }
+
+    &:hover {
+      color: white;
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.08);
+      transform: translateX(4px);
+
+      i {
+        opacity: 1;
+      }
+    }
+
+    &.active {
+      color: white;
+      background: rgba(198, 17, 32, 0.15);
+      border: 1px solid rgba(198, 17, 32, 0.3);
+      box-shadow: 0 4px 12px rgba(198, 17, 32, 0.2);
+      font-weight: 600;
+
+      i {
+        opacity: 1;
+        color: rgb(255, 100, 110);
+      }
+    }
+  }
+}
+
+.sidebar-divider {
+  height: 1px;
+  background: linear-gradient(
+      to right,
+      transparent,
+      rgba(255, 255, 255, 0.08) 20%,
+      rgba(255, 255, 255, 0.08) 80%,
+      transparent
+  );
+  margin: 12px 0;
+  padding: 0;
+}
+
+/* ===== MINI PLAYER ===== */
+.mini-player {
+  margin-top: auto;
+  padding: 0 0 12px 0;
+}
+
+.mini-player-divider {
+  height: 1px;
+  background: linear-gradient(
+      to right,
+      transparent,
+      rgba(255, 255, 255, 0.1) 20%,
+      rgba(255, 255, 255, 0.1) 80%,
+      transparent
+  );
+  margin: 12px 0 8px 0;
+}
+
+.mini-player-content {
+  padding: 12px 12px;
+  background: rgba(13, 110, 253, 0.08);
+  border: 1px solid rgba(13, 110, 253, 0.15);
+  border-radius: 10px;
+  margin: 0 8px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.1);
+}
+
+.mini-player-info {
+  margin-bottom: 8px;
+}
+
+.mini-player-title {
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.mini-player-channel {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mini-player-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.mini-control-btn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: white;
+  padding: 8px;
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 14px;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+/* ===== MAIN CONTENT ===== */
+.main-content {
+  flex: 1;
+  margin-left: 240px;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+  min-height: 100vh;
+  padding: 20px;
+  position: relative;
+  z-index: 1;
+
+  &.expanded {
+    margin-left: 0;
+  }
+}
+
+/* ===== TOAST CONTAINER ===== */
+.toast-container {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 2000;
+  max-width: 350px;
+}
+
+.toast {
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &.bg-success {
+    background: rgba(25, 135, 84, 0.9) !important;
+    border-color: rgba(25, 135, 84, 0.3);
+  }
+
+  &.bg-danger {
+    background: rgba(220, 53, 69, 0.9) !important;
+    border-color: rgba(220, 53, 69, 0.3);
+  }
+
+  &.bg-warning {
+    background: rgba(255, 193, 7, 0.9) !important;
+    border-color: rgba(255, 193, 7, 0.3);
+  }
+
+  &.bg-info {
+    background: rgba(13, 202, 240, 0.9) !important;
+    border-color: rgba(13, 202, 240, 0.3);
+  }
+
+  .toast-header {
+    background: transparent;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 12px 16px;
+  }
+
+  .toast-body {
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* ===== MOBILE RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 280px;
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.5);
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+
+  .navbar-toggle {
+    top: 16px;
+    left: 16px;
   }
 }

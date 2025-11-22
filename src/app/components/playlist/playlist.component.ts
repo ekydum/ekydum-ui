@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
+import { PlayerService } from '../../services/player.service';
+import { VideoItemData } from '../../models/video-item.model';
 
 @Component({
   selector: 'app-playlist',
@@ -8,59 +10,48 @@ import { ApiService } from '../../services/api.service';
   template: `
     <div class="container-fluid">
       <div *ngIf="loading" class="text-center py-5">
-        <div class="spinner-border text-primary" role="status"></div>
+        <div class="spinner-border spinner-custom" role="status"></div>
       </div>
 
       <div *ngIf="!loading">
         <div class="d-flex align-items-center mb-4">
-          <h2 class="mb-0" style="margin-left: 48px;">
+          <h2 class="mb-0 page-title" style="margin-left: 48px;">
             <i class="fas fa-list me-2"></i>
             {{ playlistTitle || 'Playlist' }}
           </h2>
           <div class="d-flex flex-row flex-grow-1"></div>
-          <button class="btn btn-outline-secondary me-3" (click)="goBack()">
+          <button
+            class="btn btn-blue-glass me-2"
+            (click)="playAllVideos()"
+            [disabled]="videos.length === 0"
+          >
+            <i class="fas fa-play me-2"></i>
+            Play All
+          </button>
+          <button class="btn btn-glass me-3" (click)="goBack()">
             <i class="fas fa-arrow-left"></i>
           </button>
         </div>
 
-        <div *ngIf="videos.length === 0 && !loading" class="alert alert-info">
+        <div *ngIf="videos.length === 0 && !loading" class="alert-custom alert-info-custom">
+          <i class="fas fa-info-circle me-2"></i>
           No videos found in this playlist.
         </div>
 
         <div class="row" *ngIf="videos.length > 0">
           <div class="col-md-6 col-lg-4 col-xl-3 mb-4" *ngFor="let video of videos">
-            <div class="card video-card h-100 text-no-select">
-              <div class="video-thumbnail" (click)="watchVideo(video.yt_id)">
-                <img [src]="video.thumbnail" [alt]="video.title" *ngIf="video.thumbnail">
-                <button
-                  class="btn btn-sm btn-primary video-action-btn"
-                  (click)="addToWatchLater($event, video)"
-                  title="Add to Watch Later"
-                >
-                  <i class="fas fa-clock"></i>
-                </button>
-              </div>
-              <div class="card-body">
-                <h6 class="card-title" (click)="watchVideo(video.yt_id)">{{ video.title }}</h6>
-                <p class="card-text text-muted small">
-                  <i class="fas fa-user me-1"></i>
-                  {{ video.channel_name }}
-                </p>
-                <p class="card-text text-muted small" *ngIf="video.duration">
-                  <i class="fas fa-clock me-1"></i>
-                  {{ formatDuration(video.duration) }}
-                  <span *ngIf="video.view_count" class="ms-2">
-                    <i class="fas fa-eye me-1"></i>
-                    {{ formatViewCount(video.view_count) }}
-                  </span>
-                </p>
-              </div>
-            </div>
+            <app-video-item
+              [video]="video"
+              [showMetadata]="true"
+              (videoClick)="watchVideo($event)"
+              (addToQueue)="addToQueue($event)"
+              (addToWatchLater)="addToWatchLater($event)"
+            ></app-video-item>
           </div>
         </div>
 
         <div class="text-center mt-4" *ngIf="videos.length > 0 && !loading">
-          <button class="btn btn-primary" (click)="loadMore()" [disabled]="loadingMore">
+          <button class="btn btn-blue-glass" (click)="loadMore()" [disabled]="loadingMore">
             <span *ngIf="!loadingMore">
               <i class="fas fa-chevron-down me-2"></i>
               Load More
@@ -75,62 +66,77 @@ import { ApiService } from '../../services/api.service';
     </div>
   `,
   styles: [`
-    .video-card {
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
+    .page-title {
+      color: white;
+      font-weight: 700;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     }
 
-    .video-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    /* Buttons - Glass */
+    .btn-glass {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: white;
+      backdrop-filter: blur(10px);
+      transition: all 0.2s ease;
     }
 
-    .video-thumbnail {
-      position: relative;
-      width: 100%;
-      padding-top: 56.25%;
-      overflow: hidden;
-      background: #f0f0f0;
-      cursor: pointer;
+    .btn-glass:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.25);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
 
-    .video-thumbnail img {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .video-action-btn {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      opacity: 0;
-      transition: opacity 0.2s;
-      z-index: 10;
-    }
-
-    .video-card:hover .video-action-btn {
-      opacity: 1;
-    }
-
-    .card-title {
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+    .btn-blue-glass {
+      background: rgba(13, 110, 253, 0.15);
+      border: 1px solid rgba(13, 110, 253, 0.3);
+      color: white;
+      backdrop-filter: blur(10px);
+      transition: all 0.2s ease;
       font-weight: 600;
-      margin-bottom: 0.5rem;
-      cursor: pointer;
+    }
+
+    .btn-blue-glass:hover:not(:disabled) {
+      background: rgba(13, 110, 253, 0.25);
+      border-color: rgba(13, 110, 253, 0.5);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(13, 110, 253, 0.4);
+    }
+
+    .btn-blue-glass:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Spinner */
+    .spinner-custom {
+      color: rgba(13, 110, 253, 0.8);
+    }
+
+    /* Alerts */
+    .alert-custom {
+      background: rgba(26, 26, 26, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .alert-info-custom {
+      color: rgba(13, 202, 240, 0.9);
+      border-color: rgba(13, 202, 240, 0.3);
+      background: rgba(13, 202, 240, 0.1);
     }
   `]
 })
 export class PlaylistComponent implements OnInit {
   playlistId = '';
   playlistTitle = '';
-  videos: any[] = [];
+  videos: VideoItemData[] = [];
   loading = false;
   loadingMore = false;
   currentPage = 1;
@@ -138,7 +144,8 @@ export class PlaylistComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private api: ApiService
+    private api: ApiService,
+    private playerService: PlayerService
   ) {
     var navigation = this.router.getCurrentNavigation();
     if (navigation?.extras?.state) {
@@ -157,7 +164,7 @@ export class PlaylistComponent implements OnInit {
     this.loading = true;
     this.api.getPlaylistVideos(this.playlistId, this.currentPage).subscribe({
       next: (data) => {
-        this.videos = data?.items || [];
+        this.videos = (data?.items || []).map((v: any) => this.mapToVideoItemData(v));
         this.loading = false;
       },
       error: () => {
@@ -171,7 +178,8 @@ export class PlaylistComponent implements OnInit {
     this.currentPage++;
     this.api.getPlaylistVideos(this.playlistId, this.currentPage).subscribe({
       next: (data) => {
-        this.videos = [...this.videos, ...data.items];
+        var newVideos = (data?.items || []).map((v: any) => this.mapToVideoItemData(v));
+        this.videos = [...this.videos, ...newVideos];
         this.loadingMore = false;
       },
       error: () => {
@@ -181,44 +189,44 @@ export class PlaylistComponent implements OnInit {
     });
   }
 
-  watchVideo(videoId: string): void {
-    this.router.navigate(['/watch', videoId]);
+  watchVideo(video: VideoItemData): void {
+    this.playerService.playVideo(video);
   }
 
-  addToWatchLater(event: Event, video: any): void {
-    event.stopPropagation();
+  addToWatchLater(video: VideoItemData): void {
     this.api.addWatchLater(
-      video.yt_id,
+      video.yt_video_id || video.yt_id || '',
       video.title,
-      video.thumbnail,
+      video.thumbnail || '',
       video.duration,
       video.channel_id,
       video.channel_name
     ).subscribe();
   }
 
+  playAllVideos(): void {
+    this.playerService.queueSet(this.videos);
+  }
+
+  addToQueue(video: VideoItemData): void {
+    this.playerService.queueAdd(video);
+  }
+
   goBack(): void {
     window.history.back();
   }
 
-  formatDuration(seconds: number): string {
-    var hours = Math.floor(seconds / 3600);
-    var minutes = Math.floor((seconds % 3600) / 60);
-    var secs = seconds % 60;
-
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
-  }
-
-  formatViewCount(count: number): string {
-    if (count >= 1000000) {
-      return (count / 1000000).toFixed(1) + 'M';
-    }
-    if (count >= 1000) {
-      return (count / 1000).toFixed(1) + 'K';
-    }
-    return count.toString();
+  private mapToVideoItemData(video: any): VideoItemData {
+    return {
+      yt_id: video.yt_id,
+      yt_video_id: video.yt_id,
+      title: video.title,
+      thumbnail: video.thumbnail,
+      duration: video.duration,
+      view_count: video.view_count,
+      channel_name: video.channel_name,
+      channel_id: video.channel_id,
+      upload_date: video.upload_date
+    };
   }
 }

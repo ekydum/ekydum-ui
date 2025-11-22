@@ -11,7 +11,7 @@ import {
 import { AuthService } from '../../../services/auth.service';
 import Hls, { ErrorData, HlsConfig } from 'hls.js';
 import { YtDlpSourceFormat, YtDlpVideoChapter, YtDlpVideoInfo } from '../../../models/yt-dlp-video-info.interface';
-import { UserPreference } from '../../../models/settings';
+import { UserPreference } from '../../../models/user-preference.model';
 import { Ekydum_SourceFormat, Ekydum_SourceKind } from './models';
 import { Subject, takeUntil, tap, throttleTime } from 'rxjs';
 
@@ -20,11 +20,12 @@ import { Subject, takeUntil, tap, throttleTime } from 'rxjs';
   templateUrl: './ekydum-player.component.html',
   styleUrls: ['./ekydum-player.component.scss'],
   standalone: false,
-   changeDetection: ChangeDetectionStrategy.OnPush,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EkydumPlayerComponent implements AfterViewInit, OnDestroy {
   @Input() video!: YtDlpVideoInfo;
   @Input() preferences!: UserPreference[];
+  @Input() showCustomControls = true;
   @ViewChild('videoEl', { static: false }) videoElementRef!: ElementRef<HTMLVideoElement>;
 
   private readonly FALLBACK_CONTENT_LANG = 'en';

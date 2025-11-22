@@ -10,30 +10,31 @@ import { VideoItemData } from '../../models/video-item.model';
   template: `
     <div class="container-fluid">
       <div *ngIf="loading" class="text-center py-5">
-        <div class="spinner-border text-primary" role="status"></div>
+        <div class="spinner-border spinner-custom" role="status"></div>
       </div>
 
       <div *ngIf="!loading">
         <div class="d-flex align-items-center mb-4">
-          <h2 class="mb-0" style="margin-left: 48px;">
+          <h2 class="mb-0 page-title" style="margin-left: 48px;">
             <i class="fas fa-list me-2"></i>
             {{ playlistTitle || 'Playlist' }}
           </h2>
           <div class="d-flex flex-row flex-grow-1"></div>
           <button
-            class="btn btn-primary me-2"
+            class="btn btn-blue-glass me-2"
             (click)="playAllVideos()"
             [disabled]="videos.length === 0"
           >
             <i class="fas fa-play me-2"></i>
             Play All
           </button>
-          <button class="btn btn-outline-secondary me-3" (click)="goBack()">
+          <button class="btn btn-glass me-3" (click)="goBack()">
             <i class="fas fa-arrow-left"></i>
           </button>
         </div>
 
-        <div *ngIf="videos.length === 0 && !loading" class="alert alert-info">
+        <div *ngIf="videos.length === 0 && !loading" class="alert-custom alert-info-custom">
+          <i class="fas fa-info-circle me-2"></i>
           No videos found in this playlist.
         </div>
 
@@ -50,7 +51,7 @@ import { VideoItemData } from '../../models/video-item.model';
         </div>
 
         <div class="text-center mt-4" *ngIf="videos.length > 0 && !loading">
-          <button class="btn btn-primary" (click)="loadMore()" [disabled]="loadingMore">
+          <button class="btn btn-blue-glass" (click)="loadMore()" [disabled]="loadingMore">
             <span *ngIf="!loadingMore">
               <i class="fas fa-chevron-down me-2"></i>
               Load More
@@ -64,7 +65,73 @@ import { VideoItemData } from '../../models/video-item.model';
       </div>
     </div>
   `,
-  styles: []
+  styles: [`
+    .page-title {
+      color: white;
+      font-weight: 700;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Buttons - Glass */
+    .btn-glass {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: white;
+      backdrop-filter: blur(10px);
+      transition: all 0.2s ease;
+    }
+
+    .btn-glass:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.25);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-blue-glass {
+      background: rgba(13, 110, 253, 0.15);
+      border: 1px solid rgba(13, 110, 253, 0.3);
+      color: white;
+      backdrop-filter: blur(10px);
+      transition: all 0.2s ease;
+      font-weight: 600;
+    }
+
+    .btn-blue-glass:hover:not(:disabled) {
+      background: rgba(13, 110, 253, 0.25);
+      border-color: rgba(13, 110, 253, 0.5);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(13, 110, 253, 0.4);
+    }
+
+    .btn-blue-glass:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Spinner */
+    .spinner-custom {
+      color: rgba(13, 110, 253, 0.8);
+    }
+
+    /* Alerts */
+    .alert-custom {
+      background: rgba(26, 26, 26, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .alert-info-custom {
+      color: rgba(13, 202, 240, 0.9);
+      border-color: rgba(13, 202, 240, 0.3);
+      background: rgba(13, 202, 240, 0.1);
+    }
+  `]
 })
 export class PlaylistComponent implements OnInit {
   playlistId = '';

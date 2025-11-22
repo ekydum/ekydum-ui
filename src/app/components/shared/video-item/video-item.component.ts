@@ -12,7 +12,7 @@ import { VideoItemData } from '../../../models/video-item.model';
         <!-- Action buttons overlay -->
         <div class="video-actions" *ngIf="showActions">
           <button
-            class="btn btn-sm btn-primary video-action-btn"
+            class="btn btn-sm video-action-btn video-action-queue"
             (click)="onAddToQueue($event)"
             title="Add to Queue"
             *ngIf="showQueueButton"
@@ -20,7 +20,7 @@ import { VideoItemData } from '../../../models/video-item.model';
             <i class="fas fa-plus"></i>
           </button>
           <button
-            class="btn btn-sm btn-primary video-action-btn ms-1"
+            class="btn btn-sm video-action-btn video-action-later ms-1"
             (click)="onAddToWatchLater($event)"
             title="Add to Watch Later"
             *ngIf="showWatchLaterButton"
@@ -38,12 +38,12 @@ import { VideoItemData } from '../../../models/video-item.model';
       <div class="card-body" [class.p-2]="mode === 'list'">
         <h6 class="card-title" (click)="onVideoClick()">{{ video.title }}</h6>
 
-        <p class="card-text text-muted small mb-1" *ngIf="video.channel_name">
+        <p class="card-text video-channel small mb-1" *ngIf="video.channel_name">
           <i class="fas fa-user me-1"></i>
           {{ video.channel_name }}
         </p>
 
-        <p class="card-text text-muted small mb-0" *ngIf="showMetadata">
+        <p class="card-text video-meta small mb-0" *ngIf="showMetadata">
           <span *ngIf="video.view_count">
             <i class="fas fa-eye me-1"></i>
             {{ formatViewCount(video.view_count) }}
@@ -61,12 +61,18 @@ import { VideoItemData } from '../../../models/video-item.model';
   styles: [`
     .video-card {
       cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
+      background: rgba(26, 26, 26, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .video-card:hover {
       transform: translateY(-4px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border-color: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     }
 
     .video-card.list-mode {
@@ -90,7 +96,8 @@ import { VideoItemData } from '../../../models/video-item.model';
       width: 100%;
       padding-top: 56.25%;
       overflow: hidden;
-      background: #f0f0f0;
+      background: #1a1a1a;
+      cursor: pointer;
     }
 
     .video-thumbnail img {
@@ -100,6 +107,11 @@ import { VideoItemData } from '../../../models/video-item.model';
       width: 100%;
       height: 100%;
       object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+
+    .video-card:hover .video-thumbnail img {
+      transform: scale(1.05);
     }
 
     .video-actions {
@@ -107,9 +119,10 @@ import { VideoItemData } from '../../../models/video-item.model';
       top: 8px;
       right: 8px;
       opacity: 0;
-      transition: opacity 0.2s;
+      transition: opacity 0.2s ease;
       z-index: 10;
       display: flex;
+      gap: 4px;
     }
 
     .video-card:hover .video-actions {
@@ -117,19 +130,53 @@ import { VideoItemData } from '../../../models/video-item.model';
     }
 
     .video-action-btn {
-      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+
+    .video-action-queue:hover {
+      background: rgba(198, 17, 32, 0.9);
+      border-color: rgba(198, 17, 32, 0.5);
+      transform: scale(1.1);
+      box-shadow: 0 6px 16px rgba(198, 17, 32, 0.6);
+    }
+
+    .video-action-later:hover {
+      background: rgba(13, 110, 253, 0.9);
+      border-color: rgba(13, 110, 253, 0.5);
+      transform: scale(1.1);
+      box-shadow: 0 6px 16px rgba(13, 110, 253, 0.6);
     }
 
     .duration-badge {
       position: absolute;
       bottom: 8px;
       right: 8px;
-      background: rgba(0,0,0,0.8);
+      background: rgba(0, 0, 0, 0.9);
+      backdrop-filter: blur(10px);
       color: white;
-      padding: 2px 6px;
-      border-radius: 3px;
+      padding: 4px 8px;
+      border-radius: 6px;
       font-size: 12px;
       font-weight: 600;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    }
+
+    .card-body {
+      background: transparent;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
     }
 
     .card-title {
@@ -140,10 +187,25 @@ import { VideoItemData } from '../../../models/video-item.model';
       font-weight: 600;
       margin-bottom: 0.5rem;
       cursor: pointer;
+      color: white;
+      line-height: 1.3;
+      transition: color 0.2s ease;
     }
 
     .card-title:hover {
-      color: #0d6efd;
+      color: rgb(66, 153, 225);
+    }
+
+    .video-channel {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .video-meta {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .video-meta i {
+      opacity: 0.7;
     }
   `]
 })

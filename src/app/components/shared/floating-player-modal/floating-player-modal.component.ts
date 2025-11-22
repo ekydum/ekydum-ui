@@ -206,7 +206,7 @@ import { VideoItemData } from '../../../models/video-item.model';
     }
 
     .player-container.mode-minimized .player-wrapper {
-      background: rgba(26, 26, 26, 0.95);
+      background: rgba(26, 26, 26, 0.45);
       backdrop-filter: blur(20px) saturate(180%);
       -webkit-backdrop-filter: blur(20px) saturate(180%);
       border: 1px solid rgba(255, 255, 255, 0.1);

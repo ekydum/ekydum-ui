@@ -1,6 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
+import { PlayerService } from '../../services/player.service';
+import { VideoItemData } from '../../models/video-item.model';
+import { Subject, takeUntil, tap } from 'rxjs';
 
 @Component({
   selector: 'app-channel',
@@ -41,6 +44,17 @@ import { ApiService } from '../../services/api.service';
         </ul>
 
         <div *ngIf="activeTab === 'videos'">
+          <div class="d-flex justify-content-between align-items-center mb-3" *ngIf="!loadingVideos && videos.length > 0">
+            <p class="text-muted mb-0">
+              <i class="fas fa-video me-2"></i>
+              {{ videos.length }} videos
+            </p>
+            <button class="btn btn-primary me-3" (click)="playAllVideos()">
+              <i class="fas fa-play me-2"></i>
+              Play All
+            </button>
+          </div>
+
           <div *ngIf="loadingVideos" class="text-center py-3">
             <div class="spinner-border text-primary" role="status"></div>
           </div>
@@ -51,27 +65,13 @@ import { ApiService } from '../../services/api.service';
 
           <div class="row" *ngIf="!loadingVideos && videos.length > 0">
             <div class="col-md-6 col-lg-4 col-xl-3 mb-4" *ngFor="let video of videos">
-              <div class="card video-card h-100 text-no-select">
-                <div class="video-thumbnail" (click)="watchVideo(video.yt_id)">
-                  <img [src]="video.thumbnail" [alt]="video.title" *ngIf="video.thumbnail">
-                  <button
-                    class="btn btn-sm btn-primary video-action-btn"
-                    (click)="addToWatchLater($event, video)"
-                    title="Add to Watch Later"
-                  >
-                    <i class="fas fa-clock"></i>
-                  </button>
-                </div>
-                <div class="card-body">
-                  <h6 class="card-title" (click)="watchVideo(video.yt_id)">{{ video.title }}</h6>
-                  <p class="card-text text-muted small" *ngIf="video.duration">
-                    <i class="fas fa-clock me-1"></i>
-                    {{ formatDuration(video.duration) }}
-                    <i class="fas fa-eye me-1 ms-2"></i>
-                    {{ video.view_count }}
-                  </p>
-                </div>
-              </div>
+              <app-video-item
+                [video]="video"
+                [showMetadata]="true"
+                (videoClick)="watchVideo(video)"
+                (addToQueue)="addToQueue(video)"
+                (addToWatchLater)="addToWatchLater(video)"
+              ></app-video-item>
             </div>
           </div>
 
@@ -123,17 +123,17 @@ import { ApiService } from '../../services/api.service';
       cursor: pointer;
     }
 
-    .video-card, .playlist-card {
+    .playlist-card {
       cursor: pointer;
       transition: transform 0.2s, box-shadow 0.2s;
     }
 
-    .video-card:hover, .playlist-card:hover {
+    .playlist-card:hover {
       transform: translateY(-4px);
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
 
-    .video-thumbnail, .playlist-thumbnail {
+    .playlist-thumbnail {
       position: relative;
       width: 100%;
       padding-top: 56.25%;
@@ -141,26 +141,13 @@ import { ApiService } from '../../services/api.service';
       background: #f0f0f0;
     }
 
-    .video-thumbnail img, .playlist-thumbnail img {
+    .playlist-thumbnail img {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
-    }
-
-    .video-action-btn {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      opacity: 0;
-      transition: opacity 0.2s;
-      z-index: 10;
-    }
-
-    .video-card:hover .video-action-btn {
-      opacity: 1;
     }
 
     .playlist-badge {
@@ -174,7 +161,7 @@ import { ApiService } from '../../services/api.service';
       font-size: 12px;
     }
 
-    .card-title {
+    .playlist-card .card-title {
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
@@ -184,12 +171,12 @@ import { ApiService } from '../../services/api.service';
     }
   `]
 })
-export class ChannelComponent implements OnInit {
+export class ChannelComponent implements OnInit, OnDestroy {
   channelId = '';
   channel: any = null;
   activeTab = 'videos';
 
-  videos: any[] = [];
+  videos: VideoItemData[] = [];
   loading = false;
   loadingVideos = false;
   loadingMore = false;
@@ -198,24 +185,33 @@ export class ChannelComponent implements OnInit {
   playlists: any[] = [];
   loadingPlaylists = false;
 
+  private alive$ = new Subject<void>();
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private api: ApiService
+    private api: ApiService,
+    private playerService: PlayerService
   ) {}
 
   ngOnInit(): void {
     this.channelId = this.route.snapshot.paramMap.get('id') || '';
 
-    this.route.queryParams.subscribe(params => {
-      this.activeTab = params['tab'] || 'videos';
-    });
+    this.route.queryParams.pipe(
+      takeUntil(this.alive$),
+      tap((params) => { this.activeTab = params['tab'] || 'videos' })
+    ).subscribe();
 
     if (this.channelId) {
       this.loadChannel();
       this.loadVideos();
       this.loadPlaylists();
     }
+  }
+
+  ngOnDestroy(): void {
+    this.alive$.next();
+    this.alive$.complete();
   }
 
   switchTab(tab: string): void {
@@ -244,7 +240,7 @@ export class ChannelComponent implements OnInit {
     this.loadingVideos = true;
     this.api.getChannelVideos(this.channelId, this.currentPage).subscribe({
       next: (data) => {
-        this.videos = data?.items || [];
+        this.videos = (data?.items || []).map((v: any) => this.mapToVideoItemData(v));
         this.loadingVideos = false;
       },
       error: () => {
@@ -258,7 +254,8 @@ export class ChannelComponent implements OnInit {
     this.currentPage++;
     this.api.getChannelVideos(this.channelId, this.currentPage).subscribe({
       next: (data) => {
-        this.videos = [...this.videos, ...data.items];
+        var newVideos = (data?.items || []).map((v: any) => this.mapToVideoItemData(v));
+        this.videos = [...this.videos, ...newVideos];
         this.loadingMore = false;
       },
       error: () => {
@@ -287,34 +284,44 @@ export class ChannelComponent implements OnInit {
     });
   }
 
-  watchVideo(videoId: string): void {
-    this.router.navigate(['/watch', videoId]);
+  watchVideo(video: VideoItemData): void {
+    this.playerService.playVideo(video);
   }
 
-  addToWatchLater(event: Event, video: any): void {
-    event.stopPropagation();
+  addToWatchLater(video: VideoItemData): void {
     this.api.addWatchLater(
-      video.yt_id,
+      video.yt_video_id || video.yt_id || '',
       video.title,
-      video.thumbnail,
+      video.thumbnail || '',
       video.duration,
-      this.channelId,
-      this.channel?.name
+      video.channel_id,
+      video.channel_name
     ).subscribe();
+  }
+
+  playAllVideos(): void {
+    this.playerService.queueSet(this.videos);
+  }
+
+  addToQueue(video: VideoItemData): void {
+    this.playerService.queueAdd(video);
   }
 
   goBack(): void {
     history.back();
   }
 
-  formatDuration(seconds: number): string {
-    var hours = Math.floor(seconds / 3600);
-    var minutes = Math.floor((seconds % 3600) / 60);
-    var secs = seconds % 60;
-
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  private mapToVideoItemData(video: any): VideoItemData {
+    return {
+      yt_id: video.yt_id,
+      yt_video_id: video.yt_id,
+      title: video.title,
+      thumbnail: video.thumbnail,
+      duration: video.duration,
+      view_count: video.view_count,
+      channel_name: this.channel?.name,
+      channel_id: this.channelId,
+      upload_date: video.upload_date
+    };
   }
 }

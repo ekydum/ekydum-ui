@@ -7,7 +7,7 @@
   >
   </video>
 
-  <div class="controls d-flex">
+  <div class="controls d-flex" *ngIf="showCustomControls">
     <div class="control-item quality-select">
       <div ngbDropdown placement="top-start" class="d-inline-block">
         <button type="button" class="btn btn-sm btn-outline-secondary" id="ctrlQuality" ngbDropdownToggle>{{ selectedFormat?.ekydum_label || '-' }}</button>

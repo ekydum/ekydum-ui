@@ -10,37 +10,37 @@
     </div>
     <ul class="sidebar-menu">
       <li>
-        <a routerLink="/search" routerLinkActive="active" (click)="closeSidebarOnMobile()">
+        <a class="menu-item" routerLink="/search" routerLinkActive="active" (click)="closeSidebarOnMobile()">
           <i class="fas fa-search"></i>
           Search
         </a>
       </li>
       <li>
-        <a routerLink="/subscriptions" routerLinkActive="active" (click)="closeSidebarOnMobile()">
+        <a class="menu-item" routerLink="/subscriptions" routerLinkActive="active" (click)="closeSidebarOnMobile()">
           <i class="fas fa-users"></i>
           Subscriptions
         </a>
       </li>
       <li>
-        <a routerLink="/starred" routerLinkActive="active" (click)="closeSidebarOnMobile()">
+        <a class="menu-item" routerLink="/starred" routerLinkActive="active" (click)="closeSidebarOnMobile()">
           <i class="fas fa-star"></i>
           Starred
         </a>
       </li>
       <li>
-        <a routerLink="/watch-later" routerLinkActive="active" (click)="closeSidebarOnMobile()">
+        <a class="menu-item" routerLink="/watch-later" routerLinkActive="active" (click)="closeSidebarOnMobile()">
           <i class="fas fa-clock"></i>
           Watch Later
         </a>
       </li>
       <li>
-        <a routerLink="/settings" routerLinkActive="active" (click)="closeSidebarOnMobile()">
+        <a class="menu-item" routerLink="/settings" routerLinkActive="active" (click)="closeSidebarOnMobile()">
           <i class="fas fa-cog"></i>
           Settings
         </a>
       </li>
       <li>
-        <a routerLink="/manage" routerLinkActive="active" (click)="closeSidebarOnMobile()">
+        <a class="menu-item" routerLink="/manage" routerLinkActive="active" (click)="closeSidebarOnMobile()">
           <i class="fas fa-users-cog"></i>
           Manage
         </a>
@@ -51,6 +51,8 @@
   <main class="main-content" [class.expanded]="sidebarCollapsed">
     <router-outlet></router-outlet>
   </main>
+
+  <app-floating-player-modal></app-floating-player-modal>
 
   <div class="toast-container">
     <div *ngFor="let toast of toasts"
@@ -71,9 +73,7 @@
         </strong>
         <button type="button" class="btn-close btn-close-white" (click)="removeToast(toast.id)"></button>
       </div>
-      <div class="toast-body text-white">
-        {{ toast.message }}
-      </div>
+      <div class="toast-body text-white">{{ toast.message }}</div>
     </div>
   </div>
 </div>

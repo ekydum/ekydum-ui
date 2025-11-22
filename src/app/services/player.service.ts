@@ -166,6 +166,15 @@ export class PlayerService {
     this.displayModeSubject$.next(PlayerDisplayMode.MODE_FLOATING);
   }
 
+  uiHide(): void {
+    this.displayModeSubject$.next(PlayerDisplayMode.MODE_HIDDEN);
+  }
+
+  uiUnhide(): void {
+    // Restore to floating mode when unhiding
+    this.displayModeSubject$.next(PlayerDisplayMode.MODE_FLOATING);
+  }
+
   closeFloatingPlayer(): void {
     this.displayModeSubject$.next(PlayerDisplayMode.MODE_INACTIVE);
   }

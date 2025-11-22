@@ -17,7 +17,7 @@ import { VideoItemData } from '../../models/video-item.model';
         <div class="d-flex flex-row flex-grow-1"></div>
         <button
           class="btn btn-primary me-3"
-          (click)="playAll()"
+          (click)="playAllVideos()"
           [disabled]="videos.length === 0"
         >
           <i class="fas fa-play me-2"></i>
@@ -40,7 +40,7 @@ import { VideoItemData } from '../../models/video-item.model';
             [video]="video"
             [showWatchLaterButton]="true"
             [showQueueButton]="true"
-            (videoClick)="playVideo($event)"
+            (videoClick)="watchVideo($event)"
             (addToQueue)="addToQueue($event)"
             (addToWatchLater)="addToWatchLater($event)"
           >
@@ -82,26 +82,8 @@ export class StarredComponent implements OnInit {
     });
   }
 
-  playVideo(video: VideoItemData): void {
-    // this.playerService.playVideoInFloatingMode({
-    //   yt_video_id: video.yt_video_id || video.yt_id || '',
-    //   title: video.title,
-    //   thumbnail: video.thumbnail || '',
-    //   duration: video.duration,
-    //   channel_id: video.channel_id,
-    //   channel_name: video.channel_name
-    // });
-  }
-
-  addToQueue(video: VideoItemData): void {
-    // this.api.addToQueue(
-    //   video.yt_video_id || video.yt_id || '',
-    //   video.title,
-    //   video.thumbnail || '',
-    //   video.duration,
-    //   video.channel_id,
-    //   video.channel_name
-    // ).subscribe();
+  watchVideo(video: VideoItemData): void {
+    this.playerService.playVideo(video);
   }
 
   addToWatchLater(video: VideoItemData): void {
@@ -115,14 +97,12 @@ export class StarredComponent implements OnInit {
     ).subscribe();
   }
 
-  playAll(): void {
-    // this.api.playAll(this.videos).subscribe({
-    //   next: () => {
-    //     setTimeout(() => {
-    //       this.playerService.openFloatingPlayer();
-    //     }, 500);
-    //   }
-    // });
+  playAllVideos(): void {
+    this.playerService.queueSet(this.videos);
+  }
+
+  addToQueue(video: VideoItemData): void {
+    this.playerService.queueAdd(video);
   }
 
   removeStar(videoId: string): void {

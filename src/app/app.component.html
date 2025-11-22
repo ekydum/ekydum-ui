@@ -8,6 +8,7 @@
       <img src="/appicon/favicon-32x32.png" alt="" class="logo me-1" width="28" height="28">
       <div class="app-name">Ekydum</div>
     </div>
+
     <ul class="sidebar-menu">
       <li>
         <a class="menu-item" routerLink="/search" routerLinkActive="active" (click)="closeSidebarOnMobile()">
@@ -33,6 +34,11 @@
           Watch Later
         </a>
       </li>
+    </ul>
+
+    <div class="sidebar-divider"></div>
+
+    <ul class="sidebar-menu">
       <li>
         <a class="menu-item" routerLink="/settings" routerLinkActive="active" (click)="closeSidebarOnMobile()">
           <i class="fas fa-cog"></i>
@@ -46,6 +52,25 @@
         </a>
       </li>
     </ul>
+
+    <!-- Mini player (only when hidden) -->
+    <div class="mini-player" *ngIf="currentVideo && displayMode === 'hidden'">
+      <div class="mini-player-divider"></div>
+      <div class="mini-player-content">
+        <div class="mini-player-info">
+          <div class="mini-player-title">{{ currentVideo.title }}</div>
+          <div class="mini-player-channel" *ngIf="currentVideo.channel_name">{{ currentVideo.channel_name }}</div>
+        </div>
+        <div class="mini-player-controls">
+          <button class="btn btn-sm mini-control-btn" (click)="togglePlayPause()" title="{{ isPlaying ? 'Pause' : 'Play' }}">
+            <i class="fas" [class.fa-pause]="isPlaying" [class.fa-play]="!isPlaying"></i>
+          </button>
+          <button class="btn btn-sm mini-control-btn" (click)="showPlayer()" title="Show Player">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
   </nav>
 
   <main class="main-content" [class.expanded]="sidebarCollapsed">

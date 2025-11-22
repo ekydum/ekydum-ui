@@ -16,6 +16,7 @@ import { VideoItemData } from '../../../models/video-item.model';
       *ngIf="displayMode !== 'inactive'"
       [class.mode-floating]="displayMode === 'floating'"
       [class.mode-minimized]="displayMode === 'minimized'"
+      [class.mode-hidden]="displayMode === 'hidden'"
       [class.with-queue]="showQueue && displayMode === 'floating'"
     >
       <!-- Overlay for floating mode -->
@@ -80,7 +81,15 @@ import { VideoItemData } from '../../../models/video-item.model';
               <i class="fas fa-window-minimize"></i>
             </button>
 
-            <!-- Minimized mode - restore only -->
+            <!-- Minimized mode - hide and restore -->
+            <button
+              class="btn btn-sm action-btn"
+              (click)="hide()"
+              title="Hide to Sidebar"
+              *ngIf="displayMode === 'minimized'"
+            >
+              <i class="fas fa-chevron-left"></i>
+            </button>
             <button
               class="btn btn-sm action-btn"
               (click)="restore()"
@@ -374,6 +383,11 @@ import { VideoItemData } from '../../../models/video-item.model';
       aspect-ratio: 16 / 9;
     }
 
+    /* Hidden mode - hide completely but keep in DOM */
+    .player-container.mode-hidden {
+      display: none;
+    }
+
     .loading-state {
       position: absolute;
       top: 0;
@@ -567,6 +581,10 @@ export class FloatingPlayerModalComponent implements OnInit, OnDestroy {
 
   restore(): void {
     this.playerService.uiMaximize();
+  }
+
+  hide(): void {
+    this.playerService.uiHide();
   }
 
   close(): void {

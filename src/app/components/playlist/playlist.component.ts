@@ -1,8 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { PlayerService } from '../../services/player.service';
 import { VideoItemData } from '../../models/video-item.model';
+import { I18nDict, I18nLocalized, I18nMultilingual } from '../../i18n/models/dict.models';
+import { I18nService } from '../../i18n/services/i18n.service';
+import { dict } from '../../i18n/dict/main.dict';
+import { Subject, takeUntil, tap } from 'rxjs';
 
 @Component({
   selector: 'app-playlist',
@@ -17,7 +21,7 @@ import { VideoItemData } from '../../models/video-item.model';
         <div class="d-flex align-items-center mb-4">
           <h2 class="mb-0 page-title" style="margin-left: 48px;">
             <i class="fas fa-list me-2"></i>
-            {{ playlistTitle || 'Playlist' }}
+            {{ playlistTitle || i18nStrings['defaultTitle'] }}
           </h2>
           <div class="d-flex flex-row flex-grow-1"></div>
           <button
@@ -26,7 +30,7 @@ import { VideoItemData } from '../../models/video-item.model';
             [disabled]="videos.length === 0"
           >
             <i class="fas fa-play me-2"></i>
-            Play All
+            {{ i18nStrings['playAll'] }}
           </button>
           <button class="btn btn-glass me-3" (click)="goBack()">
             <i class="fas fa-arrow-left"></i>
@@ -35,7 +39,7 @@ import { VideoItemData } from '../../models/video-item.model';
 
         <div *ngIf="videos.length === 0 && !loading" class="alert-custom alert-info-custom">
           <i class="fas fa-info-circle me-2"></i>
-          No videos found in this playlist.
+          {{ i18nStrings['noVideos'] }}
         </div>
 
         <div class="row" *ngIf="videos.length > 0">
@@ -54,11 +58,11 @@ import { VideoItemData } from '../../models/video-item.model';
           <button class="btn btn-blue-glass" (click)="loadMore()" [disabled]="loadingMore">
             <span *ngIf="!loadingMore">
               <i class="fas fa-chevron-down me-2"></i>
-              Load More
+              {{ i18nStrings['loadMore'] }}
             </span>
             <span *ngIf="loadingMore">
               <span class="spinner-border spinner-border-sm me-2"></span>
-              Loading...
+              {{ i18nStrings['loading'] }}
             </span>
           </button>
         </div>
@@ -133,7 +137,10 @@ import { VideoItemData } from '../../models/video-item.model';
     }
   `]
 })
-export class PlaylistComponent implements OnInit {
+export class PlaylistComponent implements I18nMultilingual, OnInit, OnDestroy {
+  readonly i18nDict: I18nDict = dict['playlist'];
+  i18nStrings: I18nLocalized = {};
+
   playlistId = '';
   playlistTitle = '';
   videos: VideoItemData[] = [];
@@ -141,11 +148,14 @@ export class PlaylistComponent implements OnInit {
   loadingMore = false;
   currentPage = 1;
 
+  private alive$ = new Subject<void>();
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private api: ApiService,
-    private playerService: PlayerService
+    private playerService: PlayerService,
+    private i18nService: I18nService,
   ) {
     var navigation = this.router.getCurrentNavigation();
     if (navigation?.extras?.state) {
@@ -154,10 +164,20 @@ export class PlaylistComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.i18nService.translate(this.i18nDict).pipe(
+      takeUntil(this.alive$),
+      tap((localized) => { this.i18nStrings = localized; })
+    ).subscribe();
+
     this.playlistId = this.route.snapshot.paramMap.get('id') || '';
     if (this.playlistId) {
       this.loadVideos();
     }
+  }
+
+  ngOnDestroy(): void {
+    this.alive$.next();
+    this.alive$.complete();
   }
 
   loadVideos(): void {

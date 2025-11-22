@@ -1,5 +1,9 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { VideoItemData } from '../../../models/video-item.model';
+import { I18nDict, I18nLocalized, I18nMultilingual } from '../../../i18n/models/dict.models';
+import { I18nService } from '../../../i18n/services/i18n.service';
+import { dict } from '../../../i18n/dict/main.dict';
+import { Subject, takeUntil, tap } from 'rxjs';
 
 @Component({
   selector: 'app-video-item',
@@ -14,7 +18,7 @@ import { VideoItemData } from '../../../models/video-item.model';
           <button
             class="btn btn-sm video-action-btn video-action-queue"
             (click)="onAddToQueue($event)"
-            title="Add to Queue"
+            [title]="i18nStrings['btnAddToQueue']"
             *ngIf="showQueueButton"
           >
             <i class="fas fa-plus"></i>
@@ -22,7 +26,7 @@ import { VideoItemData } from '../../../models/video-item.model';
           <button
             class="btn btn-sm video-action-btn video-action-later ms-1"
             (click)="onAddToWatchLater($event)"
-            title="Add to Watch Later"
+            [title]="i18nStrings['btnAddToWatchLater']"
             *ngIf="showWatchLaterButton"
           >
             <i class="fas fa-clock"></i>
@@ -209,7 +213,10 @@ import { VideoItemData } from '../../../models/video-item.model';
     }
   `]
 })
-export class VideoItemComponent {
+export class VideoItemComponent implements I18nMultilingual, OnInit, OnDestroy {
+  readonly i18nDict: I18nDict = dict['player'];
+  i18nStrings: I18nLocalized = {};
+
   @Input() video!: VideoItemData;
   @Input() mode: 'thumbnail' | 'list' = 'thumbnail';
   @Input() showActions = true;
@@ -220,6 +227,22 @@ export class VideoItemComponent {
   @Output() videoClick = new EventEmitter<VideoItemData>();
   @Output() addToQueue = new EventEmitter<VideoItemData>();
   @Output() addToWatchLater = new EventEmitter<VideoItemData>();
+
+  private alive$ = new Subject<void>();
+
+  constructor(private i18nService: I18nService) {}
+
+  ngOnInit(): void {
+    this.i18nService.translate(this.i18nDict).pipe(
+      takeUntil(this.alive$),
+      tap((localized) => { this.i18nStrings = localized; })
+    ).subscribe();
+  }
+
+  ngOnDestroy(): void {
+    this.alive$.next();
+    this.alive$.complete();
+  }
 
   onVideoClick(): void {
     this.videoClick.emit(this.video);
@@ -266,12 +289,12 @@ export class VideoItemComponent {
       var diff = now.getTime() - date.getTime();
       var days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-      if (days === 0) return 'Today';
-      if (days === 1) return 'Yesterday';
-      if (days < 7) return `${days} days ago`;
-      if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
-      if (days < 365) return `${Math.floor(days / 30)} months ago`;
-      return `${Math.floor(days / 365)} years ago`;
+      if (days === 0) return this.i18nStrings['dateToday'] || 'Today';
+      if (days === 1) return this.i18nStrings['dateYesterday'] || 'Yesterday';
+      if (days < 7) return `${days} ${this.i18nStrings['dateDaysAgo'] || 'days ago'}`;
+      if (days < 30) return `${Math.floor(days / 7)} ${this.i18nStrings['dateWeeksAgo'] || 'weeks ago'}`;
+      if (days < 365) return `${Math.floor(days / 30)} ${this.i18nStrings['dateMonthsAgo'] || 'months ago'}`;
+      return `${Math.floor(days / 365)} ${this.i18nStrings['dateYearsAgo'] || 'years ago'}`;
     }
 
     return dateString;

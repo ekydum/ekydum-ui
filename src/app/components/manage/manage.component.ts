@@ -343,6 +343,7 @@ import { ToastService } from '../../services/toast.service';
       --bs-table-hover-bg: rgba(13, 110, 253, 0.1);
       color: white;
       margin-bottom: 0;
+      overflow: hidden;
     }
 
     .table-dark-glass thead th {

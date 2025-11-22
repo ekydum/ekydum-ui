@@ -1,8 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
+import { I18nDict, I18nLocalized, I18nMultilingual } from '../../i18n/models/dict.models';
+import { I18nService } from '../../i18n/services/i18n.service';
+import { dict } from '../../i18n/dict/main.dict';
+import { Subject, takeUntil, tap } from 'rxjs';
 
 @Component({
   selector: 'app-subscriptions',
@@ -11,7 +15,7 @@ import { ToastService } from '../../services/toast.service';
     <div class="container-fluid">
       <h2 class="mb-4 page-title text-no-select" style="margin-left: 48px;">
         <i class="fas fa-users me-2"></i>
-        Subscriptions
+        {{ i18nStrings['pageTitle'] }}
       </h2>
 
       <div class="mb-4">
@@ -19,19 +23,19 @@ import { ToastService } from '../../services/toast.service';
           <input
             type="text"
             class="form-control search-input"
-            placeholder="Search channels..."
+            [placeholder]="i18nStrings['searchPlaceholder']"
             [(ngModel)]="searchQuery"
             (keyup.enter)="searchChannels()">
           <button class="btn btn-blue-glass" (click)="searchChannels()" [disabled]="!searchQuery || searching">
             <i class="fas fa-search me-1"></i>
-            Search
+            {{ i18nStrings['btnSearch'] }}
           </button>
         </div>
       </div>
 
       <div *ngIf="!isAuthenticated" class="alert-custom alert-warning-custom">
         <i class="fas fa-exclamation-triangle me-2"></i>
-        Please configure your server settings first. Go to <a routerLink="/settings" class="alert-link">Settings</a>.
+        {{ i18nStrings['configureWarning'] }} <a routerLink="/settings" class="alert-link">{{ i18nStrings['linkSettings'] }}</a>.
       </div>
 
       <div *ngIf="loading" class="text-center py-5">
@@ -40,7 +44,7 @@ import { ToastService } from '../../services/toast.service';
 
       <div *ngIf="!loading && subscriptions.length === 0" class="alert-custom alert-info-custom">
         <i class="fas fa-info-circle me-2"></i>
-        No subscriptions yet. Search for channels to subscribe!
+        {{ i18nStrings['noSubscriptions'] }}
       </div>
 
       <div class="row" *ngIf="!loading && subscriptions.length > 0">
@@ -49,17 +53,17 @@ import { ToastService } from '../../services/toast.service';
             <div class="card-body">
               <h5 class="card-title">
                 <i class="fas fa-tv me-2"></i>
-                {{ sub.yt_channel_name || 'Channel' }}
+                {{ sub.yt_channel_name || i18nStrings['channelDefault'] }}
               </h5>
               <p class="card-text channel-meta small">
                 <i class="fas fa-calendar me-1"></i>
-                Subscribed: {{ sub.created_at | date:'short' }}
+                {{ i18nStrings['subscribedLabel'] }} {{ sub.created_at | date:'short' }}
               </p>
               <button
                 class="btn btn-sm btn-red-glass"
                 (click)="unsubscribe(sub.id, $event)">
                 <i class="fas fa-times me-1"></i>
-                Unsubscribe
+                {{ i18nStrings['btnUnsubscribe'] }}
               </button>
             </div>
           </div>
@@ -71,7 +75,7 @@ import { ToastService } from '../../services/toast.service';
           <div class="d-flex justify-content-between align-items-center mb-3">
             <h4 class="text-white">
               <i class="fas fa-search me-2"></i>
-              Search Results
+              {{ i18nStrings['searchResultsTitle'] }}
             </h4>
             <button class="btn btn-sm btn-glass" (click)="closeSearch()">
               <i class="fas fa-times"></i>
@@ -84,7 +88,7 @@ import { ToastService } from '../../services/toast.service';
 
           <div *ngIf="!searching && searchResults.length === 0" class="alert-custom alert-info-custom">
             <i class="fas fa-info-circle me-2"></i>
-            No channels found for "{{ searchQuery }}"
+            {{ i18nStrings['noChannelsFound'] }} "{{ searchQuery }}"
           </div>
 
           <div class="results-list" *ngIf="!searching && searchResults.length > 0">
@@ -100,7 +104,7 @@ import { ToastService } from '../../services/toast.service';
                   [disabled]="isSubscribed(channel.yt_id)">
                   <i class="fas" [class.fa-check]="isSubscribed(channel.yt_id)"
                      [class.fa-plus]="!isSubscribed(channel.yt_id)"></i>
-                  {{ isSubscribed(channel.yt_id) ? 'Subscribed' : 'Subscribe' }}
+                  {{ isSubscribed(channel.yt_id) ? i18nStrings['btnSubscribed'] : i18nStrings['btnSubscribe'] }}
                 </button>
               </div>
             </div>
@@ -327,7 +331,10 @@ import { ToastService } from '../../services/toast.service';
     }
   `]
 })
-export class SubscriptionsComponent implements OnInit {
+export class SubscriptionsComponent implements I18nMultilingual, OnInit, OnDestroy {
+  readonly i18nDict: I18nDict = dict['subscriptions'];
+  i18nStrings: I18nLocalized = {};
+
   subscriptions: any[] = [];
   searchResults: any[] = [];
   searchQuery = '';
@@ -336,18 +343,31 @@ export class SubscriptionsComponent implements OnInit {
   showSearchResults = false;
   isAuthenticated = false;
 
+  private alive$ = new Subject<void>();
+
   constructor(
     private api: ApiService,
     private auth: AuthService,
     private toast: ToastService,
-    private router: Router
+    private router: Router,
+    private i18nService: I18nService,
   ) {}
 
   ngOnInit(): void {
+    this.i18nService.translate(this.i18nDict).pipe(
+      takeUntil(this.alive$),
+      tap((localized) => { this.i18nStrings = localized; })
+    ).subscribe();
+
     this.isAuthenticated = this.auth.isAuthenticated();
     if (this.isAuthenticated) {
       this.loadSubscriptions();
     }
+  }
+
+  ngOnDestroy(): void {
+    this.alive$.next();
+    this.alive$.complete();
   }
 
   loadSubscriptions(): void {
@@ -384,7 +404,7 @@ export class SubscriptionsComponent implements OnInit {
   subscribeToChannel(channelId: string): void {
     this.api.subscribe(channelId).subscribe({
       next: () => {
-        this.toast.success('Subscribed successfully');
+        this.toast.success(this.i18nStrings['toastSubscribed']);
         this.loadSubscriptions();
       }
     });
@@ -394,7 +414,7 @@ export class SubscriptionsComponent implements OnInit {
     event.stopPropagation();
     this.api.unsubscribe(id).subscribe({
       next: () => {
-        this.toast.success('Unsubscribed successfully');
+        this.toast.success(this.i18nStrings['toastUnsubscribed']);
         this.loadSubscriptions();
       }
     });

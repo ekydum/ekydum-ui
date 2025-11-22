@@ -1,11 +1,14 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { PlayerService } from '../../../services/player.service';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, tap } from 'rxjs';
 import { ApiService } from '../../../services/api.service';
 import { YtDlpVideoInfo } from '../../../models/yt-dlp-video-info.interface';
 import { UserPreference } from '../../../models/user-preference.model';
 import { PlayerDisplayMode } from '../../../models/player-state.model';
 import { VideoItemData } from '../../../models/video-item.model';
+import { I18nDict, I18nLocalized, I18nMultilingual } from '../../../i18n/models/dict.models';
+import { I18nService } from '../../../i18n/services/i18n.service';
+import { dict } from '../../../i18n/dict/main.dict';
 
 @Component({
   selector: 'app-floating-player-modal',
@@ -31,7 +34,7 @@ import { VideoItemData } from '../../../models/video-item.model';
         <!-- Header -->
         <div class="player-header">
           <div class="player-title">
-            {{ currentVideo?.title || 'Now Playing' }}
+            {{ currentVideo?.title || i18nStrings['nowPlaying'] }}
           </div>
 
           <!-- Playback controls (both modes) -->
@@ -40,14 +43,14 @@ import { VideoItemData } from '../../../models/video-item.model';
               class="btn btn-sm control-btn"
               (click)="previous()"
               [disabled]="!hasPrevious"
-              title="Previous"
+              [title]="i18nStrings['btnPrevious']"
             >
               <i class="fas fa-step-backward"></i>
             </button>
             <button
               class="btn btn-sm control-btn play-pause-btn"
               (click)="togglePlayPause()"
-              title="{{ isPlaying ? 'Pause' : 'Play' }}"
+              [title]="isPlaying ? i18nStrings['btnPause'] : i18nStrings['btnPlay']"
             >
               <i class="fas" [class.fa-pause]="isPlaying" [class.fa-play]="!isPlaying"></i>
             </button>
@@ -55,7 +58,7 @@ import { VideoItemData } from '../../../models/video-item.model';
               class="btn btn-sm control-btn"
               (click)="next()"
               [disabled]="!hasNext"
-              title="Next"
+              [title]="i18nStrings['btnNext']"
             >
               <i class="fas fa-step-forward"></i>
             </button>
@@ -67,7 +70,7 @@ import { VideoItemData } from '../../../models/video-item.model';
               class="btn btn-sm action-btn"
               (click)="toggleQueue()"
               [class.active]="showQueue"
-              title="Toggle Queue"
+              [title]="i18nStrings['btnToggleQueue']"
               *ngIf="displayMode === 'floating' && queueLength > 1"
             >
               <i class="fas fa-list"></i>
@@ -75,7 +78,7 @@ import { VideoItemData } from '../../../models/video-item.model';
             <button
               class="btn btn-sm action-btn"
               (click)="minimize()"
-              title="Minimize"
+              [title]="i18nStrings['btnMinimize']"
               *ngIf="displayMode === 'floating'"
             >
               <i class="fas fa-window-minimize"></i>
@@ -85,7 +88,7 @@ import { VideoItemData } from '../../../models/video-item.model';
             <button
               class="btn btn-sm action-btn"
               (click)="hide()"
-              title="Hide to Sidebar"
+              [title]="i18nStrings['btnHideToSidebar']"
               *ngIf="displayMode === 'minimized'"
             >
               <i class="fas fa-chevron-left"></i>
@@ -93,7 +96,7 @@ import { VideoItemData } from '../../../models/video-item.model';
             <button
               class="btn btn-sm action-btn"
               (click)="restore()"
-              title="Restore"
+              [title]="i18nStrings['btnRestore']"
               *ngIf="displayMode === 'minimized'"
             >
               <i class="fas fa-window-restore"></i>
@@ -103,7 +106,7 @@ import { VideoItemData } from '../../../models/video-item.model';
             <button
               class="btn btn-sm action-btn"
               (click)="close()"
-              title="Close"
+              [title]="i18nStrings['btnClose']"
             >
               <i class="fas fa-times"></i>
             </button>
@@ -125,7 +128,7 @@ import { VideoItemData } from '../../../models/video-item.model';
 
             <div class="loading-state" *ngIf="loading">
               <div class="spinner-border text-primary" role="status"></div>
-              <p class="mt-3" *ngIf="displayMode === 'floating'">Loading video...</p>
+              <p class="mt-3" *ngIf="displayMode === 'floating'">{{ i18nStrings['loadingVideo'] }}</p>
             </div>
           </div>
 
@@ -262,7 +265,7 @@ import { VideoItemData } from '../../../models/video-item.model';
     .player-container.mode-minimized .player-title {
       font-size: 14px;
       text-align: center;
-      flex: 0 0 100%; /* Full width - first row */
+      flex: 0 0 100%;
       margin-bottom: 8px;
     }
 
@@ -274,7 +277,7 @@ import { VideoItemData } from '../../../models/video-item.model';
     }
 
     .player-container.mode-minimized .playback-controls {
-      margin-right: 12px; /* Space before action buttons */
+      margin-right: 12px;
     }
 
     .control-btn {
@@ -303,22 +306,22 @@ import { VideoItemData } from '../../../models/video-item.model';
       cursor: not-allowed;
     }
 
-    .control-btn.play-pause-btn {
-      width: 42px;
-      height: 42px;
-      background: rgba(13, 110, 253, 0.2);
-      border-color: rgba(13, 110, 253, 0.4);
+    .play-pause-btn {
+      background: rgba(13, 110, 253, 0.15);
+      border-color: rgba(13, 110, 253, 0.3);
     }
 
-    .control-btn.play-pause-btn:hover:not(:disabled) {
-      background: rgba(13, 110, 253, 0.3);
-      border-color: rgba(13, 110, 253, 0.6);
+    .play-pause-btn:hover:not(:disabled) {
+      background: rgba(13, 110, 253, 0.25);
+      border-color: rgba(13, 110, 253, 0.5);
       box-shadow: 0 4px 16px rgba(13, 110, 253, 0.4);
     }
 
+    /* Action buttons (queue/minimize/restore/close) */
     .player-actions {
       display: flex;
-      gap: 8px;
+      gap: 6px;
+      align-items: center;
     }
 
     .action-btn {
@@ -335,50 +338,44 @@ import { VideoItemData } from '../../../models/video-item.model';
       backdrop-filter: blur(10px);
     }
 
-    .action-btn:hover:not(:disabled) {
+    .action-btn:hover {
       background: rgba(255, 255, 255, 0.1);
       border-color: rgba(255, 255, 255, 0.2);
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
 
-    .action-btn:disabled {
-      opacity: 0.3;
-      cursor: not-allowed;
-    }
-
     .action-btn.active {
-      background: rgba(13, 110, 253, 0.3);
-      border-color: rgba(13, 110, 253, 0.5);
-      box-shadow: 0 0 20px rgba(13, 110, 253, 0.3);
+      background: rgba(13, 110, 253, 0.15);
+      border-color: rgba(13, 110, 253, 0.3);
     }
 
-    /* Content area */
+    /* Content */
     .player-content {
       display: flex;
       flex: 1;
-      min-height: 0;
       overflow: hidden;
+      position: relative;
     }
 
     .player-video-section {
       flex: 1;
+      position: relative;
+      background: #000;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #000;
-      position: relative; /* For absolute positioned loading state */
     }
 
     .video-wrapper {
       width: 100%;
       height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
 
-    /* Minimized mode - fixed aspect ratio */
+    .player-container.mode-floating .player-video-section {
+      min-height: 400px;
+    }
+
     .player-container.mode-minimized .player-video-section {
       aspect-ratio: 16 / 9;
     }
@@ -465,7 +462,10 @@ import { VideoItemData } from '../../../models/video-item.model';
     }
   `]
 })
-export class FloatingPlayerModalComponent implements OnInit, OnDestroy {
+export class FloatingPlayerModalComponent implements I18nMultilingual, OnInit, OnDestroy {
+  readonly i18nDict: I18nDict = dict['player'];
+  i18nStrings: I18nLocalized = {};
+
   @ViewChild('ekydumPlayer') ekydumPlayer?: any;
 
   private readonly destroy$ = new Subject<void>();
@@ -486,10 +486,16 @@ export class FloatingPlayerModalComponent implements OnInit, OnDestroy {
 
   constructor(
     public playerService: PlayerService,
-    private api: ApiService
+    private api: ApiService,
+    private i18nService: I18nService,
   ) {}
 
   ngOnInit(): void {
+    this.i18nService.translate(this.i18nDict).pipe(
+      takeUntil(this.destroy$),
+      tap((localized) => { this.i18nStrings = localized; })
+    ).subscribe();
+
     // Subscribe to display mode
     this.playerService.displayMode$
     .pipe(takeUntil(this.destroy$))

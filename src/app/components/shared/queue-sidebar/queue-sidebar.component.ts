@@ -1,8 +1,11 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { PlayerService } from '../../../services/player.service';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, tap } from 'rxjs';
 import { Router } from '@angular/router';
 import { VideoItemData } from '../../../models/video-item.model';
+import { I18nDict, I18nLocalized, I18nMultilingual } from '../../../i18n/models/dict.models';
+import { I18nService } from '../../../i18n/services/i18n.service';
+import { dict } from '../../../i18n/dict/main.dict';
 
 @Component({
   selector: 'app-queue-sidebar',
@@ -12,14 +15,14 @@ import { VideoItemData } from '../../../models/video-item.model';
       <div class="queue-header">
         <h5>
           <i class="fas fa-list me-2"></i>
-          Queue
+          {{ i18nStrings['queueTitle'] }}
           <span class="badge bg-secondary ms-2">{{ queue.length }}</span>
         </h5>
         <button
           class="btn btn-sm btn-outline-danger"
           (click)="clearQueue()"
           *ngIf="queue.length > 0"
-          title="Clear Queue"
+          [title]="i18nStrings['btnClearQueue']"
         >
           <i class="fas fa-trash"></i>
         </button>
@@ -52,7 +55,7 @@ import { VideoItemData } from '../../../models/video-item.model';
             <button
               class="btn btn-sm queue-item-remove"
               (click)="removeFromQueue($event, item.yt_video_id)"
-              title="Remove"
+              [title]="i18nStrings['btnRemove']"
               *ngIf="i !== currentIndex"
             >
               <i class="fas fa-times"></i>
@@ -63,8 +66,8 @@ import { VideoItemData } from '../../../models/video-item.model';
 
       <div class="queue-empty" *ngIf="queue.length === 0">
         <i class="fas fa-list-ul mb-3"></i>
-        <p class="mb-1">Queue is empty</p>
-        <small class="text-muted">Add videos to start playing</small>
+        <p class="mb-1">{{ i18nStrings['queueEmpty'] }}</p>
+        <small class="text-muted">{{ i18nStrings['queueEmptyHint'] }}</small>
       </div>
     </div>
   `,
@@ -103,14 +106,26 @@ import { VideoItemData } from '../../../models/video-item.model';
     .queue-list::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
   `]
 })
-export class QueueSidebarComponent implements OnInit, OnDestroy {
+export class QueueSidebarComponent implements I18nMultilingual, OnInit, OnDestroy {
+  readonly i18nDict: I18nDict = dict['player'];
+  i18nStrings: I18nLocalized = {};
+
   private readonly destroy$ = new Subject<void>();
   queue: VideoItemData[] = [];
   currentIndex = -1;
 
-  constructor(private playerService: PlayerService, private router: Router) {}
+  constructor(
+    private playerService: PlayerService,
+    private router: Router,
+    private i18nService: I18nService,
+  ) {}
 
   ngOnInit(): void {
+    this.i18nService.translate(this.i18nDict).pipe(
+      takeUntil(this.destroy$),
+      tap((localized) => { this.i18nStrings = localized; })
+    ).subscribe();
+
     this.playerService.queue$.pipe(takeUntil(this.destroy$)).subscribe(queue => { this.queue = queue; });
     this.playerService.currentIndex$.pipe(takeUntil(this.destroy$)).subscribe(index => { this.currentIndex = index; });
   }
@@ -130,7 +145,7 @@ export class QueueSidebarComponent implements OnInit, OnDestroy {
   }
 
   clearQueue(): void {
-    if (confirm('Clear all videos from queue?')) {
+    if (confirm(this.i18nStrings['confirmClearQueue'] || 'Clear all videos from queue?')) {
       this.playerService.queueClear();
     }
   }

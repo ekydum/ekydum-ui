@@ -4,6 +4,9 @@ import { ApiService } from '../../services/api.service';
 import { PlayerService } from '../../services/player.service';
 import { VideoItemData } from '../../models/video-item.model';
 import { Subject, takeUntil, tap } from 'rxjs';
+import { I18nDict, I18nLocalized, I18nMultilingual } from '../../i18n/models/dict.models';
+import { I18nService } from '../../i18n/services/i18n.service';
+import { dict } from '../../i18n/dict/main.dict';
 
 @Component({
   selector: 'app-channel',
@@ -32,13 +35,13 @@ import { Subject, takeUntil, tap } from 'rxjs';
           <li class="nav-item">
             <a class="nav-link" [class.active]="activeTab === 'videos'" (click)="switchTab('videos')">
               <i class="fas fa-video me-2"></i>
-              Videos
+              {{ i18nStrings['tabVideos'] }}
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link" [class.active]="activeTab === 'playlists'" (click)="switchTab('playlists')">
               <i class="fas fa-list me-2"></i>
-              Playlists
+              {{ i18nStrings['tabPlaylists'] }}
             </a>
           </li>
         </ul>
@@ -47,11 +50,11 @@ import { Subject, takeUntil, tap } from 'rxjs';
           <div class="d-flex justify-content-between align-items-center mb-3" *ngIf="!loadingVideos && videos.length > 0">
             <p class="text-info mb-0">
               <i class="fas fa-video me-2"></i>
-              {{ videos.length }} videos
+              {{ videos.length }} {{ i18nStrings['videosCount'] }}
             </p>
             <button class="btn btn-blue-glass me-3" (click)="playAllVideos()">
               <i class="fas fa-play me-2"></i>
-              Play All
+              {{ i18nStrings['playAll'] }}
             </button>
           </div>
 
@@ -61,7 +64,7 @@ import { Subject, takeUntil, tap } from 'rxjs';
 
           <div *ngIf="!loadingVideos && videos.length === 0" class="alert-custom alert-info-custom">
             <i class="fas fa-info-circle me-2"></i>
-            No videos found for this channel.
+            {{ i18nStrings['noVideos'] }}
           </div>
 
           <div class="row" *ngIf="!loadingVideos && videos.length > 0">
@@ -80,11 +83,11 @@ import { Subject, takeUntil, tap } from 'rxjs';
             <button class="btn btn-blue-glass" (click)="loadMoreVideos()" [disabled]="loadingMore">
               <span *ngIf="!loadingMore">
                 <i class="fas fa-chevron-down me-2"></i>
-                Load More
+                {{ i18nStrings['loadMore'] }}
               </span>
               <span *ngIf="loadingMore">
                 <span class="spinner-border spinner-border-sm me-2"></span>
-                Loading...
+                {{ i18nStrings['loading'] }}
               </span>
             </button>
           </div>
@@ -97,7 +100,7 @@ import { Subject, takeUntil, tap } from 'rxjs';
 
           <div *ngIf="!loadingPlaylists && playlists.length === 0" class="alert-custom alert-info-custom">
             <i class="fas fa-info-circle me-2"></i>
-            No playlists found for this channel.
+            {{ i18nStrings['noPlaylists'] }}
           </div>
 
           <div class="row" *ngIf="!loadingPlaylists && playlists.length > 0">
@@ -107,7 +110,7 @@ import { Subject, takeUntil, tap } from 'rxjs';
                   <img [src]="playlist.thumbnail" [alt]="playlist.title" *ngIf="playlist.thumbnail">
                   <div class="playlist-badge">
                     <i class="fas fa-list me-1"></i>
-                    {{ playlist.video_count }} videos
+                    {{ playlist.video_count }} {{ i18nStrings['videosCount'] }}
                   </div>
                 </div>
                 <div class="card-body">
@@ -286,10 +289,13 @@ import { Subject, takeUntil, tap } from 'rxjs';
     }
   `]
 })
-export class ChannelComponent implements OnInit, OnDestroy {
+export class ChannelComponent implements I18nMultilingual, OnInit, OnDestroy {
   channelId = '';
   channel: any = null;
   activeTab = 'videos';
+
+  readonly i18nDict: I18nDict = dict['channel'];
+  i18nStrings: I18nLocalized = {};
 
   videos: VideoItemData[] = [];
   loading = false;
@@ -306,10 +312,16 @@ export class ChannelComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private api: ApiService,
-    private playerService: PlayerService
+    private playerService: PlayerService,
+    private i18nService: I18nService
   ) {}
 
   ngOnInit(): void {
+    this.i18nService.translate(this.i18nDict).pipe(
+      takeUntil(this.alive$),
+      tap((localized) => { this.i18nStrings = localized; })
+    ).subscribe();
+
     this.channelId = this.route.snapshot.paramMap.get('id') || '';
 
     this.route.queryParams.pipe(

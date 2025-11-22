@@ -2,7 +2,10 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ToastService, Toast } from './services/toast.service';
 import { PlayerService } from './services/player.service';
 import { VideoItemData } from './models/video-item.model';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, tap } from 'rxjs';
+import { I18nDict, I18nLocalized, I18nMultilingual } from './i18n/models/dict.models';
+import { I18nService } from './i18n/services/i18n.service';
+import { dict } from './i18n/dict/main.dict';
 
 @Component({
   selector: 'app-root',
@@ -10,8 +13,11 @@ import { Subject, takeUntil } from 'rxjs';
   styleUrls: ['./app.component.scss'],
   standalone: false,
 })
-export class AppComponent implements OnInit, OnDestroy {
+export class AppComponent implements I18nMultilingual, OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
+
+  readonly i18nDict: I18nDict = dict['app'];
+  i18nStrings: I18nLocalized = {};
 
   sidebarCollapsed = false;
   toasts: Toast[] = [];
@@ -24,9 +30,15 @@ export class AppComponent implements OnInit, OnDestroy {
   constructor(
     private toastService: ToastService,
     private playerService: PlayerService,
+    private i18nService: I18nService,
   ) {}
 
   ngOnInit(): void {
+    this.i18nService.translate(this.i18nDict).pipe(
+      takeUntil(this.destroy$),
+      tap((localized) => { this.i18nStrings = localized; })
+    ).subscribe();
+
     this.toastService.toasts$.subscribe(toasts => {
       this.toasts = toasts;
     });

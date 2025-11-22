@@ -13,25 +13,25 @@
       <li>
         <a class="menu-item" routerLink="/search" routerLinkActive="active" (click)="closeSidebarOnMobile()">
           <i class="fas fa-search"></i>
-          Search
+          {{ i18nStrings['menuSearch'] }}
         </a>
       </li>
       <li>
         <a class="menu-item" routerLink="/subscriptions" routerLinkActive="active" (click)="closeSidebarOnMobile()">
           <i class="fas fa-users"></i>
-          Subscriptions
+          {{ i18nStrings['menuSubscriptions'] }}
         </a>
       </li>
       <li>
         <a class="menu-item" routerLink="/starred" routerLinkActive="active" (click)="closeSidebarOnMobile()">
           <i class="fas fa-star"></i>
-          Starred
+          {{ i18nStrings['menuStarred'] }}
         </a>
       </li>
       <li>
         <a class="menu-item" routerLink="/watch-later" routerLinkActive="active" (click)="closeSidebarOnMobile()">
           <i class="fas fa-clock"></i>
-          Watch Later
+          {{ i18nStrings['menuWatchLater'] }}
         </a>
       </li>
     </ul>
@@ -42,13 +42,13 @@
       <li>
         <a class="menu-item" routerLink="/settings" routerLinkActive="active" (click)="closeSidebarOnMobile()">
           <i class="fas fa-cog"></i>
-          Settings
+          {{ i18nStrings['menuSettings'] }}
         </a>
       </li>
       <li>
         <a class="menu-item" routerLink="/manage" routerLinkActive="active" (click)="closeSidebarOnMobile()">
           <i class="fas fa-users-cog"></i>
-          Manage
+          {{ i18nStrings['menuManage'] }}
         </a>
       </li>
     </ul>
@@ -62,10 +62,10 @@
           <div class="mini-player-channel" *ngIf="currentVideo.channel_name">{{ currentVideo.channel_name }}</div>
         </div>
         <div class="mini-player-controls">
-          <button class="btn btn-sm mini-control-btn" (click)="togglePlayPause()" title="{{ isPlaying ? 'Pause' : 'Play' }}">
+          <button class="btn btn-sm mini-control-btn" (click)="togglePlayPause()" [title]="isPlaying ? i18nStrings['playerPause'] : i18nStrings['playerPlay']">
             <i class="fas" [class.fa-pause]="isPlaying" [class.fa-play]="!isPlaying"></i>
           </button>
-          <button class="btn btn-sm mini-control-btn" (click)="showPlayer()" title="Show Player">
+          <button class="btn btn-sm mini-control-btn" (click)="showPlayer()" [title]="i18nStrings['playerShow']">
             <i class="fas fa-chevron-right"></i>
           </button>
         </div>

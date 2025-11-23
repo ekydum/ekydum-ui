@@ -5,7 +5,9 @@ import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 import { I18nService } from '../../i18n/services/i18n.service';
 import { LANG_CODE } from '../../i18n/models/lang-code.enum';
-import { interval, Subject, Subscription, switchMap, takeUntil } from 'rxjs';
+import { interval, Subject, Subscription, switchMap, takeUntil, tap } from 'rxjs';
+import { I18nDict, I18nLocalized, I18nMultilingual } from '../../i18n/models/dict.models';
+import { dict } from '../../i18n/dict/main.dict';
 
 // Fun animal names for generating random account names (like Google Docs)
 const ANIMAL_NAMES = [
@@ -36,9 +38,9 @@ const ADJECTIVES = [
         <div class="card-header">
           <div class="logo-section">
             <i class="fas fa-rocket me-2"></i>
-            <h2 class="mb-0">Quick Connect</h2>
+            <h2 class="mb-0">{{ i18nStrings['pageTitle'] }}</h2>
           </div>
-          <p class="subtitle">Connect to Ekydum server in seconds</p>
+          <p class="subtitle">{{ i18nStrings['subtitle'] }}</p>
 
           <!-- Language selector -->
           <div class="language-selector mt-3">
@@ -60,7 +62,7 @@ const ADJECTIVES = [
               <option [value]="LANG_CODE.vi">Tiếng Việt (VI)</option>
               <option [value]="LANG_CODE.zh">中文 (ZH)</option>
             </select>
-            <!-- All languages label -->
+            <!-- All languages label (static, multilingual) -->
             <div class="lang-label mt-2">
               Sprache | Language | Idioma | Langue | Bahasa | Lingua | 言語 | 언어 | Taal | Język | Idioma | Язык | Dil | Мова | Ngôn ngữ | 语言
             </div>
@@ -73,26 +75,23 @@ const ADJECTIVES = [
             <div class="waiting-animation">
               <i class="fas fa-hourglass-half fa-3x mb-3"></i>
             </div>
-            <h4 class="text-center mb-3">Waiting for Administrator Approval</h4>
-            <p class="text-center text-muted-custom mb-4">
-              Your connection request has been sent.<br>
-              An administrator needs to approve your account.
-            </p>
+            <h4 class="text-center mb-3">{{ i18nStrings['waitingTitle'] }}</h4>
+            <p class="text-center text-muted-custom mb-4" [innerHTML]="i18nStrings['waitingMessage']"></p>
 
             <div class="account-info-box">
               <div class="info-row">
-                <span class="info-label">Server:</span>
+                <span class="info-label">{{ i18nStrings['labelServer'] }}</span>
                 <span class="info-value">{{ selectedServer }}</span>
               </div>
               <div class="info-row">
-                <span class="info-label">Account Name:</span>
+                <span class="info-label">{{ i18nStrings['labelAccountName'] }}:</span>
                 <span class="info-value">{{ accountName }}</span>
               </div>
               <div class="info-row">
-                <span class="info-label">Status:</span>
+                <span class="info-label">{{ i18nStrings['labelStatus'] }}</span>
                 <span class="status-badge status-inactive">
                   <i class="fas fa-clock me-1"></i>
-                  Pending Approval
+                  {{ i18nStrings['statusPending'] }}
                 </span>
               </div>
             </div>
@@ -100,18 +99,18 @@ const ADJECTIVES = [
             <div class="d-flex gap-2 justify-content-center mt-4">
               <button class="btn btn-glass" (click)="checkStatusNow()">
                 <i class="fas fa-sync me-2"></i>
-                Check Now
+                {{ i18nStrings['btnCheckNow'] }}
               </button>
               <button class="btn btn-red-glass" (click)="cancelWaiting()">
                 <i class="fas fa-times me-2"></i>
-                Cancel
+                {{ i18nStrings['btnCancel'] }}
               </button>
             </div>
 
             <div class="polling-indicator mt-3 text-center">
               <small class="text-muted-custom">
                 <i class="fas fa-circle-notch fa-spin me-1"></i>
-                Auto-checking every 5 seconds...
+                {{ i18nStrings['autoChecking'] }}
               </small>
             </div>
           </div>
@@ -123,13 +122,13 @@ const ADJECTIVES = [
               <li class="nav-item">
                 <a class="nav-link" [class.active]="activeTab === 'new'" (click)="activeTab = 'new'">
                   <i class="fas fa-plus-circle me-2"></i>
-                  New Account
+                  {{ i18nStrings['tabNewAccount'] }}
                 </a>
               </li>
               <li class="nav-item">
                 <a class="nav-link" [class.active]="activeTab === 'existing'" (click)="activeTab = 'existing'">
                   <i class="fas fa-sign-in-alt me-2"></i>
-                  Existing Account
+                  {{ i18nStrings['tabExistingAccount'] }}
                 </a>
               </li>
             </ul>
@@ -138,7 +137,7 @@ const ADJECTIVES = [
             <div class="mb-4">
               <label class="form-label">
                 <i class="fas fa-server me-2"></i>
-                Select or Enter Server URL
+                {{ i18nStrings['labelServerUrl'] }}
               </label>
 
               <!-- Server Select Dropdown -->
@@ -148,7 +147,7 @@ const ADJECTIVES = [
                   [(ngModel)]="selectedServer"
                   [disabled]="connecting"
                   (change)="onServerSelectChange()">
-                  <option value="">-- Select from list --</option>
+                  <option value="">{{ i18nStrings['selectFromList'] }}</option>
                   <option *ngFor="let server of servers" [value]="server">
                     {{ server }}
                   </option>
@@ -164,7 +163,7 @@ const ADJECTIVES = [
                 placeholder="http://localhost:3000"
                 [disabled]="connecting">
               <small class="form-text text-muted-custom">
-                Choose from list or enter server URL manually
+                {{ i18nStrings['serverUrlHint'] }}
               </small>
             </div>
 
@@ -173,14 +172,14 @@ const ADJECTIVES = [
               <div class="mb-4">
                 <label class="form-label">
                   <i class="fas fa-user me-2"></i>
-                  Account Name
+                  {{ i18nStrings['labelAccountName'] }}
                 </label>
                 <div class="input-group">
                   <input
                     type="text"
                     class="form-control quick-input"
                     [(ngModel)]="accountName"
-                    placeholder="Enter account name"
+                    [placeholder]="i18nStrings['placeholderAccountName']"
                     [disabled]="connecting"
                     (keyup.enter)="connectNewAccount()"
                     pattern="[a-z0-9]+"
@@ -190,12 +189,12 @@ const ADJECTIVES = [
                     (click)="generateRandomName()"
                     [disabled]="connecting"
                     type="button"
-                    title="Generate random name">
+                    [title]="i18nStrings['titleGenerateRandom']">
                     <i class="fas fa-dice"></i>
                   </button>
                 </div>
                 <small class="form-text text-muted-custom">
-                  Lowercase letters and numbers only (e.g., {{ exampleName }})
+                  {{ getAccountNameHint() }}
                 </small>
               </div>
 
@@ -204,7 +203,7 @@ const ADJECTIVES = [
                 (click)="connectNewAccount()"
                 [disabled]="!canConnect() || connecting">
                 <i class="fas fa-plug me-2"></i>
-                {{ connecting ? 'Connecting...' : 'Connect' }}
+                {{ connecting ? i18nStrings['btnConnecting'] : i18nStrings['btnConnect'] }}
               </button>
             </div>
 
@@ -213,19 +212,17 @@ const ADJECTIVES = [
               <div class="mb-4">
                 <label class="form-label">
                   <i class="fas fa-user me-2"></i>
-                  Account Name
+                  {{ i18nStrings['labelAccountName'] }}
                 </label>
                 <input
                   type="text"
                   class="form-control quick-input"
                   [(ngModel)]="accountName"
-                  placeholder="Enter your account name"
+                  [placeholder]="i18nStrings['placeholderAccountName']"
                   [disabled]="connecting"
-                  (keyup.enter)="requestLogin()"
-                  pattern="[a-z0-9]+"
-                  maxlength="32">
+                  (keyup.enter)="requestLogin()">
                 <small class="form-text text-muted-custom">
-                  Enter the account name you want to access
+                  {{ getAccountNameHint() }}
                 </small>
               </div>
 
@@ -233,54 +230,13 @@ const ADJECTIVES = [
                 class="btn btn-primary-glass btn-lg w-100 mb-3"
                 (click)="requestLogin()"
                 [disabled]="!canConnect() || connecting">
-                <i class="fas fa-key me-2"></i>
-                {{ connecting ? 'Requesting...' : 'Request Access' }}
+                <i class="fas fa-sign-in-alt me-2"></i>
+                {{ connecting ? i18nStrings['btnRequesting'] : i18nStrings['btnRequestLogin'] }}
               </button>
-
-              <div class="info-box">
-                <div class="info-box-header">
-                  <i class="fas fa-info-circle me-2"></i>
-                  How it works
-                </div>
-                <ul class="info-list">
-                  <li>Enter your existing account name</li>
-                  <li>Click "Request Access"</li>
-                  <li>Wait for administrator approval</li>
-                  <li>You'll be automatically logged in</li>
-                </ul>
-              </div>
-            </div>
-
-            <!-- Info box for new account -->
-            <div *ngIf="activeTab === 'new'" class="info-box">
-              <div class="info-box-header">
-                <i class="fas fa-info-circle me-2"></i>
-                How it works
-              </div>
-              <ul class="info-list">
-                <li>Choose a server from the list or enter manually</li>
-                <li>Enter or generate a unique account name</li>
-                <li>Click Connect to send a connection request</li>
-                <li>Wait for administrator approval</li>
-                <li>Start using Ekydum!</li>
-              </ul>
-            </div>
-
-            <!-- Advanced settings link -->
-            <div class="text-center mt-3">
-              <a class="link-glass" routerLink="/settings">
-                <i class="fas fa-cog me-1"></i>
-                Advanced Settings
-              </a>
             </div>
           </div>
         </div>
       </div>
-
-      <!-- Decorative background elements -->
-      <div class="bg-decoration bg-decoration-1"></div>
-      <div class="bg-decoration bg-decoration-2"></div>
-      <div class="bg-decoration bg-decoration-3"></div>
     </div>
   `,
   styles: [`
@@ -290,104 +246,75 @@ const ADJECTIVES = [
       align-items: center;
       justify-content: center;
       padding: 20px;
-      position: relative;
-      overflow: hidden;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
     }
 
-    /* Background decorations */
-    .bg-decoration {
-      position: absolute;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(13, 110, 253, 0.15), transparent);
-      filter: blur(80px);
-      z-index: 0;
-    }
-
-    .bg-decoration-1 {
-      width: 600px;
-      height: 600px;
-      top: -200px;
-      right: -200px;
-    }
-
-    .bg-decoration-2 {
-      width: 400px;
-      height: 400px;
-      bottom: -100px;
-      left: -100px;
-      background: radial-gradient(circle, rgba(198, 17, 32, 0.1), transparent);
-    }
-
-    .bg-decoration-3 {
-      width: 500px;
-      height: 500px;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: radial-gradient(circle, rgba(25, 135, 84, 0.08), transparent);
-    }
-
-    /* Main card */
     .quick-connect-card {
-      background: rgba(26, 26, 26, 0.85);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(30px);
-      border-radius: 24px;
-      overflow: hidden;
-      max-width: 600px;
+      max-width: 500px;
       width: 100%;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-      position: relative;
-      z-index: 1;
+      background: rgba(26, 26, 26, 0.85);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      overflow: hidden;
     }
 
     .card-header {
-      background: rgba(13, 110, 253, 0.12);
-      border-bottom: 1px solid rgba(13, 110, 253, 0.25);
-      padding: 32px 32px 24px;
+      padding: 32px;
       text-align: center;
+      background: rgba(13, 110, 253, 0.05);
+      border-bottom: 1px solid rgba(13, 110, 253, 0.1);
     }
 
     .logo-section {
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 8px;
+      gap: 12px;
     }
 
     .logo-section i {
       font-size: 32px;
-      color: rgba(13, 110, 253, 1);
-      filter: drop-shadow(0 0 10px rgba(13, 110, 253, 0.5));
+      color: #4299e1;
     }
 
     .logo-section h2 {
       color: white;
       font-weight: 700;
-      font-size: 32px;
-      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+      font-size: 28px;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
 
     .subtitle {
       color: rgba(255, 255, 255, 0.7);
-      font-size: 16px;
       margin-bottom: 0;
+      font-size: 14px;
     }
 
-    /* Language selector */
     .language-selector {
-      max-width: 100%;
-      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
     }
 
     .lang-select {
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
       color: white;
-      backdrop-filter: blur(10px);
-      border-radius: 10px;
+      border-radius: 8px;
       padding: 8px 12px;
-      font-size: 14px;
+      max-width: 250px;
+      backdrop-filter: blur(10px);
+    }
+
+    .lang-select:focus {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(13, 110, 253, 0.5);
+      color: white;
+      box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
     }
 
     .lang-select option {
@@ -396,21 +323,23 @@ const ADJECTIVES = [
     }
 
     .lang-label {
-      color: rgba(255, 255, 255, 0.5);
       font-size: 11px;
+      color: rgba(255, 255, 255, 0.4);
       text-align: center;
+      max-width: 100%;
+      word-wrap: break-word;
       line-height: 1.4;
-      padding: 0 10px;
     }
 
     .card-body {
       padding: 32px;
     }
 
-    /* Tabs */
     .nav-tabs-glass {
-      border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       margin-bottom: 24px;
+      display: flex;
+      gap: 0;
     }
 
     .nav-tabs-glass .nav-item {
@@ -420,98 +349,64 @@ const ADJECTIVES = [
     .nav-tabs-glass .nav-link {
       background: transparent;
       border: none;
-      color: rgba(255, 255, 255, 0.6);
-      padding: 12px 20px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
       border-bottom: 2px solid transparent;
-      margin-bottom: -2px;
-      font-weight: 600;
+      color: rgba(255, 255, 255, 0.6);
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .nav-tabs-glass .nav-link:hover {
-      color: rgba(255, 255, 255, 0.9);
+      color: white;
       background: rgba(255, 255, 255, 0.05);
     }
 
     .nav-tabs-glass .nav-link.active {
-      color: rgba(13, 110, 253, 1);
-      border-bottom-color: rgba(13, 110, 253, 1);
+      color: #4299e1;
+      border-bottom-color: #4299e1;
       background: rgba(13, 110, 253, 0.1);
     }
 
-    /* Form controls */
     .form-label {
-      color: rgba(255, 255, 255, 0.95);
-      font-weight: 600;
-      margin-bottom: 10px;
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 500;
+      margin-bottom: 8px;
       display: block;
     }
 
-    .quick-input,
-    .form-select {
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+    .quick-input, .server-select {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
       color: white;
       backdrop-filter: blur(10px);
-      border-radius: 12px;
-      padding: 14px 16px;
-      font-size: 15px;
-      transition: all 0.3s ease;
+      border-radius: 10px;
+      padding: 12px 16px;
+      transition: all 0.2s ease;
     }
 
     .quick-input::placeholder {
       color: rgba(255, 255, 255, 0.4);
     }
 
-    .quick-input:focus,
-    .form-select:focus {
-      background: rgba(255, 255, 255, 0.1);
-      border-color: rgba(13, 110, 253, 0.6);
+    .quick-input:focus, .server-select:focus {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(13, 110, 253, 0.5);
       color: white;
-      box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.2);
+      box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
       outline: 0;
     }
 
-    .quick-input:disabled,
-    .form-select:disabled {
+    .quick-input:disabled, .server-select:disabled {
       opacity: 0.5;
       cursor: not-allowed;
     }
 
-    .form-select option {
-      background: #1a1a1a;
-      color: white;
-    }
-
-    /* Server select with icon */
     .server-select-wrapper {
       position: relative;
-    }
-
-    .server-select {
-      background: rgba(13, 110, 253, 0.15);
-      border: 1px solid rgba(13, 110, 253, 0.3);
-      color: white;
-      backdrop-filter: blur(10px);
-      border-radius: 12px;
-      padding: 14px 40px 14px 16px;
-      font-size: 15px;
-      transition: all 0.3s ease;
-      appearance: none;
-      cursor: pointer;
-    }
-
-    .server-select:hover:not(:disabled) {
-      background: rgba(13, 110, 253, 0.25);
-      border-color: rgba(13, 110, 253, 0.5);
-    }
-
-    .server-select:focus {
-      background: rgba(13, 110, 253, 0.25);
-      border-color: rgba(13, 110, 253, 0.6);
-      box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.2);
     }
 
     .select-icon {
@@ -519,19 +414,21 @@ const ADJECTIVES = [
       right: 16px;
       top: 50%;
       transform: translateY(-50%);
-      color: rgba(255, 255, 255, 0.6);
+      color: rgba(255, 255, 255, 0.5);
       pointer-events: none;
-      font-size: 14px;
     }
 
-    .text-muted-custom {
-      color: rgba(255, 255, 255, 0.55);
-      font-size: 13px;
-      margin-top: 6px;
-      display: block;
+    .server-select {
+      appearance: none;
+      padding-right: 40px;
+      width: 100%;
     }
 
-    /* Input group */
+    .server-select option {
+      background: #1a1a1a;
+      color: white;
+    }
+
     .input-group {
       display: flex;
       gap: 8px;
@@ -541,23 +438,21 @@ const ADJECTIVES = [
       flex: 1;
     }
 
-    /* Buttons */
     .btn-glass-outline {
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
       color: white;
       backdrop-filter: blur(10px);
-      border-radius: 12px;
-      padding: 14px 20px;
-      transition: all 0.3s ease;
+      border-radius: 10px;
+      padding: 12px 16px;
+      transition: all 0.2s ease;
     }
 
     .btn-glass-outline:hover:not(:disabled) {
-      background: rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.1);
       border-color: rgba(255, 255, 255, 0.3);
       color: white;
       transform: translateY(-2px);
-      box-shadow: 0 4px 16px rgba(255, 255, 255, 0.15);
     }
 
     .btn-glass-outline:disabled {
@@ -565,139 +460,53 @@ const ADJECTIVES = [
       cursor: not-allowed;
     }
 
+    .text-muted-custom {
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 0.875rem;
+    }
+
     .btn-primary-glass {
-      background: linear-gradient(135deg, rgba(13, 110, 253, 0.3), rgba(13, 110, 253, 0.2));
-      border: 1px solid rgba(13, 110, 253, 0.5);
+      background: rgba(13, 110, 253, 0.2);
+      border: 1px solid rgba(13, 110, 253, 0.4);
       color: white;
       backdrop-filter: blur(10px);
-      font-weight: 700;
-      font-size: 16px;
       border-radius: 12px;
-      padding: 16px;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 20px rgba(13, 110, 253, 0.3);
+      padding: 14px 24px;
+      font-weight: 600;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .btn-primary-glass:hover:not(:disabled) {
-      background: linear-gradient(135deg, rgba(13, 110, 253, 0.4), rgba(13, 110, 253, 0.3));
-      border-color: rgba(13, 110, 253, 0.7);
+      background: rgba(13, 110, 253, 0.3);
+      border-color: rgba(13, 110, 253, 0.6);
       color: white;
-      transform: translateY(-3px);
-      box-shadow: 0 6px 30px rgba(13, 110, 253, 0.5);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(13, 110, 253, 0.4);
     }
 
     .btn-primary-glass:disabled {
       opacity: 0.5;
       cursor: not-allowed;
-      transform: none;
     }
 
-    .btn-glass {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: white;
-      backdrop-filter: blur(10px);
-      border-radius: 10px;
-      padding: 10px 20px;
-      transition: all 0.2s ease;
-      font-weight: 600;
-    }
-
-    .btn-glass:hover {
-      background: rgba(255, 255, 255, 0.15);
-      border-color: rgba(255, 255, 255, 0.3);
-      color: white;
-      transform: translateY(-2px);
-    }
-
-    .btn-red-glass {
-      background: rgba(198, 17, 32, 0.15);
-      border: 1px solid rgba(198, 17, 32, 0.3);
-      color: white;
-      backdrop-filter: blur(10px);
-      border-radius: 10px;
-      padding: 10px 20px;
-      transition: all 0.2s ease;
-      font-weight: 600;
-    }
-
-    .btn-red-glass:hover {
-      background: rgba(198, 17, 32, 0.25);
-      border-color: rgba(198, 17, 32, 0.5);
-      color: white;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 16px rgba(198, 17, 32, 0.4);
-    }
-
-    /* Info box */
-    .info-box {
-      background: rgba(13, 110, 253, 0.08);
-      border: 1px solid rgba(13, 110, 253, 0.2);
-      backdrop-filter: blur(10px);
-      border-radius: 12px;
-      padding: 16px;
-    }
-
-    .info-box-header {
-      color: rgba(255, 255, 255, 0.95);
-      font-weight: 600;
-      margin-bottom: 12px;
-      font-size: 14px;
-    }
-
-    .info-list {
-      margin: 0;
-      padding-left: 20px;
-      color: rgba(255, 255, 255, 0.75);
-      font-size: 13px;
-    }
-
-    .info-list li {
-      margin-bottom: 6px;
-    }
-
-    .info-list li:last-child {
-      margin-bottom: 0;
-    }
-
-    /* Link */
-    .link-glass {
-      color: rgba(13, 110, 253, 0.9);
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 14px;
-      transition: all 0.2s ease;
-    }
-
-    .link-glass:hover {
-      color: rgba(13, 110, 253, 1);
-      text-decoration: underline;
-    }
-
-    /* Waiting section */
     .waiting-section {
-      padding: 20px 0;
+      text-align: center;
     }
 
     .waiting-animation {
-      text-align: center;
-      animation: pulse 2s ease-in-out infinite;
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
     }
 
     .waiting-animation i {
-      color: rgba(13, 110, 253, 0.8);
-      filter: drop-shadow(0 0 15px rgba(13, 110, 253, 0.5));
+      color: #4299e1;
+      animation: hourglass-rotate 2s infinite;
     }
 
-    @keyframes pulse {
-      0%, 100% {
-        opacity: 1;
-        transform: scale(1);
-      }
-      50% {
-        opacity: 0.6;
-        transform: scale(1.1);
-      }
+    @keyframes hourglass-rotate {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(180deg); }
     }
 
     .waiting-section h4 {
@@ -706,11 +515,11 @@ const ADJECTIVES = [
     }
 
     .account-info-box {
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
       border-radius: 12px;
       padding: 20px;
+      margin: 20px 0;
     }
 
     .info-row {
@@ -727,85 +536,89 @@ const ADJECTIVES = [
 
     .info-label {
       color: rgba(255, 255, 255, 0.6);
-      font-weight: 500;
       font-size: 14px;
     }
 
     .info-value {
       color: white;
-      font-weight: 600;
-      font-size: 14px;
+      font-weight: 500;
     }
 
     .status-badge {
-      display: inline-flex;
-      align-items: center;
       padding: 6px 12px;
-      border-radius: 8px;
+      border-radius: 20px;
       font-size: 13px;
       font-weight: 600;
+      display: inline-flex;
+      align-items: center;
     }
 
     .status-inactive {
       background: rgba(255, 193, 7, 0.15);
+      color: #ffc107;
       border: 1px solid rgba(255, 193, 7, 0.3);
-      color: rgba(255, 193, 7, 1);
+    }
+
+    .btn-glass {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: white;
+      backdrop-filter: blur(10px);
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .btn-glass:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.3);
+      color: white;
+      transform: translateY(-2px);
+    }
+
+    .btn-red-glass {
+      background: rgba(198, 17, 32, 0.15);
+      border: 1px solid rgba(198, 17, 32, 0.3);
+      color: white;
+      backdrop-filter: blur(10px);
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .btn-red-glass:hover {
+      background: rgba(198, 17, 32, 0.25);
+      border-color: rgba(198, 17, 32, 0.5);
+      color: white;
+      transform: translateY(-2px);
     }
 
     .polling-indicator {
-      animation: fadeInOut 2s ease-in-out infinite;
+      color: rgba(255, 255, 255, 0.5);
     }
 
-    @keyframes fadeInOut {
-      0%, 100% {
-        opacity: 0.6;
-      }
-      50% {
-        opacity: 1;
-      }
-    }
-
-    /* Responsive */
-    @media (max-width: 576px) {
-      .quick-connect-card {
-        border-radius: 16px;
-      }
-
-      .card-header {
-        padding: 24px 20px 20px;
-      }
-
-      .card-body {
-        padding: 24px 20px;
-      }
-
-      .logo-section h2 {
-        font-size: 24px;
-      }
-
-      .logo-section i {
-        font-size: 24px;
-      }
-
-      .lang-label {
-        font-size: 10px;
-      }
+    .polling-indicator i {
+      color: #4299e1;
     }
   `]
 })
-export class QuickConnectComponent implements OnInit, OnDestroy {
+export class QuickConnectComponent implements I18nMultilingual, OnInit, OnDestroy {
+  readonly i18nDict: I18nDict = dict['quickConnect'];
+  i18nStrings: I18nLocalized = {};
+
   readonly LANG_CODE = LANG_CODE;
 
-  servers: string[] = [];
+  activeTab: 'new' | 'existing' = 'new';
   selectedServer = '';
   accountName = '';
-  exampleName = '';
   connecting = false;
   waitingForApproval = false;
-  activeTab: 'new' | 'existing' = 'new';
+  exampleName = '';
   lang: LANG_CODE = LANG_CODE.en;
 
-  // For login request flow
+  servers: string[] = [];
   loginRequestId?: string;
 
   private statusCheckSubscription?: Subscription;
@@ -816,42 +629,53 @@ export class QuickConnectComponent implements OnInit, OnDestroy {
     private auth: AuthService,
     private toast: ToastService,
     private router: Router,
-    private i18nService: I18nService
+    private i18nService: I18nService,
   ) {}
 
-  async ngOnInit(): Promise<void> {
-    // Load servers from config
-    await this.loadServers();
+  ngOnInit(): void {
+    this.i18nService.translate(this.i18nDict).pipe(
+      takeUntil(this.alive$),
+      tap((localized) => {
+        this.lang = this.i18nService.lang;
+        this.i18nStrings = localized;
+      })
+    ).subscribe();
 
-    // Load language
+    // Get current language
     this.lang = this.i18nService.lang;
 
-    // Check if already waiting for approval
+    this.exampleName = this.generateName();
+    this.accountName = this.generateName();
+    this.loadServers();
+
+    // Check if user is already waiting for approval
     if (this.auth.isWaitingForApproval()) {
       const savedServer = this.auth.getServerUrl();
       const savedToken = this.auth.getAccountToken();
 
       if (savedServer && savedToken) {
         this.selectedServer = savedServer;
-        this.accountName = '';
         this.waitingForApproval = true;
-        this.startStatusPolling();
-      } else {
-        this.auth.clearWaitingForApproval();
+
+        // Try to get account info to retrieve account name
+        this.api.getMe().subscribe({
+          next: (data) => {
+            this.accountName = data.name || '';
+            this.startStatusPolling();
+          },
+          error: () => {
+            this.accountName = '';
+            this.startStatusPolling();
+          }
+        });
       }
     }
-
-    // Generate example name
-    this.exampleName = this.generateName();
-
-    // Generate initial name for user
-    this.generateRandomName();
   }
 
   ngOnDestroy(): void {
+    this.stopStatusPolling();
     this.alive$.next();
     this.alive$.complete();
-    this.stopStatusPolling();
   }
 
   async loadServers(): Promise<void> {
@@ -898,9 +722,14 @@ export class QuickConnectComponent implements OnInit, OnDestroy {
     );
   }
 
+  getAccountNameHint(): string {
+    const hint = this.i18nStrings['accountNameHint'] || 'Lowercase letters and numbers only (e.g., {name})';
+    return hint.replace('{name}', this.exampleName);
+  }
+
   connectNewAccount(): void {
     if (!this.canConnect()) {
-      this.toast.error('Please fill in all fields correctly');
+      this.toast.error(this.i18nStrings['toastFillFields'] || 'Please fill in all fields correctly');
       return;
     }
 
@@ -915,7 +744,7 @@ export class QuickConnectComponent implements OnInit, OnDestroy {
         this.connecting = false;
         this.waitingForApproval = true;
 
-        this.toast.success('Connection request sent!');
+        this.toast.success(this.i18nStrings['toastConnectionSent'] || 'Connection request sent!');
         this.startStatusPolling();
       },
       error: () => {
@@ -926,7 +755,7 @@ export class QuickConnectComponent implements OnInit, OnDestroy {
 
   requestLogin(): void {
     if (!this.canConnect()) {
-      this.toast.error('Please fill in all fields correctly');
+      this.toast.error(this.i18nStrings['toastFillFields'] || 'Please fill in all fields correctly');
       return;
     }
 
@@ -939,7 +768,7 @@ export class QuickConnectComponent implements OnInit, OnDestroy {
         this.connecting = false;
         this.waitingForApproval = true;
 
-        this.toast.success('Login request sent!');
+        this.toast.success(this.i18nStrings['toastLoginSent'] || 'Login request sent!');
         this.startLoginRequestPolling();
       },
       error: () => {
@@ -962,14 +791,14 @@ export class QuickConnectComponent implements OnInit, OnDestroy {
         if (data.status === 2) {
           this.auth.clearWaitingForApproval();
           this.stopStatusPolling();
-          this.toast.success('Account approved! Welcome to Ekydum!');
+          this.toast.success(this.i18nStrings['toastApproved'] || 'Account approved! Welcome to Ekydum!');
           this.router.navigate(['/subscriptions']);
         } else if (data.status === 3) {
           this.auth.clearWaitingForApproval();
           this.auth.clearAccountToken();
           this.stopStatusPolling();
           this.waitingForApproval = false;
-          this.toast.error('Your account has been blocked by administrator');
+          this.toast.error(this.i18nStrings['toastBlocked'] || 'Your account has been blocked by administrator');
         }
       },
       error: () => {
@@ -994,13 +823,13 @@ export class QuickConnectComponent implements OnInit, OnDestroy {
         if (data.status === 'approved' && data.token) {
           this.auth.setAccountToken(data.token);
           this.stopStatusPolling();
-          this.toast.success('Login approved! Welcome to Ekydum!');
+          this.toast.success(this.i18nStrings['toastLoginApproved'] || 'Login approved! Welcome to Ekydum!');
           this.router.navigate(['/subscriptions']);
         } else if (data.status === 'denied') {
           this.stopStatusPolling();
           this.waitingForApproval = false;
           this.loginRequestId = undefined;
-          this.toast.error('Login request was denied by administrator');
+          this.toast.error(this.i18nStrings['toastLoginDenied'] || 'Login request was denied by administrator');
         }
       },
       error: () => {
@@ -1024,15 +853,15 @@ export class QuickConnectComponent implements OnInit, OnDestroy {
           if (data.status === 'approved' && data.token) {
             this.auth.setAccountToken(data.token);
             this.stopStatusPolling();
-            this.toast.success('Login approved! Welcome to Ekydum!');
+            this.toast.success(this.i18nStrings['toastLoginApproved'] || 'Login approved! Welcome to Ekydum!');
             this.router.navigate(['/subscriptions']);
           } else if (data.status === 'denied') {
             this.stopStatusPolling();
             this.waitingForApproval = false;
             this.loginRequestId = undefined;
-            this.toast.error('Login request was denied');
+            this.toast.error(this.i18nStrings['toastLoginDeniedShort'] || 'Login request was denied');
           } else {
-            this.toast.info('Still waiting for approval...');
+            this.toast.info(this.i18nStrings['toastStillWaiting'] || 'Still waiting for approval...');
           }
         }
       });
@@ -1043,16 +872,16 @@ export class QuickConnectComponent implements OnInit, OnDestroy {
           if (data.status === 2) {
             this.auth.clearWaitingForApproval();
             this.stopStatusPolling();
-            this.toast.success('Account approved! Welcome to Ekydum!');
+            this.toast.success(this.i18nStrings['toastApproved'] || 'Account approved! Welcome to Ekydum!');
             this.router.navigate(['/subscriptions']);
           } else if (data.status === 3) {
             this.auth.clearWaitingForApproval();
             this.auth.clearAccountToken();
             this.stopStatusPolling();
             this.waitingForApproval = false;
-            this.toast.error('Your account has been blocked');
+            this.toast.error(this.i18nStrings['toastAccountBlocked'] || 'Your account has been blocked');
           } else {
-            this.toast.info('Still waiting for approval...');
+            this.toast.info(this.i18nStrings['toastStillWaiting'] || 'Still waiting for approval...');
           }
         }
       });
@@ -1065,13 +894,13 @@ export class QuickConnectComponent implements OnInit, OnDestroy {
     this.auth.clearAccountToken();
     this.waitingForApproval = false;
     this.loginRequestId = undefined;
-    this.toast.info('Connection cancelled');
+    this.toast.info(this.i18nStrings['toastCancelled'] || 'Connection cancelled');
   }
 
   updateLang(): void {
     if (this.lang) {
       this.i18nService.setLang(this.lang);
-      this.toast.success('Language updated');
+      this.toast.success(this.i18nStrings['toastLanguageUpdated'] || 'Language updated');
     }
   }
 }

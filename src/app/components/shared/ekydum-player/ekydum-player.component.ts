@@ -287,7 +287,7 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
   }
 
   private getProxiedManifestUrl(url: string): string {
-    return `${this.SERVER_URL}/hls/m3u8?url=${encodeURIComponent(url)}&token=${this.auth.getAccountToken()}`;
+    return `${this.SERVER_URL}/relay/hls/manifest?url=${encodeURIComponent(url)}&token=${this.auth.getAccountToken()}`;
   }
 
   private capturePlayerState() {

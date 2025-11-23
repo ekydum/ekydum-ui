@@ -60,6 +60,10 @@ const ADJECTIVES = [
               <option [value]="LANG_CODE.vi">Tiếng Việt (VI)</option>
               <option [value]="LANG_CODE.zh">中文 (ZH)</option>
             </select>
+            <!-- All languages label -->
+            <div class="lang-label mt-2">
+              Sprache | Language | Idioma | Langue | Bahasa | Lingua | 言語 | 언어 | Taal | Język | Idioma | Язык | Dil | Мова | Ngôn ngữ | 语言
+            </div>
           </div>
         </div>
 
@@ -136,17 +140,23 @@ const ADJECTIVES = [
                 <i class="fas fa-server me-2"></i>
                 Select or Enter Server URL
               </label>
-              <select
-                *ngIf="servers.length > 0"
-                class="form-select quick-input mb-2"
-                [(ngModel)]="selectedServer"
-                [disabled]="connecting"
-                (change)="onServerSelectChange()">
-                <option value="">-- Select from list --</option>
-                <option *ngFor="let server of servers" [value]="server">
-                  {{ server }}
-                </option>
-              </select>
+
+              <!-- Server Select Dropdown -->
+              <div *ngIf="servers.length > 0" class="server-select-wrapper mb-2">
+                <select
+                  class="form-select server-select"
+                  [(ngModel)]="selectedServer"
+                  [disabled]="connecting"
+                  (change)="onServerSelectChange()">
+                  <option value="">-- Select from list --</option>
+                  <option *ngFor="let server of servers" [value]="server">
+                    {{ server }}
+                  </option>
+                </select>
+                <i class="fas fa-chevron-down select-icon"></i>
+              </div>
+
+              <!-- Server Text Input -->
               <input
                 type="text"
                 class="form-control quick-input"
@@ -366,7 +376,7 @@ const ADJECTIVES = [
 
     /* Language selector */
     .language-selector {
-      max-width: 300px;
+      max-width: 100%;
       margin: 0 auto;
     }
 
@@ -383,6 +393,14 @@ const ADJECTIVES = [
     .lang-select option {
       background: #1a1a1a;
       color: white;
+    }
+
+    .lang-label {
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 11px;
+      text-align: center;
+      line-height: 1.4;
+      padding: 0 10px;
     }
 
     .card-body {
@@ -465,6 +483,45 @@ const ADJECTIVES = [
     .form-select option {
       background: #1a1a1a;
       color: white;
+    }
+
+    /* Server select with icon */
+    .server-select-wrapper {
+      position: relative;
+    }
+
+    .server-select {
+      background: rgba(13, 110, 253, 0.15);
+      border: 1px solid rgba(13, 110, 253, 0.3);
+      color: white;
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 14px 40px 14px 16px;
+      font-size: 15px;
+      transition: all 0.3s ease;
+      appearance: none;
+      cursor: pointer;
+    }
+
+    .server-select:hover:not(:disabled) {
+      background: rgba(13, 110, 253, 0.25);
+      border-color: rgba(13, 110, 253, 0.5);
+    }
+
+    .server-select:focus {
+      background: rgba(13, 110, 253, 0.25);
+      border-color: rgba(13, 110, 253, 0.6);
+      box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.2);
+    }
+
+    .select-icon {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: rgba(255, 255, 255, 0.6);
+      pointer-events: none;
+      font-size: 14px;
     }
 
     .text-muted-custom {
@@ -728,6 +785,10 @@ const ADJECTIVES = [
 
       .logo-section i {
         font-size: 24px;
+      }
+
+      .lang-label {
+        font-size: 10px;
       }
     }
   `]

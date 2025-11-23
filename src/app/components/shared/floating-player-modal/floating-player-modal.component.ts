@@ -37,6 +37,30 @@ import { dict } from '../../../i18n/dict/main.dict';
             {{ currentVideo?.title || i18nStrings['nowPlaying'] }}
           </div>
 
+          <!-- Feature buttons (Star, Watch Later) -->
+          <div class="feature-controls">
+            <button
+              class="btn btn-sm feature-btn"
+              (click)="toggleStar()"
+              [class.active]="isStarred"
+              [disabled]="starLoading"
+              title="Star"
+            >
+              <i class="fas fa-spinner fa-spin" *ngIf="starLoading"></i>
+              <i class="fas fa-star" *ngIf="!starLoading"></i>
+            </button>
+            <button
+              class="btn btn-sm feature-btn"
+              (click)="toggleWatchLater()"
+              [class.active]="isWatchLater"
+              [disabled]="watchLaterLoading"
+              title="Watch Later"
+            >
+              <i class="fas fa-spinner fa-spin" *ngIf="watchLaterLoading"></i>
+              <i class="fas fa-clock" *ngIf="!watchLaterLoading"></i>
+            </button>
+          </div>
+
           <!-- Playback controls (both modes) -->
           <div class="playback-controls">
             <button
@@ -280,6 +304,71 @@ import { dict } from '../../../i18n/dict/main.dict';
       margin-right: 12px;
     }
 
+    /* Feature controls (Star, Watch Later) */
+    .feature-controls {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-left: 16px;
+    }
+
+    .player-container.mode-minimized .feature-controls {
+      display: none; /* Hide in minimized mode to save space */
+    }
+
+    .feature-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: white;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      backdrop-filter: blur(10px);
+      position: relative;
+    }
+
+    .feature-btn:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .feature-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Star button active state */
+    .feature-btn:nth-child(1).active {
+      background: rgba(255, 215, 0, 0.2);
+      border-color: rgba(255, 215, 0, 0.4);
+      color: #ffd700;
+    }
+
+    .feature-btn:nth-child(1).active:hover:not(:disabled) {
+      background: rgba(255, 215, 0, 0.3);
+      border-color: rgba(255, 215, 0, 0.5);
+      box-shadow: 0 4px 16px rgba(255, 215, 0, 0.4);
+    }
+
+    /* Watch Later button active state */
+    .feature-btn:nth-child(2).active {
+      background: rgba(59, 130, 246, 0.2);
+      border-color: rgba(59, 130, 246, 0.4);
+      color: #3b82f6;
+    }
+
+    .feature-btn:nth-child(2).active:hover:not(:disabled) {
+      background: rgba(59, 130, 246, 0.3);
+      border-color: rgba(59, 130, 246, 0.5);
+      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+    }
+
     .control-btn {
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -481,6 +570,12 @@ export class FloatingPlayerModalComponent implements I18nMultilingual, OnInit, O
   hasPrevious = false;
   queueLength = 0;
 
+  isStarred = false;
+  starLoading = false;
+
+  isWatchLater = false;
+  watchLaterLoading = false;
+
   private currentVideoId = '';
   private loadingSubscription?: any;
 
@@ -518,6 +613,8 @@ export class FloatingPlayerModalComponent implements I18nMultilingual, OnInit, O
         }
 
         this.loadVideoInfo(this.currentVideoId);
+        this.checkStarred();
+        this.checkWatchLater();
       }
     });
 
@@ -544,13 +641,7 @@ export class FloatingPlayerModalComponent implements I18nMultilingual, OnInit, O
       this.queueLength = queue.length;
       this.hasNext = this.playerService.hasNext;
       this.hasPrevious = this.playerService.hasPrevious;
-
-      // Auto-show/hide queue based on length
-      if (queue.length <= 1) {
-        this.showQueue = false;
-      } else {
-        this.showQueue = true;
-      }
+      this.showQueue = queue.length > 1;
     });
 
     this.playerService.currentIndex$
@@ -617,6 +708,114 @@ export class FloatingPlayerModalComponent implements I18nMultilingual, OnInit, O
 
   previous(): void {
     this.playerService.previous();
+  }
+
+  checkStarred(): void {
+    this.isStarred = false;
+    if (this.currentVideo) {
+      var vidId = this.currentVideoId;
+      this.api.checkStarred(vidId).subscribe({
+        next: (data) => {
+          if (this.currentVideoId === vidId) {
+            this.isStarred = data?.starred || false;
+          }
+        }
+      });
+    }
+  }
+
+  checkWatchLater(): void {
+    this.isWatchLater = false;
+    if (this.currentVideo) {
+      var vidId = this.currentVideoId;
+      this.api.checkWatchLater(vidId).subscribe({
+        next: (data) => {
+          if (this.currentVideoId === vidId) {
+            this.isWatchLater = data?.watch_later || false;
+          }
+        }
+      });
+    }
+  }
+
+  toggleStar(): void {
+    var v = this.currentVideo;
+    if (v) {
+      var vidId = this.currentVideoId;
+      this.starLoading = true;
+      if (this.isStarred) {
+        this.api.removeStarred(vidId).subscribe({
+          next: () => {
+            if (this.currentVideoId === vidId) {
+              this.isStarred = false;
+            }
+            this.starLoading = false;
+          },
+          error: () => {
+            this.starLoading = false;
+          }
+        });
+      } else {
+        this.api.addStarred(
+          vidId,
+          v.title || '',
+          v.thumbnail || '',
+          v.duration || 0,
+          v.channel_id || '',
+          v.channel_name,
+        ).subscribe({
+          next: () => {
+            if (this.currentVideoId === vidId) {
+              this.isStarred = true;
+            }
+            this.starLoading = false;
+          },
+          error: () => {
+            this.starLoading = false;
+          }
+        });
+      }
+    }
+  }
+
+  toggleWatchLater(): void {
+    var v = this.currentVideo;
+    if (v) {
+      var vidId = this.currentVideoId;
+      this.watchLaterLoading = true;
+      if (this.isWatchLater) {
+        this.api.removeWatchLater(v.yt_video_id).subscribe({
+          next: () => {
+            if (this.currentVideoId === vidId) {
+              this.isWatchLater = false;
+            }
+            this.watchLaterLoading = false;
+          },
+          error: () => {
+            this.watchLaterLoading = false;
+          }
+        });
+      } else {
+        this.api.addWatchLater(
+          v.yt_video_id,
+          v.title || '',
+          v.thumbnail || '',
+          v.duration || 0,
+          v.channel_id || '',
+          v.channel_name || '',
+        ).subscribe({
+          next: () => {
+            if (this.currentVideoId === vidId) {
+              this.isWatchLater = true;
+            }
+            this.watchLaterLoading = false;
+          },
+          error: () => {
+            this.watchLaterLoading = false;
+          }
+        });
+      }
+    }
   }
 
   private loadVideoInfo(videoId: string): void {

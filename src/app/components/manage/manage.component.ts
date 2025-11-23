@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
+import { interval, Subject, Subscription, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-manage',
@@ -63,6 +64,63 @@ import { ToastService } from '../../services/toast.service';
       </div>
 
       <div *ngIf="isAdmin">
+        <!-- Login Requests Section -->
+        <div class="card settings-card mb-4" *ngIf="loginRequests.length > 0">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-no-select">
+              <i class="fas fa-key me-2"></i>
+              Login Requests
+              <span class="badge badge-warning ms-2">{{ loginRequests.length }}</span>
+            </h5>
+            <button class="btn btn-sm btn-glass" (click)="loadLoginRequests()">
+              <i class="fas fa-sync me-1"></i>
+              Refresh
+            </button>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-dark-glass">
+                <thead>
+                <tr class="text-no-select">
+                  <th>Account Name</th>
+                  <th>Time</th>
+                  <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr *ngFor="let request of loginRequests">
+                  <td>
+                    <strong>{{ request.account_name }}</strong>
+                  </td>
+                  <td>
+                    <small class="text-muted-custom">{{ formatElapsedTime(request.elapsed_seconds) }}</small>
+                  </td>
+                  <td>
+                    <div class="btn-group btn-group-sm">
+                      <button
+                        class="btn btn-success-glass"
+                        (click)="approveLoginRequest(request.request_id)"
+                        title="Approve">
+                        <i class="fas fa-check me-1"></i>
+                        Approve
+                      </button>
+                      <button
+                        class="btn btn-red-glass"
+                        (click)="denyLoginRequest(request.request_id)"
+                        title="Deny">
+                        <i class="fas fa-times me-1"></i>
+                        Deny
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Create Account Section -->
         <div class="card settings-card mb-4">
           <div class="card-header">
             <h5 class="mb-0 text-no-select">Create New Account</h5>
@@ -87,6 +145,7 @@ import { ToastService } from '../../services/toast.service';
           </div>
         </div>
 
+        <!-- Accounts Table -->
         <div class="card settings-card">
           <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0 text-no-select">Accounts</h5>
@@ -157,7 +216,6 @@ import { ToastService } from '../../services/toast.service';
                   </td>
                   <td>
                     <div class="btn-group btn-group-sm" *ngIf="editingId !== account.id">
-                      <!-- Status toggle buttons -->
                       <button
                         class="btn btn-success-glass"
                         (click)="approveAccount(account.id)"
@@ -172,7 +230,6 @@ import { ToastService } from '../../services/toast.service';
                         title="Block">
                         <i class="fas fa-ban"></i>
                       </button>
-                      <!-- Other actions -->
                       <button class="btn btn-blue-glass" (click)="startEdit(account)" title="Edit name">
                         <i class="fas fa-edit"></i>
                       </button>
@@ -205,7 +262,6 @@ import { ToastService } from '../../services/toast.service';
       text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     }
 
-    /* Settings Card */
     .settings-card {
       background: rgba(26, 26, 26, 0.8);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -230,7 +286,6 @@ import { ToastService } from '../../services/toast.service';
       padding: 20px;
     }
 
-    /* Form Controls */
     .form-label {
       color: rgba(255, 255, 255, 0.9);
       font-weight: 500;
@@ -269,7 +324,6 @@ import { ToastService } from '../../services/toast.service';
       font-size: 0.875rem;
     }
 
-    /* Buttons */
     .btn-glass {
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(255, 255, 255, 0.15);
@@ -389,7 +443,16 @@ import { ToastService } from '../../services/toast.service';
       cursor: not-allowed;
     }
 
-    /* Status badges */
+    .badge-warning {
+      background: rgba(255, 193, 7, 0.2);
+      border: 1px solid rgba(255, 193, 7, 0.3);
+      color: rgba(255, 193, 7, 1);
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
     .status-badge {
       display: inline-flex;
       align-items: center;
@@ -419,7 +482,6 @@ import { ToastService } from '../../services/toast.service';
       color: rgba(198, 17, 32, 1);
     }
 
-    /* Table */
     .table-dark-glass {
       --bs-table-bg: transparent;
       --bs-table-striped-bg: rgba(0, 0, 0, 0.2);
@@ -468,12 +530,10 @@ import { ToastService } from '../../services/toast.service';
       font-family: 'Courier New', monospace;
     }
 
-    /* Spinner */
     .spinner-custom {
       color: rgba(13, 110, 253, 0.8);
     }
 
-    /* Alerts */
     .alert-custom {
       background: rgba(26, 26, 26, 0.8);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -495,16 +555,20 @@ import { ToastService } from '../../services/toast.service';
     }
   `]
 })
-export class ManageComponent implements OnInit {
+export class ManageComponent implements OnInit, OnDestroy {
   serverUrl = 'http://localhost:3000';
   adminToken = '';
   isAdmin = false;
   accounts: any[] = [];
+  loginRequests: any[] = [];
   loading = false;
   creating = false;
   newAccountName = '';
   editingId: string | null = null;
   editingName = '';
+
+  private autoRefreshSubscription?: Subscription;
+  private alive$ = new Subject<void>();
 
   constructor(
     private api: ApiService,
@@ -523,6 +587,35 @@ export class ManageComponent implements OnInit {
       this.adminToken = savedToken;
       this.isAdmin = true;
       this.loadAccounts();
+      this.loadLoginRequests();
+      this.startAutoRefresh();
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.alive$.next();
+    this.alive$.complete();
+    this.stopAutoRefresh();
+  }
+
+  startAutoRefresh(): void {
+    this.stopAutoRefresh();
+
+    // Refresh every 8 seconds
+    this.autoRefreshSubscription = interval(8000)
+    .pipe(takeUntil(this.alive$))
+    .subscribe(() => {
+      if (this.isAdmin) {
+        this.loadAccounts();
+        this.loadLoginRequests();
+      }
+    });
+  }
+
+  stopAutoRefresh(): void {
+    if (this.autoRefreshSubscription) {
+      this.autoRefreshSubscription.unsubscribe();
+      this.autoRefreshSubscription = undefined;
     }
   }
 
@@ -545,6 +638,8 @@ export class ManageComponent implements OnInit {
         this.isAdmin = true;
         this.toast.success('Admin access granted');
         this.loadAccounts();
+        this.loadLoginRequests();
+        this.startAutoRefresh();
       },
       error: () => {
         this.auth.clearAdminToken();
@@ -559,6 +654,8 @@ export class ManageComponent implements OnInit {
     this.adminToken = '';
     this.isAdmin = false;
     this.accounts = [];
+    this.loginRequests = [];
+    this.stopAutoRefresh();
     this.toast.info('Admin logged out');
   }
 
@@ -571,6 +668,17 @@ export class ManageComponent implements OnInit {
       },
       error: () => {
         this.loading = false;
+      }
+    });
+  }
+
+  loadLoginRequests(): void {
+    this.api.getLoginRequests().subscribe({
+      next: (data) => {
+        this.loginRequests = data?.requests || [];
+      },
+      error: () => {
+        // Silent error
       }
     });
   }
@@ -677,5 +785,42 @@ export class ManageComponent implements OnInit {
         this.loadAccounts();
       }
     });
+  }
+
+  approveLoginRequest(requestId: string): void {
+    this.api.approveLoginRequest(requestId).subscribe({
+      next: () => {
+        this.toast.success('Login request approved');
+        this.loadLoginRequests();
+      }
+    });
+  }
+
+  denyLoginRequest(requestId: string): void {
+    if (!confirm('Are you sure you want to deny this login request?')) {
+      return;
+    }
+
+    this.api.denyLoginRequest(requestId).subscribe({
+      next: () => {
+        this.toast.success('Login request denied');
+        this.loadLoginRequests();
+      }
+    });
+  }
+
+  formatElapsedTime(seconds: number): string {
+    if (seconds < 60) {
+      return `${seconds}s ago`;
+    } else if (seconds < 3600) {
+      const minutes = Math.floor(seconds / 60);
+      return `${minutes}m ago`;
+    } else if (seconds < 86400) {
+      const hours = Math.floor(seconds / 3600);
+      return `${hours}h ago`;
+    } else {
+      const days = Math.floor(seconds / 86400);
+      return `${days}d ago`;
+    }
   }
 }

@@ -3,6 +3,8 @@ import { Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
+import { I18nService } from '../../i18n/services/i18n.service';
+import { LANG_CODE } from '../../i18n/models/lang-code.enum';
 import { interval, Subject, Subscription, switchMap, takeUntil } from 'rxjs';
 
 // Fun animal names for generating random account names (like Google Docs)
@@ -10,7 +12,7 @@ const ANIMAL_NAMES = [
   'tiger', 'lion', 'dolphin', 'eagle', 'wolf', 'fox', 'bear', 'shark',
   'falcon', 'hawk', 'owl', 'panther', 'jaguar', 'cheetah', 'leopard',
   'raven', 'phoenix', 'dragon', 'griffin', 'unicorn', 'pegasus',
-  'cobra', 'python', 'viper', 'cobra', 'mamba', 'anaconda',
+  'cobra', 'python', 'viper', 'mamba', 'anaconda',
   'octopus', 'whale', 'orca', 'seal', 'penguin', 'panda',
   'koala', 'kangaroo', 'gazelle', 'zebra', 'giraffe', 'rhino',
   'elephant', 'buffalo', 'bison', 'moose', 'elk', 'deer',
@@ -19,7 +21,7 @@ const ANIMAL_NAMES = [
 
 const ADJECTIVES = [
   'swift', 'brave', 'wild', 'wise', 'noble', 'fierce', 'silent', 'agile',
-  'mighty', 'swift', 'clever', 'bold', 'quick', 'strong', 'gentle',
+  'mighty', 'clever', 'bold', 'quick', 'strong', 'gentle',
   'curious', 'playful', 'fearless', 'cunning', 'loyal', 'proud',
   'majestic', 'elegant', 'graceful', 'powerful', 'stealthy', 'mysterious',
   'brilliant', 'daring', 'valiant', 'witty', 'charming', 'spirited'
@@ -37,6 +39,28 @@ const ADJECTIVES = [
             <h2 class="mb-0">Quick Connect</h2>
           </div>
           <p class="subtitle">Connect to Ekydum server in seconds</p>
+
+          <!-- Language selector -->
+          <div class="language-selector mt-3">
+            <select class="form-select lang-select" [(ngModel)]="lang" (change)="updateLang()">
+              <option [value]="LANG_CODE.de">Deutsch (DE)</option>
+              <option [value]="LANG_CODE.en">English (EN)</option>
+              <option [value]="LANG_CODE.es">Español (ES)</option>
+              <option [value]="LANG_CODE.fr">Français (FR)</option>
+              <option [value]="LANG_CODE.id">Indonesia (ID)</option>
+              <option [value]="LANG_CODE.it">Italiano (IT)</option>
+              <option [value]="LANG_CODE.ja">日本語 (JA)</option>
+              <option [value]="LANG_CODE.ko">한국어 (KO)</option>
+              <option [value]="LANG_CODE.nl">Nederlands (NL)</option>
+              <option [value]="LANG_CODE.pl">Polski (PL)</option>
+              <option [value]="LANG_CODE.pt">Português (PT)</option>
+              <option [value]="LANG_CODE.ru">Русский (RU)</option>
+              <option [value]="LANG_CODE.tr">Türkçe (TR)</option>
+              <option [value]="LANG_CODE.ua">Українська (UA)</option>
+              <option [value]="LANG_CODE.vi">Tiếng Việt (VI)</option>
+              <option [value]="LANG_CODE.zh">中文 (ZH)</option>
+            </select>
+          </div>
         </div>
 
         <div class="card-body">
@@ -90,72 +114,141 @@ const ADJECTIVES = [
 
           <!-- Connection form -->
           <div *ngIf="!waitingForApproval">
-            <!-- Server selection -->
+            <!-- Tabs -->
+            <ul class="nav nav-tabs-glass mb-4">
+              <li class="nav-item">
+                <a class="nav-link" [class.active]="activeTab === 'new'" (click)="activeTab = 'new'">
+                  <i class="fas fa-plus-circle me-2"></i>
+                  New Account
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" [class.active]="activeTab === 'existing'" (click)="activeTab = 'existing'">
+                  <i class="fas fa-sign-in-alt me-2"></i>
+                  Existing Account
+                </a>
+              </li>
+            </ul>
+
+            <!-- Server selection (common for both tabs) -->
             <div class="mb-4">
               <label class="form-label">
                 <i class="fas fa-server me-2"></i>
-                Select Server
+                Select or Enter Server URL
               </label>
               <select
-                class="form-select quick-input"
+                *ngIf="servers.length > 0"
+                class="form-select quick-input mb-2"
                 [(ngModel)]="selectedServer"
-                [disabled]="connecting">
+                [disabled]="connecting"
+                (change)="onServerSelectChange()">
+                <option value="">-- Select from list --</option>
                 <option *ngFor="let server of servers" [value]="server">
                   {{ server }}
                 </option>
               </select>
+              <input
+                type="text"
+                class="form-control quick-input"
+                [(ngModel)]="selectedServer"
+                placeholder="http://localhost:3000"
+                [disabled]="connecting">
               <small class="form-text text-muted-custom">
-                Choose the Ekydum server you want to connect to
+                Choose from list or enter server URL manually
               </small>
             </div>
 
-            <!-- Account name -->
-            <div class="mb-4">
-              <label class="form-label">
-                <i class="fas fa-user me-2"></i>
-                Account Name
-              </label>
-              <div class="input-group">
+            <!-- Tab: New Account -->
+            <div *ngIf="activeTab === 'new'">
+              <div class="mb-4">
+                <label class="form-label">
+                  <i class="fas fa-user me-2"></i>
+                  Account Name
+                </label>
+                <div class="input-group">
+                  <input
+                    type="text"
+                    class="form-control quick-input"
+                    [(ngModel)]="accountName"
+                    placeholder="Enter account name"
+                    [disabled]="connecting"
+                    (keyup.enter)="connectNewAccount()"
+                    pattern="[a-z0-9]+"
+                    maxlength="32">
+                  <button
+                    class="btn btn-glass-outline"
+                    (click)="generateRandomName()"
+                    [disabled]="connecting"
+                    type="button"
+                    title="Generate random name">
+                    <i class="fas fa-dice"></i>
+                  </button>
+                </div>
+                <small class="form-text text-muted-custom">
+                  Lowercase letters and numbers only (e.g., {{ exampleName }})
+                </small>
+              </div>
+
+              <button
+                class="btn btn-primary-glass btn-lg w-100 mb-3"
+                (click)="connectNewAccount()"
+                [disabled]="!canConnect() || connecting">
+                <i class="fas fa-plug me-2"></i>
+                {{ connecting ? 'Connecting...' : 'Connect' }}
+              </button>
+            </div>
+
+            <!-- Tab: Existing Account -->
+            <div *ngIf="activeTab === 'existing'">
+              <div class="mb-4">
+                <label class="form-label">
+                  <i class="fas fa-user me-2"></i>
+                  Account Name
+                </label>
                 <input
                   type="text"
                   class="form-control quick-input"
                   [(ngModel)]="accountName"
-                  placeholder="Enter account name"
+                  placeholder="Enter your account name"
                   [disabled]="connecting"
-                  (keyup.enter)="connect()"
+                  (keyup.enter)="requestLogin()"
                   pattern="[a-z0-9]+"
                   maxlength="32">
-                <button
-                  class="btn btn-glass-outline"
-                  (click)="generateRandomName()"
-                  [disabled]="connecting"
-                  type="button"
-                  title="Generate random name">
-                  <i class="fas fa-dice"></i>
-                </button>
+                <small class="form-text text-muted-custom">
+                  Enter the account name you want to access
+                </small>
               </div>
-              <small class="form-text text-muted-custom">
-                Lowercase letters and numbers only (e.g., {{ exampleName }})
-              </small>
+
+              <button
+                class="btn btn-primary-glass btn-lg w-100 mb-3"
+                (click)="requestLogin()"
+                [disabled]="!canConnect() || connecting">
+                <i class="fas fa-key me-2"></i>
+                {{ connecting ? 'Requesting...' : 'Request Access' }}
+              </button>
+
+              <div class="info-box">
+                <div class="info-box-header">
+                  <i class="fas fa-info-circle me-2"></i>
+                  How it works
+                </div>
+                <ul class="info-list">
+                  <li>Enter your existing account name</li>
+                  <li>Click "Request Access"</li>
+                  <li>Wait for administrator approval</li>
+                  <li>You'll be automatically logged in</li>
+                </ul>
+              </div>
             </div>
 
-            <!-- Connect button -->
-            <button
-              class="btn btn-primary-glass btn-lg w-100 mb-3"
-              (click)="connect()"
-              [disabled]="!canConnect() || connecting">
-              <i class="fas fa-plug me-2"></i>
-              {{ connecting ? 'Connecting...' : 'Connect' }}
-            </button>
-
-            <!-- Info box -->
-            <div class="info-box">
+            <!-- Info box for new account -->
+            <div *ngIf="activeTab === 'new'" class="info-box">
               <div class="info-box-header">
                 <i class="fas fa-info-circle me-2"></i>
                 How it works
               </div>
               <ul class="info-list">
-                <li>Choose a server from the list</li>
+                <li>Choose a server from the list or enter manually</li>
                 <li>Enter or generate a unique account name</li>
                 <li>Click Connect to send a connection request</li>
                 <li>Wait for administrator approval</li>
@@ -231,7 +324,7 @@ const ADJECTIVES = [
       backdrop-filter: blur(30px);
       border-radius: 24px;
       overflow: hidden;
-      max-width: 500px;
+      max-width: 600px;
       width: 100%;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
       position: relative;
@@ -271,8 +364,63 @@ const ADJECTIVES = [
       margin-bottom: 0;
     }
 
+    /* Language selector */
+    .language-selector {
+      max-width: 300px;
+      margin: 0 auto;
+    }
+
+    .lang-select {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      backdrop-filter: blur(10px);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 14px;
+    }
+
+    .lang-select option {
+      background: #1a1a1a;
+      color: white;
+    }
+
     .card-body {
       padding: 32px;
+    }
+
+    /* Tabs */
+    .nav-tabs-glass {
+      border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 24px;
+    }
+
+    .nav-tabs-glass .nav-item {
+      flex: 1;
+    }
+
+    .nav-tabs-glass .nav-link {
+      background: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.6);
+      padding: 12px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      font-weight: 600;
+    }
+
+    .nav-tabs-glass .nav-link:hover {
+      color: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .nav-tabs-glass .nav-link.active {
+      color: rgba(13, 110, 253, 1);
+      border-bottom-color: rgba(13, 110, 253, 1);
+      background: rgba(13, 110, 253, 0.1);
     }
 
     /* Form controls */
@@ -585,12 +733,19 @@ const ADJECTIVES = [
   `]
 })
 export class QuickConnectComponent implements OnInit, OnDestroy {
+  readonly LANG_CODE = LANG_CODE;
+
   servers: string[] = [];
   selectedServer = '';
   accountName = '';
   exampleName = '';
   connecting = false;
   waitingForApproval = false;
+  activeTab: 'new' | 'existing' = 'new';
+  lang: LANG_CODE = LANG_CODE.en;
+
+  // For login request flow
+  loginRequestId?: string;
 
   private statusCheckSubscription?: Subscription;
   private alive$ = new Subject<void>();
@@ -599,12 +754,16 @@ export class QuickConnectComponent implements OnInit, OnDestroy {
     private api: ApiService,
     private auth: AuthService,
     private toast: ToastService,
-    private router: Router
+    private router: Router,
+    private i18nService: I18nService
   ) {}
 
   async ngOnInit(): Promise<void> {
     // Load servers from config
     await this.loadServers();
+
+    // Load language
+    this.lang = this.i18nService.lang;
 
     // Check if already waiting for approval
     if (this.auth.isWaitingForApproval()) {
@@ -612,13 +771,11 @@ export class QuickConnectComponent implements OnInit, OnDestroy {
       const savedToken = this.auth.getAccountToken();
 
       if (savedServer && savedToken) {
-        // Restore state
         this.selectedServer = savedServer;
-        this.accountName = ''; // We don't store account name
+        this.accountName = '';
         this.waitingForApproval = true;
         this.startStatusPolling();
       } else {
-        // Clear invalid state
         this.auth.clearWaitingForApproval();
       }
     }
@@ -642,20 +799,23 @@ export class QuickConnectComponent implements OnInit, OnDestroy {
       const data = await response.json();
       this.servers = data.servers || [];
 
-      // Select default server (prioritize non-localhost)
-      this.selectedServer = this.selectDefaultServer();
+      // Select default server if not already set
+      if (!this.selectedServer) {
+        this.selectedServer = this.selectDefaultServer();
+      }
     } catch (error) {
-      console.error('Failed to load servers config:', error);
-      // Fallback to localhost
-      this.servers = ['http://localhost:3000'];
-      this.selectedServer = this.servers[0];
+      console.log('No servers config found');
+      this.servers = [];
     }
   }
 
   selectDefaultServer(): string {
-    // Prioritize non-localhost servers
     const nonLocalhost = this.servers.find(s => !s.includes('localhost'));
     return nonLocalhost || this.servers[0] || '';
+  }
+
+  onServerSelectChange(): void {
+    // Server select changed, value is already updated via ngModel
   }
 
   generateName(): string {
@@ -677,7 +837,7 @@ export class QuickConnectComponent implements OnInit, OnDestroy {
     );
   }
 
-  connect(): void {
+  connectNewAccount(): void {
     if (!this.canConnect()) {
       this.toast.error('Please fill in all fields correctly');
       return;
@@ -688,7 +848,6 @@ export class QuickConnectComponent implements OnInit, OnDestroy {
 
     this.api.quickConnect(this.selectedServer, this.accountName).subscribe({
       next: (data) => {
-        // Save token and set waiting state
         this.auth.setAccountToken(data.token);
         this.auth.setWaitingForApproval();
 
@@ -696,8 +855,6 @@ export class QuickConnectComponent implements OnInit, OnDestroy {
         this.waitingForApproval = true;
 
         this.toast.success('Connection request sent!');
-
-        // Start polling for status
         this.startStatusPolling();
       },
       error: () => {
@@ -706,10 +863,34 @@ export class QuickConnectComponent implements OnInit, OnDestroy {
     });
   }
 
-  startStatusPolling(): void {
-    this.stopStatusPolling(); // Clear any existing subscription
+  requestLogin(): void {
+    if (!this.canConnect()) {
+      this.toast.error('Please fill in all fields correctly');
+      return;
+    }
 
-    // Poll every 5 seconds
+    this.connecting = true;
+    this.auth.setServerUrl(this.selectedServer);
+
+    this.api.createLoginRequest(this.selectedServer, this.accountName).subscribe({
+      next: (data) => {
+        this.loginRequestId = data.request_id;
+        this.connecting = false;
+        this.waitingForApproval = true;
+
+        this.toast.success('Login request sent!');
+        this.startLoginRequestPolling();
+      },
+      error: () => {
+        this.connecting = false;
+      }
+    });
+  }
+
+  startStatusPolling(): void {
+    this.stopStatusPolling();
+
+    // Poll every 5 seconds for account status
     this.statusCheckSubscription = interval(5000)
     .pipe(
       takeUntil(this.alive$),
@@ -718,18 +899,47 @@ export class QuickConnectComponent implements OnInit, OnDestroy {
     .subscribe({
       next: (data) => {
         if (data.status === 2) {
-          // Account is active!
           this.auth.clearWaitingForApproval();
           this.stopStatusPolling();
           this.toast.success('Account approved! Welcome to Ekydum!');
           this.router.navigate(['/subscriptions']);
         } else if (data.status === 3) {
-          // Account is blocked
           this.auth.clearWaitingForApproval();
           this.auth.clearAccountToken();
           this.stopStatusPolling();
           this.waitingForApproval = false;
           this.toast.error('Your account has been blocked by administrator');
+        }
+      },
+      error: () => {
+        // Continue polling on error
+      }
+    });
+  }
+
+  startLoginRequestPolling(): void {
+    this.stopStatusPolling();
+
+    if (!this.loginRequestId) return;
+
+    // Poll every 5 seconds for login request status
+    this.statusCheckSubscription = interval(5000)
+    .pipe(
+      takeUntil(this.alive$),
+      switchMap(() => this.api.getLoginRequestStatus(this.loginRequestId!))
+    )
+    .subscribe({
+      next: (data) => {
+        if (data.status === 'approved' && data.token) {
+          this.auth.setAccountToken(data.token);
+          this.stopStatusPolling();
+          this.toast.success('Login approved! Welcome to Ekydum!');
+          this.router.navigate(['/subscriptions']);
+        } else if (data.status === 'denied') {
+          this.stopStatusPolling();
+          this.waitingForApproval = false;
+          this.loginRequestId = undefined;
+          this.toast.error('Login request was denied by administrator');
         }
       },
       error: () => {
@@ -746,24 +956,46 @@ export class QuickConnectComponent implements OnInit, OnDestroy {
   }
 
   checkStatusNow(): void {
-    this.api.getMe().subscribe({
-      next: (data) => {
-        if (data.status === 2) {
-          this.auth.clearWaitingForApproval();
-          this.stopStatusPolling();
-          this.toast.success('Account approved! Welcome to Ekydum!');
-          this.router.navigate(['/subscriptions']);
-        } else if (data.status === 3) {
-          this.auth.clearWaitingForApproval();
-          this.auth.clearAccountToken();
-          this.stopStatusPolling();
-          this.waitingForApproval = false;
-          this.toast.error('Your account has been blocked by administrator');
-        } else {
-          this.toast.info('Still waiting for approval...');
+    if (this.loginRequestId) {
+      // Check login request status
+      this.api.getLoginRequestStatus(this.loginRequestId).subscribe({
+        next: (data) => {
+          if (data.status === 'approved' && data.token) {
+            this.auth.setAccountToken(data.token);
+            this.stopStatusPolling();
+            this.toast.success('Login approved! Welcome to Ekydum!');
+            this.router.navigate(['/subscriptions']);
+          } else if (data.status === 'denied') {
+            this.stopStatusPolling();
+            this.waitingForApproval = false;
+            this.loginRequestId = undefined;
+            this.toast.error('Login request was denied');
+          } else {
+            this.toast.info('Still waiting for approval...');
+          }
         }
-      }
-    });
+      });
+    } else {
+      // Check account status
+      this.api.getMe().subscribe({
+        next: (data) => {
+          if (data.status === 2) {
+            this.auth.clearWaitingForApproval();
+            this.stopStatusPolling();
+            this.toast.success('Account approved! Welcome to Ekydum!');
+            this.router.navigate(['/subscriptions']);
+          } else if (data.status === 3) {
+            this.auth.clearWaitingForApproval();
+            this.auth.clearAccountToken();
+            this.stopStatusPolling();
+            this.waitingForApproval = false;
+            this.toast.error('Your account has been blocked');
+          } else {
+            this.toast.info('Still waiting for approval...');
+          }
+        }
+      });
+    }
   }
 
   cancelWaiting(): void {
@@ -771,6 +1003,14 @@ export class QuickConnectComponent implements OnInit, OnDestroy {
     this.auth.clearWaitingForApproval();
     this.auth.clearAccountToken();
     this.waitingForApproval = false;
+    this.loginRequestId = undefined;
     this.toast.info('Connection cancelled');
+  }
+
+  updateLang(): void {
+    if (this.lang) {
+      this.i18nService.setLang(this.lang);
+      this.toast.success('Language updated');
+    }
   }
 }

@@ -46,8 +46,21 @@ export class ApiService {
     return throwError(() => error);
   }
 
+  // Quick Connect - create new account
   quickConnect(serverUrl: string, accountName: string): Observable<any> {
     return this.http.post(`${serverUrl}/quick-connect`, { account_name: accountName })
+    .pipe(catchError(err => this.handleError(err)));
+  }
+
+  // Quick Connect - create login request for existing account
+  createLoginRequest(serverUrl: string, accountName: string): Observable<any> {
+    return this.http.post(`${serverUrl}/quick-connect/login-request`, { account_name: accountName })
+    .pipe(catchError(err => this.handleError(err)));
+  }
+
+  // Quick Connect - check login request status (for polling)
+  getLoginRequestStatus(requestId: string): Observable<any> {
+    return this.http.get(this.getUrl(`/quick-connect/login-request/${requestId}/status`))
     .pipe(catchError(err => this.handleError(err)));
   }
 
@@ -182,6 +195,7 @@ export class ApiService {
     .pipe(catchError(err => this.handleError(err)));
   }
 
+  // Account status management
   approveAccount(id: string): Observable<any> {
     return this.http.post(this.getUrl(`/admin/accounts/${id}/approve`), {}, { headers: this.getHeaders(true) })
     .pipe(catchError(err => this.handleError(err)));
@@ -189,6 +203,22 @@ export class ApiService {
 
   blockAccount(id: string): Observable<any> {
     return this.http.post(this.getUrl(`/admin/accounts/${id}/block`), {}, { headers: this.getHeaders(true) })
+    .pipe(catchError(err => this.handleError(err)));
+  }
+
+  // Login requests management (admin)
+  getLoginRequests(): Observable<any> {
+    return this.http.get(this.getUrl('/admin/login-requests'), { headers: this.getHeaders(true) })
+    .pipe(catchError(err => this.handleError(err)));
+  }
+
+  approveLoginRequest(requestId: string): Observable<any> {
+    return this.http.post(this.getUrl(`/admin/login-requests/${requestId}/approve`), {}, { headers: this.getHeaders(true) })
+    .pipe(catchError(err => this.handleError(err)));
+  }
+
+  denyLoginRequest(requestId: string): Observable<any> {
+    return this.http.post(this.getUrl(`/admin/login-requests/${requestId}/deny`), {}, { headers: this.getHeaders(true) })
     .pipe(catchError(err => this.handleError(err)));
   }
 

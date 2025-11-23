@@ -46,6 +46,11 @@ export class ApiService {
     return throwError(() => error);
   }
 
+  quickConnect(serverUrl: string, accountName: string): Observable<any> {
+    return this.http.post(`${serverUrl}/quick-connect`, { account_name: accountName })
+    .pipe(catchError(err => this.handleError(err)));
+  }
+
   getMe(): Observable<any> {
     return this.http.get(this.getUrl('/me'), { headers: this.getHeaders() })
     .pipe(catchError(err => this.handleError(err)));
@@ -174,6 +179,16 @@ export class ApiService {
 
   deleteAccount(id: string): Observable<any> {
     return this.http.delete(this.getUrl(`/admin/accounts/${id}`), { headers: this.getHeaders(true) })
+    .pipe(catchError(err => this.handleError(err)));
+  }
+
+  approveAccount(id: string): Observable<any> {
+    return this.http.post(this.getUrl(`/admin/accounts/${id}/approve`), {}, { headers: this.getHeaders(true) })
+    .pipe(catchError(err => this.handleError(err)));
+  }
+
+  blockAccount(id: string): Observable<any> {
+    return this.http.post(this.getUrl(`/admin/accounts/${id}/block`), {}, { headers: this.getHeaders(true) })
     .pipe(catchError(err => this.handleError(err)));
   }
 

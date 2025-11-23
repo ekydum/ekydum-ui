@@ -1,4 +1,4 @@
-import { NgModule } from '@angular/core';
+import { APP_INITIALIZER, NgModule } from '@angular/core';
 import { AppComponent } from './app.component';
 import { SubscriptionsComponent } from './components/subscriptions/subscriptions.component';
 import { ChannelComponent } from './components/channel/channel.component';
@@ -19,6 +19,8 @@ import { WatchLaterComponent } from './components/watch-later/watch-later.compon
 import { VideoItemComponent } from './components/shared/video-item/video-item.component';
 import { QueueSidebarComponent } from './components/shared/queue-sidebar/queue-sidebar.component';
 import { FloatingPlayerModalComponent } from './components/shared/floating-player-modal/floating-player-modal.component';
+import { AppInitializerService } from './services/app-initializer.service';
+import { QuickConnectComponent } from './components/quick-connect/quick-connect.component';
 
 @NgModule({
   declarations: [
@@ -35,6 +37,7 @@ import { FloatingPlayerModalComponent } from './components/shared/floating-playe
     VideoItemComponent,
     QueueSidebarComponent,
     FloatingPlayerModalComponent,
+    QuickConnectComponent,
   ],
   imports: [
     CommonModule,
@@ -45,6 +48,12 @@ import { FloatingPlayerModalComponent } from './components/shared/floating-playe
   ],
   providers: [
     provideHttpClient(),
+    {
+      provide: APP_INITIALIZER,
+      useFactory: (appInitializer: AppInitializerService) => () => appInitializer.loadServerConfig(),
+      deps: [AppInitializerService],
+      multi: true
+    }
   ],
   bootstrap: [AppComponent],
 })

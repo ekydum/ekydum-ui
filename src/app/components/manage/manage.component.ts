@@ -110,6 +110,7 @@ import { ToastService } from '../../services/toast.service';
                 <thead>
                 <tr class="text-no-select">
                   <th>Name</th>
+                  <th>Status</th>
                   <th>Token</th>
                   <th>Created</th>
                   <th>Actions</th>
@@ -129,6 +130,20 @@ import { ToastService } from '../../services/toast.service';
                       (keyup.enter)="saveEdit(account.id)">
                   </td>
                   <td>
+                    <span class="status-badge" [ngClass]="{
+                      'status-inactive': account.status === 1,
+                      'status-active': account.status === 2,
+                      'status-blocked': account.status === 3
+                    }">
+                      <i class="fas me-1" [ngClass]="{
+                        'fa-clock': account.status === 1,
+                        'fa-check-circle': account.status === 2,
+                        'fa-ban': account.status === 3
+                      }"></i>
+                      {{ getStatusText(account.status) }}
+                    </span>
+                  </td>
+                  <td>
                     <code class="token-code">{{ account.token.substring(0, 20) }}...</code>
                     <button
                       class="btn btn-sm btn-glass-icon ms-2"
@@ -142,10 +157,26 @@ import { ToastService } from '../../services/toast.service';
                   </td>
                   <td>
                     <div class="btn-group btn-group-sm" *ngIf="editingId !== account.id">
-                      <button class="btn btn-blue-glass" (click)="startEdit(account)">
+                      <!-- Status toggle buttons -->
+                      <button
+                        class="btn btn-success-glass"
+                        (click)="approveAccount(account.id)"
+                        [disabled]="account.status === 2"
+                        title="Approve">
+                        <i class="fas fa-check"></i>
+                      </button>
+                      <button
+                        class="btn btn-warning-glass"
+                        (click)="blockAccount(account.id)"
+                        [disabled]="account.status === 3"
+                        title="Block">
+                        <i class="fas fa-ban"></i>
+                      </button>
+                      <!-- Other actions -->
+                      <button class="btn btn-blue-glass" (click)="startEdit(account)" title="Edit name">
                         <i class="fas fa-edit"></i>
                       </button>
-                      <button class="btn btn-red-glass" (click)="deleteAccount(account.id)">
+                      <button class="btn btn-red-glass" (click)="deleteAccount(account.id)" title="Delete">
                         <i class="fas fa-trash"></i>
                       </button>
                     </div>
@@ -334,6 +365,58 @@ import { ToastService } from '../../services/toast.service';
     .btn-success-glass:disabled {
       opacity: 0.5;
       cursor: not-allowed;
+    }
+
+    .btn-warning-glass {
+      background: rgba(255, 193, 7, 0.15);
+      border: 1px solid rgba(255, 193, 7, 0.3);
+      color: white;
+      backdrop-filter: blur(10px);
+      transition: all 0.2s ease;
+      font-weight: 600;
+    }
+
+    .btn-warning-glass:hover:not(:disabled) {
+      background: rgba(255, 193, 7, 0.25);
+      border-color: rgba(255, 193, 7, 0.5);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(255, 193, 7, 0.4);
+    }
+
+    .btn-warning-glass:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Status badges */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .status-inactive {
+      background: rgba(255, 193, 7, 0.15);
+      border: 1px solid rgba(255, 193, 7, 0.3);
+      color: rgba(255, 193, 7, 1);
+    }
+
+    .status-active {
+      background: rgba(25, 135, 84, 0.15);
+      border: 1px solid rgba(25, 135, 84, 0.3);
+      color: rgba(25, 135, 84, 1);
+    }
+
+    .status-blocked {
+      background: rgba(198, 17, 32, 0.15);
+      border: 1px solid rgba(198, 17, 32, 0.3);
+      color: rgba(198, 17, 32, 1);
     }
 
     /* Table */
@@ -558,6 +641,41 @@ export class ManageComponent implements OnInit {
       this.toast.success('Token copied to clipboard');
     }).catch(() => {
       this.toast.error('Failed to copy token');
+    });
+  }
+
+  getStatusText(status: number): string {
+    switch (status) {
+      case 1:
+        return 'Inactive';
+      case 2:
+        return 'Active';
+      case 3:
+        return 'Blocked';
+      default:
+        return 'Unknown';
+    }
+  }
+
+  approveAccount(id: string): void {
+    this.api.approveAccount(id).subscribe({
+      next: () => {
+        this.toast.success('Account approved');
+        this.loadAccounts();
+      }
+    });
+  }
+
+  blockAccount(id: string): void {
+    if (!confirm('Are you sure you want to block this account?')) {
+      return;
+    }
+
+    this.api.blockAccount(id).subscribe({
+      next: () => {
+        this.toast.success('Account blocked');
+        this.loadAccounts();
+      }
     });
   }
 }

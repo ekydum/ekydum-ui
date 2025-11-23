@@ -7,15 +7,18 @@ import { SearchComponent } from './components/search/search.component';
 import { PlaylistComponent } from './components/playlist/playlist.component';
 import { StarredComponent } from './components/starred/starred.component';
 import { WatchLaterComponent } from './components/watch-later/watch-later.component';
+import { QuickConnectComponent } from './components/quick-connect/quick-connect.component';
+import { AuthGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/subscriptions', pathMatch: 'full' },
-  { path: 'search', component: SearchComponent },
-  { path: 'subscriptions', component: SubscriptionsComponent },
-  { path: 'starred', component: StarredComponent },
-  { path: 'watch-later', component: WatchLaterComponent },
-  { path: 'channel/:id', component: ChannelComponent },
-  { path: 'playlist/:id', component: PlaylistComponent },
+  { path: 'quick-connect', component: QuickConnectComponent },
   { path: 'settings', component: SettingsComponent },
-  { path: 'manage', component: ManageComponent }
+  { path: 'manage', component: ManageComponent },
+  { path: 'search', component: SearchComponent, canActivate: [AuthGuard] },
+  { path: 'subscriptions', component: SubscriptionsComponent, canActivate: [AuthGuard] },
+  { path: 'starred', component: StarredComponent, canActivate: [AuthGuard] },
+  { path: 'watch-later', component: WatchLaterComponent, canActivate: [AuthGuard] },
+  { path: 'channel/:id', component: ChannelComponent, canActivate: [AuthGuard] },
+  { path: 'playlist/:id', component: PlaylistComponent, canActivate: [AuthGuard] }
 ];

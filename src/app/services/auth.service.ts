@@ -7,6 +7,7 @@ export class AuthService {
   private readonly SERVER_URL_KEY = 'ekydum_server_url';
   private readonly ACCOUNT_TOKEN_KEY = 'ekydum_account_token';
   private readonly ADMIN_TOKEN_KEY = 'ekydum_admin_token';
+  private readonly WAITING_FOR_APPROVAL_KEY = 'ekydum_waiting_for_approval';
 
   getServerUrl(): string | null {
     return localStorage.getItem(this.SERVER_URL_KEY);
@@ -46,5 +47,17 @@ export class AuthService {
 
   isAdmin(): boolean {
     return !!this.getAdminToken();
+  }
+
+  setWaitingForApproval(): void {
+    localStorage.setItem(this.WAITING_FOR_APPROVAL_KEY, 'true');
+  }
+
+  isWaitingForApproval(): boolean {
+    return localStorage.getItem(this.WAITING_FOR_APPROVAL_KEY) === 'true';
+  }
+
+  clearWaitingForApproval(): void {
+    localStorage.removeItem(this.WAITING_FOR_APPROVAL_KEY);
   }
 }

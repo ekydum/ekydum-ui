@@ -5,6 +5,7 @@
 /bazel-out
 
 /public/config/servers.json
+/dist/config/servers.json
 
 # Node
 /node_modules

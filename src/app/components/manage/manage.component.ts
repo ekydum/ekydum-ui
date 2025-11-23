@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
+import { interval, Subject, Subscription, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-manage',
@@ -63,6 +64,63 @@ import { ToastService } from '../../services/toast.service';
       </div>
 
       <div *ngIf="isAdmin">
+        <!-- Login Requests Section -->
+        <div class="card settings-card mb-4" *ngIf="loginRequests.length > 0">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-no-select">
+              <i class="fas fa-key me-2"></i>
+              Login Requests
+              <span class="badge badge-warning ms-2">{{ loginRequests.length }}</span>
+            </h5>
+            <button class="btn btn-sm btn-glass" (click)="loadLoginRequests()">
+              <i class="fas fa-sync me-1"></i>
+              Refresh
+            </button>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-dark-glass">
+                <thead>
+                <tr class="text-no-select">
+                  <th>Account Name</th>
+                  <th>Time</th>
+                  <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr *ngFor="let request of loginRequests">
+                  <td>
+                    <strong>{{ request.account_name }}</strong>
+                  </td>
+                  <td>
+                    <small class="text-muted-custom">{{ formatElapsedTime(request.elapsed_seconds) }}</small>
+                  </td>
+                  <td>
+                    <div class="btn-group btn-group-sm">
+                      <button
+                        class="btn btn-success-glass"
+                        (click)="approveLoginRequest(request.request_id)"
+                        title="Approve">
+                        <i class="fas fa-check me-1"></i>
+                        Approve
+                      </button>
+                      <button
+                        class="btn btn-red-glass"
+                        (click)="denyLoginRequest(request.request_id)"
+                        title="Deny">
+                        <i class="fas fa-times me-1"></i>
+                        Deny
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Create Account Section -->
         <div class="card settings-card mb-4">
           <div class="card-header">
             <h5 class="mb-0 text-no-select">Create New Account</h5>
@@ -87,6 +145,7 @@ import { ToastService } from '../../services/toast.service';
           </div>
         </div>
 
+        <!-- Accounts Table -->
         <div class="card settings-card">
           <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0 text-no-select">Accounts</h5>
@@ -110,6 +169,7 @@ import { ToastService } from '../../services/toast.service';
                 <thead>
                 <tr class="text-no-select">
                   <th>Name</th>
+                  <th>Status</th>
                   <th>Token</th>
                   <th>Created</th>
                   <th>Actions</th>
@@ -129,6 +189,20 @@ import { ToastService } from '../../services/toast.service';
                       (keyup.enter)="saveEdit(account.id)">
                   </td>
                   <td>
+                    <span class="status-badge" [ngClass]="{
+                      'status-inactive': account.status === 1,
+                      'status-active': account.status === 2,
+                      'status-blocked': account.status === 3
+                    }">
+                      <i class="fas me-1" [ngClass]="{
+                        'fa-clock': account.status === 1,
+                        'fa-check-circle': account.status === 2,
+                        'fa-ban': account.status === 3
+                      }"></i>
+                      {{ getStatusText(account.status) }}
+                    </span>
+                  </td>
+                  <td>
                     <code class="token-code">{{ account.token.substring(0, 20) }}...</code>
                     <button
                       class="btn btn-sm btn-glass-icon ms-2"
@@ -142,10 +216,24 @@ import { ToastService } from '../../services/toast.service';
                   </td>
                   <td>
                     <div class="btn-group btn-group-sm" *ngIf="editingId !== account.id">
-                      <button class="btn btn-blue-glass" (click)="startEdit(account)">
+                      <button
+                        class="btn btn-success-glass"
+                        (click)="approveAccount(account.id)"
+                        [disabled]="account.status === 2"
+                        title="Approve">
+                        <i class="fas fa-check"></i>
+                      </button>
+                      <button
+                        class="btn btn-warning-glass"
+                        (click)="blockAccount(account.id)"
+                        [disabled]="account.status === 3"
+                        title="Block">
+                        <i class="fas fa-ban"></i>
+                      </button>
+                      <button class="btn btn-blue-glass" (click)="startEdit(account)" title="Edit name">
                         <i class="fas fa-edit"></i>
                       </button>
-                      <button class="btn btn-red-glass" (click)="deleteAccount(account.id)">
+                      <button class="btn btn-red-glass" (click)="deleteAccount(account.id)" title="Delete">
                         <i class="fas fa-trash"></i>
                       </button>
                     </div>
@@ -174,7 +262,6 @@ import { ToastService } from '../../services/toast.service';
       text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     }
 
-    /* Settings Card */
     .settings-card {
       background: rgba(26, 26, 26, 0.8);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -199,7 +286,6 @@ import { ToastService } from '../../services/toast.service';
       padding: 20px;
     }
 
-    /* Form Controls */
     .form-label {
       color: rgba(255, 255, 255, 0.9);
       font-weight: 500;
@@ -238,7 +324,6 @@ import { ToastService } from '../../services/toast.service';
       font-size: 0.875rem;
     }
 
-    /* Buttons */
     .btn-glass {
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(255, 255, 255, 0.15);
@@ -336,7 +421,67 @@ import { ToastService } from '../../services/toast.service';
       cursor: not-allowed;
     }
 
-    /* Table */
+    .btn-warning-glass {
+      background: rgba(255, 193, 7, 0.15);
+      border: 1px solid rgba(255, 193, 7, 0.3);
+      color: white;
+      backdrop-filter: blur(10px);
+      transition: all 0.2s ease;
+      font-weight: 600;
+    }
+
+    .btn-warning-glass:hover:not(:disabled) {
+      background: rgba(255, 193, 7, 0.25);
+      border-color: rgba(255, 193, 7, 0.5);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(255, 193, 7, 0.4);
+    }
+
+    .btn-warning-glass:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .badge-warning {
+      background: rgba(255, 193, 7, 0.2);
+      border: 1px solid rgba(255, 193, 7, 0.3);
+      color: rgba(255, 193, 7, 1);
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .status-inactive {
+      background: rgba(255, 193, 7, 0.15);
+      border: 1px solid rgba(255, 193, 7, 0.3);
+      color: rgba(255, 193, 7, 1);
+    }
+
+    .status-active {
+      background: rgba(25, 135, 84, 0.15);
+      border: 1px solid rgba(25, 135, 84, 0.3);
+      color: rgba(25, 135, 84, 1);
+    }
+
+    .status-blocked {
+      background: rgba(198, 17, 32, 0.15);
+      border: 1px solid rgba(198, 17, 32, 0.3);
+      color: rgba(198, 17, 32, 1);
+    }
+
     .table-dark-glass {
       --bs-table-bg: transparent;
       --bs-table-striped-bg: rgba(0, 0, 0, 0.2);
@@ -385,12 +530,10 @@ import { ToastService } from '../../services/toast.service';
       font-family: 'Courier New', monospace;
     }
 
-    /* Spinner */
     .spinner-custom {
       color: rgba(13, 110, 253, 0.8);
     }
 
-    /* Alerts */
     .alert-custom {
       background: rgba(26, 26, 26, 0.8);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -412,16 +555,20 @@ import { ToastService } from '../../services/toast.service';
     }
   `]
 })
-export class ManageComponent implements OnInit {
+export class ManageComponent implements OnInit, OnDestroy {
   serverUrl = 'http://localhost:3000';
   adminToken = '';
   isAdmin = false;
   accounts: any[] = [];
+  loginRequests: any[] = [];
   loading = false;
   creating = false;
   newAccountName = '';
   editingId: string | null = null;
   editingName = '';
+
+  private autoRefreshSubscription?: Subscription;
+  private alive$ = new Subject<void>();
 
   constructor(
     private api: ApiService,
@@ -440,6 +587,35 @@ export class ManageComponent implements OnInit {
       this.adminToken = savedToken;
       this.isAdmin = true;
       this.loadAccounts();
+      this.loadLoginRequests();
+      this.startAutoRefresh();
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.alive$.next();
+    this.alive$.complete();
+    this.stopAutoRefresh();
+  }
+
+  startAutoRefresh(): void {
+    this.stopAutoRefresh();
+
+    // Refresh every 8 seconds
+    this.autoRefreshSubscription = interval(8000)
+    .pipe(takeUntil(this.alive$))
+    .subscribe(() => {
+      if (this.isAdmin) {
+        this.loadAccounts();
+        this.loadLoginRequests();
+      }
+    });
+  }
+
+  stopAutoRefresh(): void {
+    if (this.autoRefreshSubscription) {
+      this.autoRefreshSubscription.unsubscribe();
+      this.autoRefreshSubscription = undefined;
     }
   }
 
@@ -462,6 +638,8 @@ export class ManageComponent implements OnInit {
         this.isAdmin = true;
         this.toast.success('Admin access granted');
         this.loadAccounts();
+        this.loadLoginRequests();
+        this.startAutoRefresh();
       },
       error: () => {
         this.auth.clearAdminToken();
@@ -476,6 +654,8 @@ export class ManageComponent implements OnInit {
     this.adminToken = '';
     this.isAdmin = false;
     this.accounts = [];
+    this.loginRequests = [];
+    this.stopAutoRefresh();
     this.toast.info('Admin logged out');
   }
 
@@ -488,6 +668,17 @@ export class ManageComponent implements OnInit {
       },
       error: () => {
         this.loading = false;
+      }
+    });
+  }
+
+  loadLoginRequests(): void {
+    this.api.getLoginRequests().subscribe({
+      next: (data) => {
+        this.loginRequests = data?.requests || [];
+      },
+      error: () => {
+        // Silent error
       }
     });
   }
@@ -559,5 +750,77 @@ export class ManageComponent implements OnInit {
     }).catch(() => {
       this.toast.error('Failed to copy token');
     });
+  }
+
+  getStatusText(status: number): string {
+    switch (status) {
+      case 1:
+        return 'Inactive';
+      case 2:
+        return 'Active';
+      case 3:
+        return 'Blocked';
+      default:
+        return 'Unknown';
+    }
+  }
+
+  approveAccount(id: string): void {
+    this.api.approveAccount(id).subscribe({
+      next: () => {
+        this.toast.success('Account approved');
+        this.loadAccounts();
+      }
+    });
+  }
+
+  blockAccount(id: string): void {
+    if (!confirm('Are you sure you want to block this account?')) {
+      return;
+    }
+
+    this.api.blockAccount(id).subscribe({
+      next: () => {
+        this.toast.success('Account blocked');
+        this.loadAccounts();
+      }
+    });
+  }
+
+  approveLoginRequest(requestId: string): void {
+    this.api.approveLoginRequest(requestId).subscribe({
+      next: () => {
+        this.toast.success('Login request approved');
+        this.loadLoginRequests();
+      }
+    });
+  }
+
+  denyLoginRequest(requestId: string): void {
+    if (!confirm('Are you sure you want to deny this login request?')) {
+      return;
+    }
+
+    this.api.denyLoginRequest(requestId).subscribe({
+      next: () => {
+        this.toast.success('Login request denied');
+        this.loadLoginRequests();
+      }
+    });
+  }
+
+  formatElapsedTime(seconds: number): string {
+    if (seconds < 60) {
+      return `${seconds}s ago`;
+    } else if (seconds < 3600) {
+      const minutes = Math.floor(seconds / 60);
+      return `${minutes}m ago`;
+    } else if (seconds < 86400) {
+      const hours = Math.floor(seconds / 3600);
+      return `${hours}h ago`;
+    } else {
+      const days = Math.floor(seconds / 86400);
+      return `${days}d ago`;
+    }
   }
 }

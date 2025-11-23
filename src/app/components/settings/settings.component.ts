@@ -61,6 +61,14 @@ import { dict } from '../../i18n/dict/main.dict';
             <i class="fas fa-check-circle me-2"></i>
             {{ i18nStrings['connectedAs'] }} <strong>{{ accountInfo.name }}</strong>
           </div>
+
+          <!-- Quick Connect link -->
+          <div class="text-center mt-3" *ngIf="hasQuickConnect">
+            <a class="link-glass" routerLink="/quick-connect">
+              <i class="fas fa-rocket me-1"></i>
+              Quick Connect
+            </a>
+          </div>
         </div>
       </div>
 
@@ -137,7 +145,6 @@ import { dict } from '../../i18n/dict/main.dict';
       text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     }
 
-    /* Settings Card */
     .settings-card {
       background: rgba(26, 26, 26, 0.8);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -162,7 +169,6 @@ import { dict } from '../../i18n/dict/main.dict';
       padding: 20px;
     }
 
-    /* Form Controls */
     .form-label {
       color: rgba(255, 255, 255, 0.9);
       font-weight: 500;
@@ -203,7 +209,6 @@ import { dict } from '../../i18n/dict/main.dict';
       font-size: 0.875rem;
     }
 
-    /* Buttons */
     .btn-blue-glass {
       background: rgba(13, 110, 253, 0.15);
       border: 1px solid rgba(13, 110, 253, 0.3);
@@ -248,12 +253,10 @@ import { dict } from '../../i18n/dict/main.dict';
       cursor: not-allowed;
     }
 
-    /* Spinner */
     .spinner-custom {
       color: rgba(13, 110, 253, 0.8);
     }
 
-    /* Alerts */
     .alert-custom {
       background: rgba(26, 26, 26, 0.8);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -266,6 +269,19 @@ import { dict } from '../../i18n/dict/main.dict';
       color: rgba(25, 135, 84, 1);
       border-color: rgba(25, 135, 84, 0.3);
       background: rgba(25, 135, 84, 0.1);
+    }
+
+    .link-glass {
+      color: rgba(13, 110, 253, 0.9);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+
+    .link-glass:hover {
+      color: rgba(13, 110, 253, 1);
+      text-decoration: underline;
     }
   `]
 })
@@ -280,6 +296,7 @@ export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
   isConnected = false;
   saving = false;
   accountInfo: any = null;
+  hasQuickConnect = false;
 
   loadingSettings = false;
   defaultQuality = '720p';
@@ -296,11 +313,14 @@ export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
     private i18nService: I18nService,
   ) {}
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     this.i18nService.translate(this.i18nDict).pipe(
       takeUntil(this.alive$),
       tap((localized) => { this.i18nStrings = localized; })
     ).subscribe();
+
+    // Check if Quick Connect is available
+    await this.checkQuickConnect();
 
     var savedUrl = this.auth.getServerUrl();
     var savedToken = this.auth.getAccountToken();
@@ -320,6 +340,16 @@ export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.alive$.next();
     this.alive$.complete();
+  }
+
+  async checkQuickConnect(): Promise<void> {
+    try {
+      const response = await fetch('/config/servers.json');
+      const data = await response.json();
+      this.hasQuickConnect = !!(data.servers && data.servers.length > 0);
+    } catch {
+      this.hasQuickConnect = false;
+    }
   }
 
   saveConnection(): void {
@@ -382,11 +412,9 @@ export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
         }
         if (langSetting) {
           var langValue = (langSetting.value + '').toLowerCase();
-          // Check if it's a valid LANG_CODE
           if (Object.values(LANG_CODE).includes(langValue as LANG_CODE)) {
             this.lang = langValue as LANG_CODE;
           } else {
-            // Fallback to EN if stored language is not in our enum
             this.lang = LANG_CODE.en;
           }
         }

@@ -1,15 +1,15 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { Router } from '@angular/router';
-import { PlayerDisplayMode } from '../models/player-state.model';
-import { VideoItemData } from '../models/video-item.model';
+import { PlayerDisplayMode } from '../models/player-display-mode.model';
+import { YtVideoListItem } from '../models/protocol/yt-video-list-item.model';
 
 @Injectable({ providedIn: 'root' })
 export class PlayerService {
   // State subjects
-  private readonly queueSubject$ = new BehaviorSubject<VideoItemData[]>([]);
+  private readonly queueSubject$ = new BehaviorSubject<YtVideoListItem[]>([]);
   private readonly currentIndexSubject$ = new BehaviorSubject<number>(-1);
-  private readonly currentVideoSubject$ = new BehaviorSubject<VideoItemData | null>(null);
+  private readonly currentVideoSubject$ = new BehaviorSubject<YtVideoListItem | null>(null);
   private readonly durationSubject$ = new BehaviorSubject<number>(0);
   private readonly currentTimeSubject$ = new BehaviorSubject<number>(0);
   private readonly isPlayingSubject$ = new BehaviorSubject<boolean>(false);
@@ -28,9 +28,9 @@ export class PlayerService {
   readonly sync$ = new Subject<void>();
 
   // Getters for current values
-  get queue(): VideoItemData[] { return this.queueSubject$.value; }
+  get queue(): YtVideoListItem[] { return this.queueSubject$.value; }
   get currentIndex(): number { return this.currentIndexSubject$.value; }
-  get currentVideo(): VideoItemData | null { return this.currentVideoSubject$.value; }
+  get currentVideo(): YtVideoListItem | null { return this.currentVideoSubject$.value; }
   get duration(): number { return this.durationSubject$.value; }
   get currentTime(): number { return this.currentTimeSubject$.value; }
   get isPlaying(): boolean { return this.isPlayingSubject$.value; }
@@ -39,7 +39,7 @@ export class PlayerService {
   constructor(private router: Router) {}
 
   // Queue Management
-  queueAdd(video: VideoItemData): void {
+  queueAdd(video: YtVideoListItem): void {
     var queue = this.queueSubject$.value;
     var wasEmpty = queue.length === 0;
 
@@ -55,7 +55,7 @@ export class PlayerService {
     }
   }
 
-  queueSet(videos: VideoItemData[]): void {
+  queueSet(videos: YtVideoListItem[]): void {
     this.queueSubject$.next([...videos]);
     if (videos.length > 0) {
       this.playVideoAtIndex(0);
@@ -86,7 +86,7 @@ export class PlayerService {
   }
 
   // Playback Control
-  playVideo(video: VideoItemData): void {
+  playVideo(video: YtVideoListItem): void {
     // Replace entire queue with single video and play in FLOATING mode
     this.queueSubject$.next([video]);
     this.currentIndexSubject$.next(0);

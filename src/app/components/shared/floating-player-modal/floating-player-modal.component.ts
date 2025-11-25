@@ -2,10 +2,10 @@ import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { PlayerService } from '../../../services/player.service';
 import { Subject, takeUntil, tap } from 'rxjs';
 import { ApiService } from '../../../services/api.service';
-import { YtDlpVideoInfo } from '../../../models/yt-dlp-video-info.interface';
+import { YtVideo } from '../../../models/protocol/yt-video.model';
 import { UserPreference } from '../../../models/user-preference.model';
-import { PlayerDisplayMode } from '../../../models/player-state.model';
-import { VideoItemData } from '../../../models/video-item.model';
+import { PlayerDisplayMode } from '../../../models/player-display-mode.model';
+import { YtVideoListItem } from '../../../models/protocol/yt-video-list-item.model';
 import { I18nDict, I18nLocalized, I18nMultilingual } from '../../../i18n/models/dict.models';
 import { I18nService } from '../../../i18n/services/i18n.service';
 import { dict } from '../../../i18n/dict/main.dict';
@@ -560,8 +560,8 @@ export class FloatingPlayerModalComponent implements I18nMultilingual, OnInit, O
   private readonly destroy$ = new Subject<void>();
 
   displayMode: PlayerDisplayMode = PlayerDisplayMode.MODE_INACTIVE;
-  currentVideo: VideoItemData | null = null;
-  videoInfo: YtDlpVideoInfo | null = null;
+  currentVideo: YtVideoListItem | null = null;
+  videoInfo: YtVideo | null = null;
   preferences: UserPreference[] = [];
   loading = false;
   showQueue = false;

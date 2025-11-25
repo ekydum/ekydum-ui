@@ -1,4 +1,4 @@
-export interface YtDlpSourceFormatFragment {
+export interface YtVideo_Format_Fragment {
   /** Fragment URL */
   url: string;
 
@@ -6,7 +6,7 @@ export interface YtDlpSourceFormatFragment {
   duration?: number;
 }
 
-export interface YtDlpSourceFormat {
+export interface YtVideo_Format {
   /** Format identifier */
   format_id: string;
 
@@ -44,7 +44,7 @@ export interface YtDlpSourceFormat {
   columns?: number;
 
   /** HLS/DASH fragments */
-  fragments?: YtDlpSourceFormatFragment[];
+  fragments?: YtVideo_Format_Fragment[];
 
   /** Audio file extension */
   audio_ext: string;
@@ -126,7 +126,7 @@ export interface YtDlpSourceFormat {
   };
 }
 
-export interface YtDlpVideoThumbnail {
+export interface YtVideo_Thumbnail {
   /** Thumbnail URL */
   url: string;
 
@@ -146,7 +146,7 @@ export interface YtDlpVideoThumbnail {
   resolution?: string;
 }
 
-export interface YtDlpAutomaticCaption {
+export interface YtVideo_AutomaticCaption {
   /** Caption file extension */
   ext: string;
 
@@ -163,7 +163,7 @@ export interface YtDlpAutomaticCaption {
   __yt_dlp_client?: string;
 }
 
-export interface YtDlpSubtitle {
+export interface YtVideo_Subtitle {
   /** Subtitle file extension */
   ext: string;
 
@@ -180,13 +180,13 @@ export interface YtDlpSubtitle {
   __yt_dlp_client?: string;
 }
 
-export interface YtDlpVideoChapter {
+export interface YtVideo_Chapter {
   start_time: number;
   title: string;
   end_time: number;
 }
 
-export interface YtDlpVideoInfo {
+export interface YtVideo {
   /** Video ID */
   id: string;
 
@@ -194,10 +194,10 @@ export interface YtDlpVideoInfo {
   title: string;
 
   /** Available formats (video/audio streams) */
-  formats: YtDlpSourceFormat[];
+  formats: YtVideo_Format[];
 
   /** Available thumbnails */
-  thumbnails?: YtDlpVideoThumbnail[];
+  thumbnails?: YtVideo_Thumbnail[];
 
   /** Default thumbnail URL */
   thumbnail?: string;
@@ -246,19 +246,19 @@ export interface YtDlpVideoInfo {
 
   /** Auto-generated captions by language */
   automatic_captions?: {
-    [language: string]: YtDlpAutomaticCaption[];
+    [language: string]: YtVideo_AutomaticCaption[];
   };
 
   /** Manual subtitles by language */
   subtitles?: {
-    [language: string]: YtDlpSubtitle[];
+    [language: string]: YtVideo_Subtitle[];
   };
 
   /** Number of comments */
   comment_count?: number;
 
   /** Video chapters/sections */
-  chapters?: YtDlpVideoChapter[] | null;
+  chapters?: YtVideo_Chapter[] | null;
 
   /** Engagement heatmap data */
   heatmap?: any | null;
@@ -342,7 +342,7 @@ export interface YtDlpVideoInfo {
   epoch?: number;
 
   /** Selected formats for download (video + audio) */
-  requested_formats?: YtDlpSourceFormat[];
+  requested_formats?: YtVideo_Format[];
 
   /** Selected format string */
   format?: string;

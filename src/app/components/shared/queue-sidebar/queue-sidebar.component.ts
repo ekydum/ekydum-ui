@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { PlayerService } from '../../../services/player.service';
 import { Subject, takeUntil, tap } from 'rxjs';
 import { Router } from '@angular/router';
-import { VideoItemData } from '../../../models/video-item.model';
+import { YtVideoListItem } from '../../../models/protocol/yt-video-list-item.model';
 import { I18nDict, I18nLocalized, I18nMultilingual } from '../../../i18n/models/dict.models';
 import { I18nService } from '../../../i18n/services/i18n.service';
 import { dict } from '../../../i18n/dict/main.dict';
@@ -111,7 +111,7 @@ export class QueueSidebarComponent implements I18nMultilingual, OnInit, OnDestro
   i18nStrings: I18nLocalized = {};
 
   private readonly destroy$ = new Subject<void>();
-  queue: VideoItemData[] = [];
+  queue: YtVideoListItem[] = [];
   currentIndex = -1;
 
   constructor(

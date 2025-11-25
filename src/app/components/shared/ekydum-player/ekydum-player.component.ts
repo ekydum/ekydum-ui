@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { AuthService } from '../../../services/auth.service';
 import Hls, { ErrorData, HlsConfig } from 'hls.js';
-import { YtDlpSourceFormat, YtDlpVideoChapter, YtDlpVideoInfo } from '../../../models/yt-dlp-video-info.interface';
+import { YtVideo_Format, YtVideo_Chapter, YtVideo } from '../../../models/protocol/yt-video.model';
 import { UserPreference } from '../../../models/user-preference.model';
 import { Ekydum_SourceFormat, Ekydum_SourceKind } from './models';
 import { Subject, takeUntil, tap, throttleTime } from 'rxjs';
@@ -26,7 +26,7 @@ import { dict } from '../../../i18n/dict/main.dict';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMultilingual {
-  @Input() video!: YtDlpVideoInfo;
+  @Input() video!: YtVideo;
   @Input() preferences!: UserPreference[];
   @Input() showCustomControls = true;
   @ViewChild('videoEl', { static: false }) videoElementRef!: ElementRef<HTMLVideoElement>;
@@ -46,8 +46,8 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
 
   posterUrl = '';
 
-  availableLanguages: YtDlpSourceFormat['language'][] = [];
-  selectedLanguage: YtDlpSourceFormat['language'] = 'en';
+  availableLanguages: YtVideo_Format['language'][] = [];
+  selectedLanguage: YtVideo_Format['language'] = 'en';
 
   private combinedFormats: Ekydum_SourceFormat[] = [];
   localizedFormats: Ekydum_SourceFormat[] = [];
@@ -124,7 +124,7 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
     this.player.pause();
   }
 
-  goToChapter(ch: YtDlpVideoChapter): void {
+  goToChapter(ch: YtVideo_Chapter): void {
     this.player.currentTime = ch.start_time;
     this.render$.next();
   }
@@ -136,7 +136,7 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
     }
   }
 
-  changeLang(lang: YtDlpSourceFormat['language']): void {
+  changeLang(lang: YtVideo_Format['language']): void {
     this.selectedLanguage = lang;
     this.localizedFormats = this.getLocalizedFormats(this.combinedFormats);
     this.changeSource(this.getDefaultSourceToPlay());
@@ -243,7 +243,7 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
     );
   }
 
-  private extractAvailableLanguages<F extends YtDlpSourceFormat>(formats: F[]): F['language'][] {
+  private extractAvailableLanguages<F extends YtVideo_Format>(formats: F[]): F['language'][] {
     return Array.from(
       new Set(
         formats.map((f) => f.language).filter((l) => !!l)
@@ -251,7 +251,7 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
     );
   }
 
-  private getCombinedFormats(formats:YtDlpSourceFormat[] ): Ekydum_SourceFormat[] {
+  private getCombinedFormats(formats:YtVideo_Format[] ): Ekydum_SourceFormat[] {
     return formats.filter(
       (f) => (f.vcodec && f.vcodec !== 'none' && f.acodec && f.acodec !== 'none')
     ).map(
@@ -259,7 +259,7 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
         var p = ((f?.protocol || '') + ''),
             isHls = p.includes('m3u8'),
             l = (f.height + 'p' + (isHls ? ' HLS' : (' ' + p.toUpperCase())));
-        return Object.assign({}, f, <Omit<Ekydum_SourceFormat, keyof YtDlpSourceFormat>>{
+        return Object.assign({}, f, <Omit<Ekydum_SourceFormat, keyof YtVideo_Format>>{
           ekydum_sourceKind: Ekydum_SourceKind.COMBINED,
           ekydum_isCurrent: false,
           ekydum_isHls: isHls,
@@ -269,7 +269,7 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
     );
   }
 
-  private sortFormatsByHeight<F extends YtDlpSourceFormat>(formats: F[] ): F[] {
+  private sortFormatsByHeight<F extends YtVideo_Format>(formats: F[] ): F[] {
     return formats.sort((a, b) => (b.height || 0) - (a.height || 0));
   }
 

@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { PlayerService } from '../../services/player.service';
-import { VideoItemData } from '../../models/video-item.model';
+import { YtVideoListItem } from '../../models/protocol/yt-video-list-item.model';
 import { I18nDict, I18nLocalized, I18nMultilingual } from '../../i18n/models/dict.models';
 import { I18nService } from '../../i18n/services/i18n.service';
 import { dict } from '../../i18n/dict/main.dict';
@@ -143,7 +143,7 @@ export class PlaylistComponent implements I18nMultilingual, OnInit, OnDestroy {
 
   playlistId = '';
   playlistTitle = '';
-  videos: VideoItemData[] = [];
+  videos: YtVideoListItem[] = [];
   loading = false;
   loadingMore = false;
   currentPage = 1;
@@ -209,11 +209,11 @@ export class PlaylistComponent implements I18nMultilingual, OnInit, OnDestroy {
     });
   }
 
-  watchVideo(video: VideoItemData): void {
+  watchVideo(video: YtVideoListItem): void {
     this.playerService.playVideo(video);
   }
 
-  addToWatchLater(video: VideoItemData): void {
+  addToWatchLater(video: YtVideoListItem): void {
     this.api.addWatchLater(
       video.yt_video_id || video.yt_id || '',
       video.title,
@@ -228,7 +228,7 @@ export class PlaylistComponent implements I18nMultilingual, OnInit, OnDestroy {
     this.playerService.queueSet(this.videos);
   }
 
-  addToQueue(video: VideoItemData): void {
+  addToQueue(video: YtVideoListItem): void {
     this.playerService.queueAdd(video);
   }
 
@@ -236,7 +236,7 @@ export class PlaylistComponent implements I18nMultilingual, OnInit, OnDestroy {
     window.history.back();
   }
 
-  private mapToVideoItemData(video: any): VideoItemData {
+  private mapToVideoItemData(video: any): YtVideoListItem {
     return {
       yt_id: video.yt_id,
       yt_video_id: video.yt_id,

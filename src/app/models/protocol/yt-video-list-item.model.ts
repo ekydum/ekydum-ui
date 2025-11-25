@@ -1,4 +1,4 @@
-export interface VideoItemData {
+export interface YtVideoListItem {
   yt_id?: string;
   yt_video_id: string;
   title: string;

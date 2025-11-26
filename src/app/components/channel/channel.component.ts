@@ -417,9 +417,9 @@ export class ChannelComponent implements I18nMultilingual, OnInit, OnDestroy {
 
   addToWatchLater(video: YtVideoListItem): void {
     this.api.addWatchLater(
-      video.yt_video_id || video.yt_id || '',
+      video.yt_id,
       video.title,
-      video.thumbnail || '',
+      video.thumbnail_src,
       video.duration,
       video.channel_id,
       video.channel_name
@@ -441,9 +441,9 @@ export class ChannelComponent implements I18nMultilingual, OnInit, OnDestroy {
   private mapToVideoItemData(video: any): YtVideoListItem {
     return {
       yt_id: video.yt_id,
-      yt_video_id: video.yt_id,
       title: video.title,
       thumbnail: video.thumbnail,
+      thumbnail_src: video.thumbnail_src,
       duration: video.duration,
       view_count: video.view_count,
       channel_name: this.channel?.name,

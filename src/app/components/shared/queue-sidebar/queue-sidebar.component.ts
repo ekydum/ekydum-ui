@@ -54,7 +54,7 @@ import { dict } from '../../../i18n/dict/main.dict';
             </div>
             <button
               class="btn btn-sm queue-item-remove"
-              (click)="removeFromQueue($event, item.yt_video_id)"
+              (click)="removeFromQueue($event, item.yt_id)"
               [title]="i18nStrings['btnRemove']"
               *ngIf="i !== currentIndex"
             >

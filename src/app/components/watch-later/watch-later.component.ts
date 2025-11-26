@@ -1,5 +1,4 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { PlayerService } from '../../services/player.service';
 import { YtVideoListItem } from '../../models/protocol/yt-video-list-item.model';
@@ -47,7 +46,7 @@ import { Subject, takeUntil, tap } from 'rxjs';
             (videoClick)="watchVideo($event)"
             (addToQueue)="addToQueue($event)"
           >
-            <button class="btn btn-sm btn-red-glass w-100 mt-2" (click)="remove(video.yt_video_id!)">
+            <button class="btn btn-sm btn-red-glass w-100 mt-2" (click)="remove(video.yt_id!)">
               <i class="fas fa-clock me-1"></i>
               {{ i18nStrings['btnRemove'] }}
             </button>
@@ -132,7 +131,6 @@ export class WatchLaterComponent implements I18nMultilingual, OnInit, OnDestroy 
   private alive$ = new Subject<void>();
 
   constructor(
-    private router: Router,
     private api: ApiService,
     private playerService: PlayerService,
     private i18nService: I18nService,
@@ -180,7 +178,7 @@ export class WatchLaterComponent implements I18nMultilingual, OnInit, OnDestroy 
   remove(videoId: string): void {
     this.api.removeWatchLater(videoId).subscribe({
       next: () => {
-        this.videos = this.videos.filter(v => v.yt_video_id !== videoId);
+        this.videos = this.videos.filter(v => v.yt_id !== videoId);
       }
     });
   }

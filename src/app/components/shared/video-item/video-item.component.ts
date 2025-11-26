@@ -269,14 +269,8 @@ export class VideoItemComponent implements I18nMultilingual, OnInit, OnDestroy {
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   }
 
-  formatViewCount(count: number): string {
-    if (count >= 1000000) {
-      return (count / 1000000).toFixed(1) + 'M';
-    }
-    if (count >= 1000) {
-      return (count / 1000).toFixed(1) + 'K';
-    }
-    return count.toString();
+  formatViewCount(count: string): string {
+    return count || '';
   }
 
   formatDate(dateString: string): string {

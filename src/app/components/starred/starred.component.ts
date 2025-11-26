@@ -48,7 +48,7 @@ import { Subject, takeUntil, tap } from 'rxjs';
             (addToQueue)="addToQueue($event)"
             (addToWatchLater)="addToWatchLater($event)"
           >
-            <button class="btn btn-sm btn-red-glass w-100 mt-2" (click)="removeStar(video.yt_video_id!)">
+            <button class="btn btn-sm btn-red-glass w-100 mt-2" (click)="removeStar(video.yt_id!)">
               <i class="fas fa-star me-1"></i>
               {{ i18nStrings['btnRemove'] }}
             </button>
@@ -172,9 +172,9 @@ export class StarredComponent implements I18nMultilingual, OnInit, OnDestroy {
 
   addToWatchLater(video: YtVideoListItem): void {
     this.api.addWatchLater(
-      video.yt_video_id || video.yt_id || '',
+      video.yt_id || video.yt_id || '',
       video.title,
-      video.thumbnail || '',
+      video.thumbnail_src || '',
       video.duration,
       video.channel_id,
       video.channel_name
@@ -192,7 +192,7 @@ export class StarredComponent implements I18nMultilingual, OnInit, OnDestroy {
   removeStar(videoId: string): void {
     this.api.removeStarred(videoId).subscribe({
       next: () => {
-        this.videos = this.videos.filter(v => v.yt_video_id !== videoId);
+        this.videos = this.videos.filter(v => v.yt_id !== videoId);
       }
     });
   }

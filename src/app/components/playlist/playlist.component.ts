@@ -184,7 +184,7 @@ export class PlaylistComponent implements I18nMultilingual, OnInit, OnDestroy {
     this.loading = true;
     this.api.getPlaylistVideos(this.playlistId, this.currentPage).subscribe({
       next: (data) => {
-        this.videos = (data?.items || []).map((v: any) => this.mapToVideoItemData(v));
+        this.videos = data.items;
         this.loading = false;
       },
       error: () => {
@@ -198,8 +198,7 @@ export class PlaylistComponent implements I18nMultilingual, OnInit, OnDestroy {
     this.currentPage++;
     this.api.getPlaylistVideos(this.playlistId, this.currentPage).subscribe({
       next: (data) => {
-        var newVideos = (data?.items || []).map((v: any) => this.mapToVideoItemData(v));
-        this.videos = [...this.videos, ...newVideos];
+        this.videos = [...this.videos, ...data.items];
         this.loadingMore = false;
       },
       error: () => {
@@ -215,9 +214,9 @@ export class PlaylistComponent implements I18nMultilingual, OnInit, OnDestroy {
 
   addToWatchLater(video: YtVideoListItem): void {
     this.api.addWatchLater(
-      video.yt_video_id || video.yt_id || '',
+      video.yt_id || '',
       video.title,
-      video.thumbnail || '',
+      video.thumbnail_src || '',
       video.duration,
       video.channel_id,
       video.channel_name
@@ -234,19 +233,5 @@ export class PlaylistComponent implements I18nMultilingual, OnInit, OnDestroy {
 
   goBack(): void {
     window.history.back();
-  }
-
-  private mapToVideoItemData(video: any): YtVideoListItem {
-    return {
-      yt_id: video.yt_id,
-      yt_video_id: video.yt_id,
-      title: video.title,
-      thumbnail: video.thumbnail,
-      duration: video.duration,
-      view_count: video.view_count,
-      channel_name: video.channel_name,
-      channel_id: video.channel_id,
-      upload_date: video.upload_date
-    };
   }
 }

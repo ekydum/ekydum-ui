@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Subject } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { Router } from '@angular/router';
 import { PlayerDisplayMode } from '../models/player-display-mode.model';
 import { YtVideoListItem } from '../models/protocol/yt-video-list-item.model';
@@ -23,9 +23,6 @@ export class PlayerService {
   readonly currentTime$ = this.currentTimeSubject$.asObservable();
   readonly isPlaying$ = this.isPlayingSubject$.asObservable();
   readonly displayMode$ = this.displayModeSubject$.asObservable();
-
-  // Sync trigger
-  readonly sync$ = new Subject<void>();
 
   // Getters for current values
   get queue(): YtVideoListItem[] { return this.queueSubject$.value; }
@@ -63,7 +60,7 @@ export class PlayerService {
   }
 
   queueRemove(videoId: string): void {
-    var queue = this.queueSubject$.value.filter(v => v.yt_video_id !== videoId);
+    var queue = this.queueSubject$.value.filter(v => v.yt_id !== videoId);
     var currentIndex = this.currentIndexSubject$.value;
 
     // Adjust current index if needed
@@ -186,7 +183,7 @@ export class PlayerService {
   expandToFullPage(): void {
     var video = this.currentVideoSubject$.value;
     if (video) {
-      this.router.navigate(['/watch', video.yt_video_id]);
+      this.router.navigate(['/watch', video.yt_id]);
       this.displayModeSubject$.next(PlayerDisplayMode.MODE_INACTIVE);
     }
   }

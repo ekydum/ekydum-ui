@@ -604,8 +604,8 @@ export class FloatingPlayerModalComponent implements I18nMultilingual, OnInit, O
     .subscribe(video => {
       this.currentVideo = video;
 
-      if (video && video.yt_video_id !== this.currentVideoId) {
-        this.currentVideoId = video.yt_video_id;
+      if (video && video.yt_id !== this.currentVideoId) {
+        this.currentVideoId = video.yt_id;
 
         // Cancel previous loading
         if (this.loadingSubscription) {
@@ -759,7 +759,7 @@ export class FloatingPlayerModalComponent implements I18nMultilingual, OnInit, O
         this.api.addStarred(
           vidId,
           v.title || '',
-          v.thumbnail || '',
+          v.thumbnail_src || '',
           v.duration || 0,
           v.channel_id || '',
           v.channel_name,
@@ -784,7 +784,7 @@ export class FloatingPlayerModalComponent implements I18nMultilingual, OnInit, O
       var vidId = this.currentVideoId;
       this.watchLaterLoading = true;
       if (this.isWatchLater) {
-        this.api.removeWatchLater(v.yt_video_id).subscribe({
+        this.api.removeWatchLater(v.yt_id).subscribe({
           next: () => {
             if (this.currentVideoId === vidId) {
               this.isWatchLater = false;
@@ -797,12 +797,12 @@ export class FloatingPlayerModalComponent implements I18nMultilingual, OnInit, O
         });
       } else {
         this.api.addWatchLater(
-          v.yt_video_id,
-          v.title || '',
-          v.thumbnail || '',
+          v.yt_id,
+          v.title,
+          v.thumbnail_src,
           v.duration || 0,
-          v.channel_id || '',
-          v.channel_name || '',
+          v.channel_id,
+          v.channel_name,
         ).subscribe({
           next: () => {
             if (this.currentVideoId === vidId) {

@@ -112,12 +112,6 @@ export class ApiService {
     .pipe(catchError(err => this.handleError(err)));
   }
 
-  getVideoStream(videoId: string, quality?: string): Observable<any> {
-    var params = quality ? new HttpParams().set('quality', quality) : new HttpParams();
-    return this.http.get(this.getUrl(`/videos/${videoId}/stream`), { headers: this.getHeaders(), params })
-    .pipe(catchError(err => this.handleError(err)));
-  }
-
   getSubscriptions(): Observable<any> {
     return this.http.get(this.getUrl('/subscriptions'), { headers: this.getHeaders() })
     .pipe(catchError(err => this.handleError(err)));

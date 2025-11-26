@@ -255,9 +255,9 @@ export class SearchComponent implements I18nMultilingual, OnDestroy {
 
   addToWatchLater(video: YtVideoListItem): void {
     this.api.addWatchLater(
-      video.yt_video_id || video.yt_id || '',
+      video.yt_id || '',
       video.title,
-      video.thumbnail || '',
+      video.thumbnail_src || '',
       video.duration,
       video.channel_id,
       video.channel_name

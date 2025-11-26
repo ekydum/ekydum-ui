@@ -23,7 +23,13 @@
 
     <div class="control-item source-language-select">
       <div ngbDropdown display="dynamic" placement="top-start" class="d-inline-block">
-        <button type="button" class="btn btn-sm btn-outline-secondary" id="ctrlLang" ngbDropdownToggle>{{ selectedLanguage }}</button>
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-secondary"
+          id="ctrlLang"
+          [disabled]="availableLanguages.length < 2"
+          ngbDropdownToggle
+        >{{ selectedLanguage }}</button>
         <div ngbDropdownMenu aria-labelledby="ctrlLang" class="multi-column-dropdown">
           <button
             ngbDropdownItem

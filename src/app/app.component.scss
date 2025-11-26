@@ -215,17 +215,16 @@
         opacity: 1;
       }
     }
-
     &.active {
       color: white;
-      background: rgba(198, 17, 32, 0.15);
-      border: 1px solid rgba(198, 17, 32, 0.3);
-      box-shadow: 0 4px 12px rgba(198, 17, 32, 0.2);
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
       font-weight: 600;
 
       i {
         opacity: 1;
-        color: rgb(255, 100, 110);
+        color: rgba(255, 255, 255, 0.95);
       }
     }
   }

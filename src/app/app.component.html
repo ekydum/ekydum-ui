@@ -4,12 +4,12 @@
   </button>
 
   <nav class="sidebar" [class.collapsed]="sidebarCollapsed">
-    <div class="sidebar-header">
+    <div class="sidebar-header text-no-select">
       <img src="/appicon/favicon-32x32.png" alt="" class="logo me-1" width="28" height="28">
       <div class="app-name">Ekydum</div>
     </div>
 
-    <ul class="sidebar-menu">
+    <ul class="sidebar-menu text-no-select">
       <li>
         <a class="menu-item" routerLink="/search" routerLinkActive="active" (click)="closeSidebarOnMobile()">
           <i class="fas fa-search"></i>
@@ -38,7 +38,7 @@
 
     <div class="sidebar-divider"></div>
 
-    <ul class="sidebar-menu">
+    <ul class="sidebar-menu text-no-select">
       <li>
         <a class="menu-item" routerLink="/settings" routerLinkActive="active" (click)="closeSidebarOnMobile()">
           <i class="fas fa-cog"></i>

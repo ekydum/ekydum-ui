@@ -66,7 +66,7 @@ import { dict } from '../../i18n/dict/main.dict';
           <div class="text-center mt-3" *ngIf="hasQuickConnect">
             <a class="link-glass" routerLink="/quick-connect">
               <i class="fas fa-rocket me-1"></i>
-              Quick Connect
+              {{ i18nStrings['linkQuickConnect'] }}
             </a>
           </div>
         </div>
@@ -112,14 +112,13 @@ import { dict } from '../../i18n/dict/main.dict';
             </div>
 
             <div class="mb-3">
-              <label class="form-label text-no-select">Relay: Proxy Thumbnails</label>
+              <label class="form-label text-no-select">{{ i18nStrings['relayProxyThumbnails'] }}</label>
               <select class="form-select settings-select" [(ngModel)]="relayProxyThumbnails"
                       (change)="updateRelayProxyThumbnails()">
-                <option [value]="1">Yes</option>
-                <option [value]="0">No</option>
+                <option [value]="1">{{ i18nStrings['yes'] }}</option>
+                <option [value]="0">{{ i18nStrings['no'] }}</option>
               </select>
-              <small class="form-text text-muted-custom text-no-select">Enable if you experience any issues loading
-                channels/videos thumbnails</small>
+              <small class="form-text text-muted-custom text-no-select">{{ i18nStrings['relayProxyThumbnailsHint'] }}</small>
             </div>
 
             <div class="mb-3">

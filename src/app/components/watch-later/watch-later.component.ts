@@ -1,8 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { PlayerService } from '../../services/player.service';
-import { VideoItemData } from '../../models/video-item.model';
+import { YtVideoListItem } from '../../models/protocol/yt-video-list-item.model';
 import { I18nDict, I18nLocalized, I18nMultilingual } from '../../i18n/models/dict.models';
 import { I18nService } from '../../i18n/services/i18n.service';
 import { dict } from '../../i18n/dict/main.dict';
@@ -47,7 +46,7 @@ import { Subject, takeUntil, tap } from 'rxjs';
             (videoClick)="watchVideo($event)"
             (addToQueue)="addToQueue($event)"
           >
-            <button class="btn btn-sm btn-red-glass w-100 mt-2" (click)="remove(video.yt_video_id!)">
+            <button class="btn btn-sm btn-red-glass w-100 mt-2" (click)="remove(video.yt_id!)">
               <i class="fas fa-clock me-1"></i>
               {{ i18nStrings['btnRemove'] }}
             </button>
@@ -126,13 +125,12 @@ export class WatchLaterComponent implements I18nMultilingual, OnInit, OnDestroy 
   readonly i18nDict: I18nDict = dict['watchLater'];
   i18nStrings: I18nLocalized = {};
 
-  videos: VideoItemData[] = [];
+  videos: YtVideoListItem[] = [];
   loading = false;
 
   private alive$ = new Subject<void>();
 
   constructor(
-    private router: Router,
     private api: ApiService,
     private playerService: PlayerService,
     private i18nService: I18nService,
@@ -165,7 +163,7 @@ export class WatchLaterComponent implements I18nMultilingual, OnInit, OnDestroy 
     });
   }
 
-  watchVideo(video: VideoItemData): void {
+  watchVideo(video: YtVideoListItem): void {
     this.playerService.playVideo(video);
   }
 
@@ -173,14 +171,14 @@ export class WatchLaterComponent implements I18nMultilingual, OnInit, OnDestroy 
     this.playerService.queueSet(this.videos);
   }
 
-  addToQueue(video: VideoItemData): void {
+  addToQueue(video: YtVideoListItem): void {
     this.playerService.queueAdd(video);
   }
 
   remove(videoId: string): void {
     this.api.removeWatchLater(videoId).subscribe({
       next: () => {
-        this.videos = this.videos.filter(v => v.yt_video_id !== videoId);
+        this.videos = this.videos.filter(v => v.yt_id !== videoId);
       }
     });
   }

@@ -4,7 +4,7 @@ import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { ToastService } from './toast.service';
-import { YtDlpVideoInfo } from '../models/yt-dlp-video-info.interface';
+import { YtVideo } from '../models/protocol/yt-video.model';
 
 @Injectable({
   providedIn: 'root'
@@ -108,13 +108,7 @@ export class ApiService {
   }
 
   getVideo(videoId: string) {
-    return this.http.get<YtDlpVideoInfo>(this.getUrl(`/videos/${videoId}`), { headers: this.getHeaders() })
-    .pipe(catchError(err => this.handleError(err)));
-  }
-
-  getVideoStream(videoId: string, quality?: string): Observable<any> {
-    var params = quality ? new HttpParams().set('quality', quality) : new HttpParams();
-    return this.http.get(this.getUrl(`/videos/${videoId}/stream`), { headers: this.getHeaders(), params })
+    return this.http.get<YtVideo>(this.getUrl(`/videos/${videoId}`), { headers: this.getHeaders() })
     .pipe(catchError(err => this.handleError(err)));
   }
 

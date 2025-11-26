@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
-import { VideoItemData } from '../../../models/video-item.model';
+import { YtVideoListItem } from '../../../models/protocol/yt-video-list-item.model';
 import { I18nDict, I18nLocalized, I18nMultilingual } from '../../../i18n/models/dict.models';
 import { I18nService } from '../../../i18n/services/i18n.service';
 import { dict } from '../../../i18n/dict/main.dict';
@@ -217,16 +217,16 @@ export class VideoItemComponent implements I18nMultilingual, OnInit, OnDestroy {
   readonly i18nDict: I18nDict = dict['player'];
   i18nStrings: I18nLocalized = {};
 
-  @Input() video!: VideoItemData;
+  @Input() video!: YtVideoListItem;
   @Input() mode: 'thumbnail' | 'list' = 'thumbnail';
   @Input() showActions = true;
   @Input() showQueueButton = true;
   @Input() showWatchLaterButton = true;
   @Input() showMetadata = true;
 
-  @Output() videoClick = new EventEmitter<VideoItemData>();
-  @Output() addToQueue = new EventEmitter<VideoItemData>();
-  @Output() addToWatchLater = new EventEmitter<VideoItemData>();
+  @Output() videoClick = new EventEmitter<YtVideoListItem>();
+  @Output() addToQueue = new EventEmitter<YtVideoListItem>();
+  @Output() addToWatchLater = new EventEmitter<YtVideoListItem>();
 
   private alive$ = new Subject<void>();
 
@@ -269,14 +269,8 @@ export class VideoItemComponent implements I18nMultilingual, OnInit, OnDestroy {
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   }
 
-  formatViewCount(count: number): string {
-    if (count >= 1000000) {
-      return (count / 1000000).toFixed(1) + 'M';
-    }
-    if (count >= 1000) {
-      return (count / 1000).toFixed(1) + 'K';
-    }
-    return count.toString();
+  formatViewCount(count: string): string {
+    return count || '';
   }
 
   formatDate(dateString: string): string {

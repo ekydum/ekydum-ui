@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ToastService, Toast } from './services/toast.service';
 import { PlayerService } from './services/player.service';
-import { VideoItemData } from './models/video-item.model';
+import { YtVideoListItem } from './models/protocol/yt-video-list-item.model';
 import { Subject, takeUntil, tap } from 'rxjs';
 import { I18nDict, I18nLocalized, I18nMultilingual } from './i18n/models/dict.models';
 import { I18nService } from './i18n/services/i18n.service';
@@ -23,7 +23,7 @@ export class AppComponent implements I18nMultilingual, OnInit, OnDestroy {
   toasts: Toast[] = [];
 
   // Player state
-  currentVideo: VideoItemData | null = null;
+  currentVideo: YtVideoListItem | null = null;
   displayMode = 'inactive';
   isPlaying = false;
 

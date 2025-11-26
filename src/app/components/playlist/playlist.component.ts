@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { PlayerService } from '../../services/player.service';
-import { VideoItemData } from '../../models/video-item.model';
+import { YtVideoListItem } from '../../models/protocol/yt-video-list-item.model';
 import { I18nDict, I18nLocalized, I18nMultilingual } from '../../i18n/models/dict.models';
 import { I18nService } from '../../i18n/services/i18n.service';
 import { dict } from '../../i18n/dict/main.dict';
@@ -143,7 +143,7 @@ export class PlaylistComponent implements I18nMultilingual, OnInit, OnDestroy {
 
   playlistId = '';
   playlistTitle = '';
-  videos: VideoItemData[] = [];
+  videos: YtVideoListItem[] = [];
   loading = false;
   loadingMore = false;
   currentPage = 1;
@@ -184,7 +184,7 @@ export class PlaylistComponent implements I18nMultilingual, OnInit, OnDestroy {
     this.loading = true;
     this.api.getPlaylistVideos(this.playlistId, this.currentPage).subscribe({
       next: (data) => {
-        this.videos = (data?.items || []).map((v: any) => this.mapToVideoItemData(v));
+        this.videos = data.items;
         this.loading = false;
       },
       error: () => {
@@ -198,8 +198,7 @@ export class PlaylistComponent implements I18nMultilingual, OnInit, OnDestroy {
     this.currentPage++;
     this.api.getPlaylistVideos(this.playlistId, this.currentPage).subscribe({
       next: (data) => {
-        var newVideos = (data?.items || []).map((v: any) => this.mapToVideoItemData(v));
-        this.videos = [...this.videos, ...newVideos];
+        this.videos = [...this.videos, ...data.items];
         this.loadingMore = false;
       },
       error: () => {
@@ -209,15 +208,15 @@ export class PlaylistComponent implements I18nMultilingual, OnInit, OnDestroy {
     });
   }
 
-  watchVideo(video: VideoItemData): void {
+  watchVideo(video: YtVideoListItem): void {
     this.playerService.playVideo(video);
   }
 
-  addToWatchLater(video: VideoItemData): void {
+  addToWatchLater(video: YtVideoListItem): void {
     this.api.addWatchLater(
-      video.yt_video_id || video.yt_id || '',
+      video.yt_id || '',
       video.title,
-      video.thumbnail || '',
+      video.thumbnail_src || '',
       video.duration,
       video.channel_id,
       video.channel_name
@@ -228,25 +227,11 @@ export class PlaylistComponent implements I18nMultilingual, OnInit, OnDestroy {
     this.playerService.queueSet(this.videos);
   }
 
-  addToQueue(video: VideoItemData): void {
+  addToQueue(video: YtVideoListItem): void {
     this.playerService.queueAdd(video);
   }
 
   goBack(): void {
     window.history.back();
-  }
-
-  private mapToVideoItemData(video: any): VideoItemData {
-    return {
-      yt_id: video.yt_id,
-      yt_video_id: video.yt_id,
-      title: video.title,
-      thumbnail: video.thumbnail,
-      duration: video.duration,
-      view_count: video.view_count,
-      channel_name: video.channel_name,
-      channel_id: video.channel_id,
-      upload_date: video.upload_date
-    };
   }
 }

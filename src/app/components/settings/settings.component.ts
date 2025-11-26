@@ -66,7 +66,7 @@ import { dict } from '../../i18n/dict/main.dict';
           <div class="text-center mt-3" *ngIf="hasQuickConnect">
             <a class="link-glass" routerLink="/quick-connect">
               <i class="fas fa-rocket me-1"></i>
-              Quick Connect
+              {{ i18nStrings['linkQuickConnect'] }}
             </a>
           </div>
         </div>
@@ -112,7 +112,18 @@ import { dict } from '../../i18n/dict/main.dict';
             </div>
 
             <div class="mb-3">
-              <label class="form-label text-no-select">Sprache | Language | Idioma | Langue | Bahasa | Lingua | 言語 | 언어 | Taal | Język | Idioma | Язык | Dil | Мова | Ngôn ngữ | 语言</label>
+              <label class="form-label text-no-select">{{ i18nStrings['relayProxyThumbnails'] }}</label>
+              <select class="form-select settings-select" [(ngModel)]="relayProxyThumbnails"
+                      (change)="updateRelayProxyThumbnails()">
+                <option [value]="1">{{ i18nStrings['yes'] }}</option>
+                <option [value]="0">{{ i18nStrings['no'] }}</option>
+              </select>
+              <small class="form-text text-muted-custom text-no-select">{{ i18nStrings['relayProxyThumbnailsHint'] }}</small>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label text-no-select">Sprache | Language | Idioma | Langue | Bahasa | Lingua | 言語 |
+                언어 | Taal | Język | Idioma | Язык | Dil | Мова | Ngôn ngữ | 语言</label>
               <select class="form-select settings-select" [(ngModel)]="lang" (change)="updateLang()">
                 <option [value]="LANG_CODE.de">Deutsch (DE)</option>
                 <option [value]="LANG_CODE.en">English (EN)</option>
@@ -302,7 +313,7 @@ export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
   defaultQuality = '720p';
   pageSize = 40;
   lang: LANG_CODE = LANG_CODE.en;
-  autoPlay = 1;
+  relayProxyThumbnails = 0;
 
   private alive$ = new Subject<void>();
 
@@ -402,7 +413,7 @@ export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
         var qualitySetting = data.find((s: any) => s.key === 'DEFAULT_QUALITY');
         var pageSizeSetting = data.find((s: any) => s.key === 'PAGE_SIZE');
         var langSetting = data.find((s: any) => s.key === 'LANG');
-        var autoPlaySetting = data.find((s: any) => s.key === 'AUTO_PLAY');
+        var relayProxyThumbnailsSetting = data.find((s: any) => s.key === 'RELAY_PROXY_THUMBNAILS');
 
         if (qualitySetting) {
           this.defaultQuality = qualitySetting.value;
@@ -418,8 +429,8 @@ export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
             this.lang = LANG_CODE.en;
           }
         }
-        if (autoPlaySetting) {
-          this.autoPlay = +autoPlaySetting.value || 0;
+        if (relayProxyThumbnailsSetting) {
+          this.relayProxyThumbnails = +relayProxyThumbnailsSetting.value || 0;
         }
 
         this.loadingSettings = false;
@@ -457,5 +468,15 @@ export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
         });
       }, 500);
     }
+  }
+
+  updateRelayProxyThumbnails(): void {
+    setTimeout(() => {
+      this.api.updateSetting('RELAY_PROXY_THUMBNAILS', this.relayProxyThumbnails).subscribe({
+        next: () => {
+          this.toast.success(this.i18nStrings['toastRelaySettingsUpdated'] || 'Relay settings updated');
+        }
+      });
+    }, 500);
   }
 }

@@ -118,6 +118,11 @@ export class ApiService {
     .pipe(catchError(err => this.handleError(err)));
   }
 
+  checkSubscription(ytChannelId: string): Observable<any> {
+    return this.http.get(this.getUrl('/subscriptions/check/' + ytChannelId), { headers: this.getHeaders() })
+    .pipe(catchError(err => this.handleError(err)));
+  }
+
   subscribe(channelId: string): Observable<any> {
     return this.http.post(this.getUrl('/subscriptions'), { yt_channel_id: channelId }, { headers: this.getHeaders() })
     .pipe(catchError(err => this.handleError(err)));

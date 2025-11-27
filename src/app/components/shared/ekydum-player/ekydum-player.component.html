@@ -7,50 +7,87 @@
   >
   </video>
 
-  <div class="controls d-flex" *ngIf="showCustomControls">
-    <div class="control-item quality-select">
-      <div ngbDropdown placement="top-start" class="d-inline-block">
-        <button type="button" class="btn btn-sm btn-outline-secondary" id="ctrlQuality" ngbDropdownToggle>{{ selectedFormat?.ekydum_label || '-' }}</button>
-        <div ngbDropdownMenu aria-labelledby="ctrlQuality" class="multi-column-dropdown">
+  <div class="controls-bar" *ngIf="showCustomControls">
+    <!-- Left: Quality, Language, Chapters -->
+    <div class="controls-left">
+      <div class="control-item quality-select">
+        <div ngbDropdown placement="top-start" class="d-inline-block">
+          <button type="button" class="btn btn-sm btn-glass" id="ctrlQuality" ngbDropdownToggle>
+            <i class="fas fa-film me-1"></i>
+            {{ selectedFormat?.ekydum_label || '-' }}
+          </button>
+          <div ngbDropdownMenu aria-labelledby="ctrlQuality" class="glass-dropdown multi-column-dropdown">
+            <button
+              ngbDropdownItem
+              *ngFor="let lf of localizedFormats; trackBy: trackFormat"
+              (click)="changeSource(lf)"
+              [class.active]="lf.ekydum_isCurrent"
+            >{{ lf.ekydum_label }}{{ lf.ekydum_isCurrent ? " ✓" : "" }}</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="control-item source-language-select">
+        <div ngbDropdown display="dynamic" placement="top-start" class="d-inline-block">
           <button
-            ngbDropdownItem
-            *ngFor="let lf of localizedFormats"
-            (click)="changeSource(lf)"
-          >{{ lf.ekydum_label }}{{ lf.ekydum_isCurrent ? "*" : "" }}</button>
+            type="button"
+            class="btn btn-sm btn-glass"
+            id="ctrlLang"
+            [disabled]="availableLanguages.length < 2"
+            ngbDropdownToggle
+          >
+            <i class="fas fa-globe me-1"></i>
+            {{ selectedLanguage || '-' }}
+          </button>
+          <div ngbDropdownMenu aria-labelledby="ctrlLang" class="glass-dropdown multi-column-dropdown">
+            <button
+              ngbDropdownItem
+              *ngFor="let lng of availableLanguages; trackBy: trackLang"
+              (click)="changeLang(lng)"
+              [class.active]="selectedLanguage === lng"
+            >{{ lng }}{{ selectedLanguage === lng ? " ✓" : "" }}</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="control-item chapters" *ngIf="video?.chapters?.length">
+        <div ngbDropdown display="dynamic" placement="top-start" class="d-inline-block">
+          <button type="button" class="btn btn-sm btn-glass" id="ctrlChapters" ngbDropdownToggle>
+            <i class="fas fa-list-ol me-1"></i>
+            {{ i18nStrings['chapters'] }}
+          </button>
+          <div ngbDropdownMenu aria-labelledby="ctrlChapters" class="glass-dropdown chapters-dropdown">
+            <button
+              ngbDropdownItem
+              *ngFor="let ch of video.chapters; let i = index; trackBy: trackChapter"
+              (click)="goToChapter(ch)"
+            >
+              <span class="chapter-num">{{ i + 1 }}.</span>
+              <span class="chapter-title">{{ ch.title }}</span>
+              <span class="chapter-time">{{ formatTime(ch.start_time) }}</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="control-item source-language-select">
-      <div ngbDropdown display="dynamic" placement="top-start" class="d-inline-block">
-        <button
-          type="button"
-          class="btn btn-sm btn-outline-secondary"
-          id="ctrlLang"
-          [disabled]="availableLanguages.length < 2"
-          ngbDropdownToggle
-        >{{ selectedLanguage }}</button>
-        <div ngbDropdownMenu aria-labelledby="ctrlLang" class="multi-column-dropdown">
-          <button
-            ngbDropdownItem
-            *ngFor="let lng of availableLanguages"
-            (click)="changeLang(lng)"
-          >{{ lng }}{{ selectedLanguage === lng ? "*" : "" }}</button>
-        </div>
+    <!-- Right: Channel + Subscribe -->
+    <div class="controls-right" *ngIf="video?.channel_id">
+      <div class="channel-block" (click)="onChannelClick()">
+        <span class="channel-name">{{ video.channel || video.uploader }}</span>
       </div>
-    </div>
 
-    <div class="control-item chapters" *ngIf="video?.chapters?.length">
-      <div ngbDropdown display="dynamic" placement="top-start" class="d-inline-block">
-        <button type="button" class="btn btn-sm btn-outline-secondary" id="ctrlChapters" ngbDropdownToggle>{{ i18nStrings['chapters'] }}</button>
-        <div ngbDropdownMenu aria-labelledby="ctrlChapters" class="multi-column-dropdown" style="columns: 2;">
-          <button
-            ngbDropdownItem
-            *ngFor="let ch of video.chapters; let i = index"
-            (click)=goToChapter(ch)
-          >{{ (i + 1) }}. {{ ch.title }}</button>
-        </div>
-      </div>
+      <button
+        class="btn btn-sm btn-subscribe"
+        [class.subscribed]="isSubscribed"
+        (click)="toggleSubscription($event)"
+        [disabled]="subscriptionLoading"
+      >
+        <i class="fas fa-spinner fa-spin" *ngIf="subscriptionLoading"></i>
+        <i class="fas fa-plus" *ngIf="!subscriptionLoading && !isSubscribed"></i>
+        <i class="fas fa-check" *ngIf="!subscriptionLoading && isSubscribed"></i>
+        <span class="btn-text">{{ isSubscribed ? i18nStrings['subscribed'] : i18nStrings['subscribe'] }}</span>
+      </button>
     </div>
   </div>
 </div>

@@ -1,4 +1,5 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Router } from '@angular/router';
 import { PlayerService } from '../../../services/player.service';
 import { Subject, takeUntil, tap } from 'rxjs';
 import { ApiService } from '../../../services/api.service';
@@ -20,7 +21,7 @@ import { dict } from '../../../i18n/dict/main.dict';
       [class.mode-floating]="displayMode === 'floating'"
       [class.mode-minimized]="displayMode === 'minimized'"
       [class.mode-hidden]="displayMode === 'hidden'"
-      [class.with-queue]="showQueue && displayMode === 'floating'"
+      [class.with-sidebar]="(showQueue || showDescription) && displayMode === 'floating'"
     >
       <!-- Overlay for floating mode -->
       <div
@@ -101,6 +102,27 @@ import { dict } from '../../../i18n/dict/main.dict';
             </button>
             <button
               class="btn btn-sm action-btn"
+              (click)="toggleDescription()"
+              [class.active]="showDescription"
+              title="Description"
+              *ngIf="displayMode === 'floating'"
+            >
+              <i class="fas fa-align-left"></i>
+            </button>
+            <!-- Comments button (disabled for now)
+            <button
+              class="btn btn-sm action-btn"
+              (click)="toggleComments()"
+              [class.active]="showComments"
+              title="Comments"
+              *ngIf="displayMode === 'floating'"
+              disabled
+            >
+              <i class="fas fa-comments"></i>
+            </button>
+            -->
+            <button
+              class="btn btn-sm action-btn"
               (click)="minimize()"
               [title]="i18nStrings['btnMinimize']"
               *ngIf="displayMode === 'floating'"
@@ -147,6 +169,7 @@ import { dict } from '../../../i18n/dict/main.dict';
                 [video]="videoInfo"
                 [preferences]="preferences"
                 [showCustomControls]="displayMode === 'floating'"
+                (channelClick)="onChannelClick($event)"
               ></app-ekydum-player>
             </div>
 
@@ -157,8 +180,42 @@ import { dict } from '../../../i18n/dict/main.dict';
           </div>
 
           <!-- Queue sidebar (floating only) -->
-          <div class="queue-section" *ngIf="showQueue && displayMode === 'floating'">
+          <div class="sidebar-section queue-section" *ngIf="showQueue && displayMode === 'floating'">
             <app-queue-sidebar></app-queue-sidebar>
+          </div>
+
+          <!-- Description sidebar (floating only) -->
+          <div class="sidebar-section description-section" *ngIf="showDescription && displayMode === 'floating'">
+            <div class="description-panel">
+              <div class="description-header">
+                <h5>
+                  <i class="fas fa-align-left me-2"></i>
+                  Description
+                </h5>
+              </div>
+
+              <div class="description-body" *ngIf="videoInfo">
+                <!-- Meta info -->
+                <div class="video-meta">
+                  <span class="meta-item" *ngIf="videoInfo.view_count">
+                    <i class="fas fa-eye"></i>
+                    {{ formatCount(videoInfo.view_count) }}
+                  </span>
+                  <span class="meta-item" *ngIf="videoInfo.upload_date">
+                    <i class="fas fa-calendar"></i>
+                    {{ formatUploadDate(videoInfo.upload_date) }}
+                  </span>
+                </div>
+
+                <!-- Description text -->
+                <div class="description-text" [innerHTML]="formattedDescription"></div>
+              </div>
+
+              <div class="description-empty" *ngIf="!videoInfo?.description">
+                <i class="fas fa-align-left"></i>
+                <p>No description available</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -219,7 +276,7 @@ import { dict } from '../../../i18n/dict/main.dict';
       overflow: hidden;
     }
 
-    .player-container.mode-floating.with-queue .player-wrapper {
+    .player-container.mode-floating.with-sidebar .player-wrapper {
       max-width: 1600px;
     }
 
@@ -313,7 +370,7 @@ import { dict } from '../../../i18n/dict/main.dict';
     }
 
     .player-container.mode-minimized .feature-controls {
-      display: none; /* Hide in minimized mode to save space */
+      display: none;
     }
 
     .feature-btn {
@@ -406,7 +463,7 @@ import { dict } from '../../../i18n/dict/main.dict';
       box-shadow: 0 4px 16px rgba(13, 110, 253, 0.4);
     }
 
-    /* Action buttons (queue/minimize/restore/close) */
+    /* Action buttons (queue/description/minimize/restore/close) */
     .player-actions {
       display: flex;
       gap: 6px;
@@ -439,6 +496,11 @@ import { dict } from '../../../i18n/dict/main.dict';
       border-color: rgba(13, 110, 253, 0.3);
     }
 
+    .action-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
     /* Content */
     .player-content {
       display: flex;
@@ -462,7 +524,7 @@ import { dict } from '../../../i18n/dict/main.dict';
     }
 
     .player-container.mode-floating .player-video-section {
-      min-height: 400px;
+      /* Height determined by video aspect ratio */
     }
 
     .player-container.mode-minimized .player-video-section {
@@ -495,22 +557,157 @@ import { dict } from '../../../i18n/dict/main.dict';
       pointer-events: auto;
     }
 
-    /* Queue sidebar */
-    .queue-section {
-      width: 350px;
+    /* ===== SIDEBAR SECTIONS ===== */
+    .sidebar-section {
+      width: 380px;
       flex-shrink: 0;
       border-left: 1px solid rgba(255, 255, 255, 0.05);
       overflow: hidden;
       background: rgba(15, 15, 15, 0.5);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Queue sidebar */
+    .queue-section {
+      /* Uses queue-sidebar component */
+    }
+
+    /* Description sidebar */
+    .description-section {
+      max-height: 100%;
+      overflow-y: auto;
+    }
+
+    .description-panel {
+      display: flex;
+      flex-direction: column;
+      color: white;
+    }
+
+    .description-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      background: rgba(15, 15, 15, 0.5);
+      backdrop-filter: blur(10px);
+
+      h5 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      }
+    }
+
+    .description-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    .video-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 13px;
+
+      i {
+        font-size: 12px;
+        opacity: 0.8;
+      }
+    }
+
+    .description-text {
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+
+      a {
+        color: rgba(13, 110, 253, 0.9);
+        text-decoration: none;
+
+        &:hover {
+          color: rgba(13, 110, 253, 1);
+          text-decoration: underline;
+        }
+      }
+
+      .timestamp {
+        color: rgba(13, 110, 253, 0.9);
+        cursor: pointer;
+
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+    }
+
+    .description-empty {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      color: rgba(255, 255, 255, 0.4);
+      text-align: center;
+
+      i {
+        font-size: 48px;
+        opacity: 0.3;
+        margin-bottom: 16px;
+      }
+
+      p {
+        margin: 0;
+        font-size: 14px;
+      }
+    }
+
+    /* Custom scrollbar for description */
+    .description-body::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .description-body::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 4px;
+    }
+
+    .description-body::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+      backdrop-filter: blur(10px);
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.25);
+      }
     }
 
     /* Responsive */
     @media (max-width: 1200px) {
-      .player-container.mode-floating.with-queue .player-wrapper {
+      .player-container.mode-floating.with-sidebar .player-wrapper {
         max-width: 100%;
       }
-      .queue-section {
-        width: 300px;
+      .sidebar-section {
+        width: 320px;
       }
     }
 
@@ -529,7 +726,7 @@ import { dict } from '../../../i18n/dict/main.dict';
         flex-direction: column;
       }
 
-      .queue-section {
+      .sidebar-section {
         width: 100%;
         max-height: 40%;
         border-left: none;
@@ -565,6 +762,8 @@ export class FloatingPlayerModalComponent implements I18nMultilingual, OnInit, O
   preferences: UserPreference[] = [];
   loading = false;
   showQueue = false;
+  showDescription = false;
+  showComments = false; // For future use
   isPlaying = false;
   hasNext = false;
   hasPrevious = false;
@@ -583,6 +782,7 @@ export class FloatingPlayerModalComponent implements I18nMultilingual, OnInit, O
     public playerService: PlayerService,
     private api: ApiService,
     private i18nService: I18nService,
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -641,7 +841,12 @@ export class FloatingPlayerModalComponent implements I18nMultilingual, OnInit, O
       this.queueLength = queue.length;
       this.hasNext = this.playerService.hasNext;
       this.hasPrevious = this.playerService.hasPrevious;
-      this.showQueue = queue.length > 1;
+      // Auto-show queue if multiple items
+      if (queue.length > 1 && !this.showDescription) {
+        this.showQueue = true;
+      } else if (queue.length <= 1) {
+        this.showQueue = false;
+      }
     });
 
     this.playerService.currentIndex$
@@ -668,9 +873,33 @@ export class FloatingPlayerModalComponent implements I18nMultilingual, OnInit, O
     this.destroy$.complete();
   }
 
+  // ===== SIDEBAR TOGGLES =====
+
   toggleQueue(): void {
     this.showQueue = !this.showQueue;
+    if (this.showQueue) {
+      this.showDescription = false;
+      this.showComments = false;
+    }
   }
+
+  toggleDescription(): void {
+    this.showDescription = !this.showDescription;
+    if (this.showDescription) {
+      this.showQueue = false;
+      this.showComments = false;
+    }
+  }
+
+  toggleComments(): void {
+    this.showComments = !this.showComments;
+    if (this.showComments) {
+      this.showQueue = false;
+      this.showDescription = false;
+    }
+  }
+
+  // ===== PLAYER CONTROLS =====
 
   minimize(): void {
     this.playerService.uiMinimize();
@@ -709,6 +938,17 @@ export class FloatingPlayerModalComponent implements I18nMultilingual, OnInit, O
   previous(): void {
     this.playerService.previous();
   }
+
+  // ===== CHANNEL NAVIGATION =====
+
+  onChannelClick(channelId: string): void {
+    // Minimize player first
+    this.minimize();
+    // Navigate to channel page
+    this.router.navigate(['/channel', channelId]);
+  }
+
+  // ===== STAR & WATCH LATER =====
 
   checkStarred(): void {
     this.isStarred = false;
@@ -818,13 +1058,58 @@ export class FloatingPlayerModalComponent implements I18nMultilingual, OnInit, O
     }
   }
 
+  // ===== HELPER METHODS =====
+
+  formatCount(count: number): string {
+    if (count >= 1_000_000) {
+      return (count / 1_000_000).toFixed(1) + 'M';
+    } else if (count >= 1_000) {
+      return (count / 1_000).toFixed(1) + 'K';
+    }
+    return count.toString();
+  }
+
+  formatUploadDate(dateStr: string): string {
+    if (dateStr?.length === 8) {
+      var year = dateStr.slice(0, 4);
+      var month = dateStr.slice(4, 6);
+      var day = dateStr.slice(6, 8);
+      return `${day}.${month}.${year}`;
+    }
+    return dateStr || '';
+  }
+
+  get formattedDescription(): string {
+    if (!this.videoInfo?.description) return '';
+
+    var desc = this.videoInfo.description;
+
+    // Escape HTML
+    desc = desc.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    // Convert URLs to links
+    desc = desc.replace(
+      /(https?:\/\/[^\s]+)/g,
+      '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+    );
+
+    // Convert timestamps (e.g., 1:23, 01:23:45) to styled spans
+    desc = desc.replace(
+      /\b(\d{1,2}:)?(\d{1,2}):(\d{2})\b/g,
+      '<span class="timestamp">$&</span>'
+    );
+
+    return desc;
+  }
+
+  // ===== PRIVATE METHODS =====
+
   private loadVideoInfo(videoId: string): void {
     this.loading = true;
-    this.videoInfo = null; // Clear old video immediately
+    this.videoInfo = null;
 
     this.loadingSubscription = this.api.getVideo(videoId).subscribe({
       next: (video) => {
-        // Check if this is still the current video (not cancelled)
         if (videoId === this.currentVideoId) {
           this.videoInfo = video;
           this.loading = false;

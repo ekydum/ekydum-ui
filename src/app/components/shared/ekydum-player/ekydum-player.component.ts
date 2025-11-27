@@ -4,16 +4,19 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
+  EventEmitter,
   Input,
   OnDestroy,
+  Output,
   ViewChild
 } from '@angular/core';
 import { AuthService } from '../../../services/auth.service';
+import { ApiService } from '../../../services/api.service';
 import Hls, { ErrorData, HlsConfig } from 'hls.js';
 import { YtVideo_Format, YtVideo_Chapter, YtVideo } from '../../../models/protocol/yt-video.model';
 import { UserPreference } from '../../../models/user-preference.model';
 import { Ekydum_SourceFormat, Ekydum_SourceKind } from './models';
-import { Subject, takeUntil, tap, throttleTime } from 'rxjs';
+import { Subject, takeUntil, tap, debounceTime } from 'rxjs';
 import { I18nDict, I18nLocalized, I18nMultilingual } from '../../../i18n/models/dict.models';
 import { I18nService } from '../../../i18n/services/i18n.service';
 import { dict } from '../../../i18n/dict/main.dict';
@@ -30,6 +33,8 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
   @Input() preferences!: UserPreference[];
   @Input() showCustomControls = true;
   @ViewChild('videoEl', { static: false }) videoElementRef!: ElementRef<HTMLVideoElement>;
+
+  @Output() channelClick = new EventEmitter<string>();
 
   readonly i18nDict: I18nDict = dict['player'];
   i18nStrings: I18nLocalized = {};
@@ -56,13 +61,18 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
 
   private hls!: Hls;
   private isFirstLoad = true;
-  private get player(): HTMLVideoElement { return this.videoElementRef.nativeElement; }
+  get player(): HTMLVideoElement { return this.videoElementRef.nativeElement; }
 
-  // quality selection strategy
+  // Quality selection strategy
   qssStrategyMax = true;
   qssStrategyMin = false;
   qssStrategyClosest = 720;
   qssAvoidNonHls = true;
+
+  // Subscription state
+  isSubscribed = false;
+  subscriptionLoading = false;
+  private subscriptionId: number | null = null;
 
   private readonly hlsPlayerOptions: Readonly<Partial<HlsConfig>> = {
     debug: false,
@@ -76,6 +86,7 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
     private auth: AuthService,
     private cdr: ChangeDetectorRef,
     private i18nService: I18nService,
+    private api: ApiService,
   ) {
     this.SERVER_URL = this.auth.getServerUrl() || 'http://localhost:3000';
   }
@@ -102,6 +113,11 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
         this.initHlsPlayer();
       }
       this.loadSelectedSource();
+
+      // Check subscription status
+      if (this.video.channel_id) {
+        this.checkSubscription();
+      }
     }
     this.render$.next();
   }
@@ -129,7 +145,7 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
     this.render$.next();
   }
 
-  changeSource(f: Ekydum_SourceFormat|null): void {
+  changeSource(f: Ekydum_SourceFormat | null): void {
     if (f) {
       this.setSelectedSource(f);
       this.loadSelectedSource();
@@ -142,7 +158,103 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
     this.changeSource(this.getDefaultSourceToPlay());
   }
 
-  private setSelectedSource(f: Ekydum_SourceFormat|null): void {
+  // ===== CHANNEL & SUBSCRIPTION =====
+
+  onChannelClick(): void {
+    if (this.video?.channel_id) {
+      this.channelClick.emit(this.video.channel_id);
+    }
+  }
+
+  checkSubscription(): void {
+    if (!this.video?.channel_id) return;
+
+    var channelId = this.video.channel_id;
+    this.api.checkSubscription(channelId).subscribe({
+      next: (data) => {
+        if (this.video?.channel_id === channelId) {
+          this.isSubscribed = data?.subscribed || false;
+          this.subscriptionId = data?.subscription_id || null;
+          this.render$.next();
+        }
+      },
+      error: () => {
+        this.isSubscribed = false;
+        this.render$.next();
+      }
+    });
+  }
+
+  toggleSubscription(event: Event): void {
+    event.stopPropagation();
+    if (!this.video?.channel_id) return;
+
+    var channelId = this.video.channel_id;
+    this.subscriptionLoading = true;
+    this.render$.next();
+
+    if (this.isSubscribed && this.subscriptionId) {
+      this.api.unsubscribe(this.subscriptionId).subscribe({
+        next: () => {
+          if (this.video?.channel_id === channelId) {
+            this.isSubscribed = false;
+            this.subscriptionId = null;
+          }
+          this.subscriptionLoading = false;
+          this.render$.next();
+        },
+        error: () => {
+          this.subscriptionLoading = false;
+          this.render$.next();
+        }
+      });
+    } else {
+      this.api.subscribe(channelId).subscribe({
+        next: (data) => {
+          if (this.video?.channel_id === channelId) {
+            this.isSubscribed = true;
+            this.subscriptionId = data?.id || null;
+          }
+          this.subscriptionLoading = false;
+          this.render$.next();
+        },
+        error: () => {
+          this.subscriptionLoading = false;
+          this.render$.next();
+        }
+      });
+    }
+  }
+
+  // ===== HELPER METHODS =====
+
+  formatTime(seconds: number): string {
+    var h = Math.floor(seconds / 3600);
+    var m = Math.floor((seconds % 3600) / 60);
+    var s = Math.floor(seconds % 60);
+
+    if (h > 0) {
+      return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  // trackBy functions
+  trackFormat(index: number, format: Ekydum_SourceFormat): string {
+    return format.format_id;
+  }
+
+  trackLang(index: number, lang: any): string {
+    return lang;
+  }
+
+  trackChapter(index: number, chapter: YtVideo_Chapter): number {
+    return chapter.start_time;
+  }
+
+  // ===== PRIVATE METHODS =====
+
+  private setSelectedSource(f: Ekydum_SourceFormat | null): void {
     if (f) {
       f.ekydum_isCurrent = true;
       this.localizedFormats.forEach((lf) => {
@@ -175,7 +287,7 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
         playerState.restore();
       }
 
-      if (f.language && ( !this.selectedLanguage || !f.language.startsWith(this.selectedLanguage))) {
+      if (f.language && (!this.selectedLanguage || !f.language.startsWith(this.selectedLanguage))) {
         this.selectedLanguage = f.language;
       }
 
@@ -233,7 +345,7 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
     this.localizedFormats = this.getLocalizedFormats(this.combinedFormats);
   }
 
-  private getDefaultSourceToPlay(): Ekydum_SourceFormat|null {
+  private getDefaultSourceToPlay(): Ekydum_SourceFormat | null {
     var formats = this.localizedFormats;
     return (
       (this.qssStrategyMax && this.qssGetMaxQuality(formats)) ||
@@ -251,14 +363,14 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
     );
   }
 
-  private getCombinedFormats(formats:YtVideo_Format[] ): Ekydum_SourceFormat[] {
+  private getCombinedFormats(formats: YtVideo_Format[]): Ekydum_SourceFormat[] {
     return formats.filter(
       (f) => (f.vcodec && f.vcodec !== 'none' && f.acodec && f.acodec !== 'none')
     ).map(
       (f) => {
         var p = ((f?.protocol || '') + ''),
-            isHls = p.includes('m3u8'),
-            l = (f.height + 'p');
+          isHls = p.includes('m3u8'),
+          l = (f.height + 'p');
         return Object.assign({}, f, <Omit<Ekydum_SourceFormat, keyof YtVideo_Format>>{
           ekydum_sourceKind: Ekydum_SourceKind.COMBINED,
           ekydum_isCurrent: false,
@@ -271,13 +383,13 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
     );
   }
 
-  private sortFormatsByHeight<F extends YtVideo_Format>(formats: F[] ): F[] {
+  private sortFormatsByHeight<F extends YtVideo_Format>(formats: F[]): F[] {
     return formats.sort((a, b) => (b.height || 0) - (a.height || 0));
   }
 
   private getLocalizedFormats(formats: Ekydum_SourceFormat[]): Ekydum_SourceFormat[] {
     var currentLang = this.selectedLanguage,
-        fallbackLang = this.FALLBACK_CONTENT_LANG;
+      fallbackLang = this.FALLBACK_CONTENT_LANG;
     var found = formats.filter((f) => f.language === currentLang);
     if (found.length === 0 && fallbackLang !== currentLang) {
       found = formats.filter((f) => f.language === fallbackLang);
@@ -331,22 +443,22 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
   }
 
   private discoverRuntimeCapabilities(): void {
-    this.CAP_HAS_NATIVE_HLS_SUPPORT = !!this.player.canPlayType('application/vnd.apple.mpegurl'); // "" | "maybe" | "probably"
+    this.CAP_HAS_NATIVE_HLS_SUPPORT = !!this.player.canPlayType('application/vnd.apple.mpegurl');
     this.CAP_HAS_HLS_PLAYER_SUPPORT = Hls.isSupported();
   }
 
   private setupRenderer(): void {
     this.render$.pipe(
       takeUntil(this.alive$),
-      throttleTime(100),
+      debounceTime(200),
       tap(() => this.cdr.detectChanges()),
     ).subscribe();
   }
 
-  private qssGetMaxQuality(formats: Ekydum_SourceFormat[]): Ekydum_SourceFormat|null {
+  private qssGetMaxQuality(formats: Ekydum_SourceFormat[]): Ekydum_SourceFormat | null {
     var maxHeight = 0,
-        maxQualityItem: Ekydum_SourceFormat|null = null,
-        avoidNonHls = this.qssAvoidNonHls;
+      maxQualityItem: Ekydum_SourceFormat | null = null,
+      avoidNonHls = this.qssAvoidNonHls;
     formats.forEach((f) => {
       if ((avoidNonHls ? f.ekydum_isHls : true) && f.height && (f.height > maxHeight)) {
         maxHeight = f.height;
@@ -356,9 +468,9 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
     return maxQualityItem;
   }
 
-  private qssGetMinQuality(formats: Ekydum_SourceFormat[]): Ekydum_SourceFormat|null {
+  private qssGetMinQuality(formats: Ekydum_SourceFormat[]): Ekydum_SourceFormat | null {
     var minHeight = Number.MAX_SAFE_INTEGER,
-      minQualityItem: Ekydum_SourceFormat|null = null,
+      minQualityItem: Ekydum_SourceFormat | null = null,
       avoidNonHls = this.qssAvoidNonHls;
     formats.forEach((f) => {
       if ((avoidNonHls ? f.ekydum_isHls : true) && f.height && (f.height < minHeight)) {
@@ -369,12 +481,12 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
     return minQualityItem;
   }
 
-  private qssGetClosestQuality(formats: Ekydum_SourceFormat[], h: number): Ekydum_SourceFormat|null {
+  private qssGetClosestQuality(formats: Ekydum_SourceFormat[], h: number): Ekydum_SourceFormat | null {
     var minDelta = Number.MAX_SAFE_INTEGER,
-      minDeltaItem: Ekydum_SourceFormat|null = null,
+      minDeltaItem: Ekydum_SourceFormat | null = null,
       avoidNonHls = this.qssAvoidNonHls;
     formats.forEach((f) => {
-      if ((avoidNonHls ? f.ekydum_isHls : true)  && f.height) {
+      if ((avoidNonHls ? f.ekydum_isHls : true) && f.height) {
         var delta = Math.abs(f.height - h);
         if (delta < minDelta) {
           minDelta = delta;

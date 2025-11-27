@@ -43,7 +43,7 @@ import { Subject, takeUntil, tap } from 'rxjs';
         </div>
 
         <div class="row" *ngIf="videos.length > 0">
-          <div class="col-md-6 col-lg-4 col-xl-3 mb-4" *ngFor="let video of videos">
+          <div class="col-md-6 col-lg-4 col-xl-3 mb-4" *ngFor="let video of videos; trackBy: trackByFn_Video">
             <app-video-item
               [video]="video"
               [showMetadata]="true"
@@ -233,5 +233,9 @@ export class PlaylistComponent implements I18nMultilingual, OnInit, OnDestroy {
 
   goBack(): void {
     window.history.back();
+  }
+
+  trackByFn_Video = function (_i: number, v: YtVideoListItem): string {
+    return v.yt_id;
   }
 }

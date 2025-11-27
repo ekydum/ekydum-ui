@@ -66,7 +66,7 @@ import { Subject, takeUntil, tap } from 'rxjs';
           </button>
         </div>
 
-        <div class="col-md-6 col-lg-4 col-xl-3 mb-4" *ngFor="let video of st.videos">
+        <div class="col-md-6 col-lg-4 col-xl-3 mb-4" *ngFor="let video of st.videos; trackBy: trackByFn_Video">
           <app-video-item
             [video]="video"
             [showMetadata]="true"
@@ -270,5 +270,9 @@ export class SearchComponent implements I18nMultilingual, OnDestroy {
 
   addToQueue(video: YtVideoListItem): void {
     this.playerService.queueAdd(video);
+  }
+
+  trackByFn_Video = function (_i: number, v: YtVideoListItem): string {
+    return v.yt_id;
   }
 }

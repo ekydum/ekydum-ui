@@ -7,6 +7,7 @@ import { I18nDict, I18nLocalized, I18nMultilingual } from '../../i18n/models/dic
 import { I18nService } from '../../i18n/services/i18n.service';
 import { dict } from '../../i18n/dict/main.dict';
 import { Subject, takeUntil, tap } from 'rxjs';
+import { YtChannelListItem } from '../../models/protocol/yt-channel-list-item.model';
 
 @Component({
   selector: 'app-subscriptions',
@@ -48,7 +49,7 @@ import { Subject, takeUntil, tap } from 'rxjs';
       </div>
 
       <div class="row" *ngIf="!loading && subscriptions.length > 0">
-        <div class="col-md-6 col-lg-4 col-xl-3 mb-4" *ngFor="let sub of subscriptions">
+        <div class="col-md-6 col-lg-4 col-xl-3 mb-4" *ngFor="let sub of subscriptions; trackBy: trackByFn_Sub">
           <div class="card channel-card h-100 text-no-select" (click)="openChannel(sub.yt_channel_id)">
             <div class="card-body">
               <h5 class="card-title">
@@ -92,7 +93,7 @@ import { Subject, takeUntil, tap } from 'rxjs';
           </div>
 
           <div class="results-list" *ngIf="!searching && searchResults.length > 0">
-            <div class="result-item" *ngFor="let channel of searchResults">
+            <div class="result-item" *ngFor="let channel of searchResults; trackBy: trackByFn_ChannelListItem">
               <div class="d-flex justify-content-between align-items-center">
                 <div>
                   <h6 class="mb-1 text-white">{{ channel.name }}</h6>
@@ -432,5 +433,13 @@ export class SubscriptionsComponent implements I18nMultilingual, OnInit, OnDestr
     this.showSearchResults = false;
     this.searchResults = [];
     this.searchQuery = '';
+  }
+
+  trackByFn_Sub = function (_i: number, sub: any): string {
+    return sub.yt_channel_id;
+  }
+
+  trackByFn_ChannelListItem = function (_i: number, ch: YtChannelListItem): string {
+    return ch.yt_id;
   }
 }

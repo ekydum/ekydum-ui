@@ -21,6 +21,7 @@ import { QueueSidebarComponent } from './components/shared/queue-sidebar/queue-s
 import { FloatingPlayerModalComponent } from './components/shared/floating-player-modal/floating-player-modal.component';
 import { AppInitializerService } from './services/app-initializer.service';
 import { QuickConnectComponent } from './components/quick-connect/quick-connect.component';
+import { AboutModalComponent } from './components/about-modal/about-modal.component';
 
 @NgModule({
   declarations: [
@@ -38,6 +39,7 @@ import { QuickConnectComponent } from './components/quick-connect/quick-connect.
     QueueSidebarComponent,
     FloatingPlayerModalComponent,
     QuickConnectComponent,
+    AboutModalComponent,
   ],
   imports: [
     CommonModule,

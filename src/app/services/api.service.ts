@@ -5,6 +5,7 @@ import { catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { ToastService } from './toast.service';
 import { YtVideo } from '../models/protocol/yt-video.model';
+import { HealthInfo, ServerInfo } from '../models/protocol/server.models';
 
 @Injectable({
   providedIn: 'root'
@@ -241,5 +242,15 @@ export class ApiService {
   checkWatchLater(ytVideoId: string): Observable<any> {
     return this.http.get(this.getUrl(`/watch-later/check/${ytVideoId}`), { headers: this.getHeaders() })
     .pipe(catchError(err => this.handleError(err)));
+  }
+
+  getServerInfo() {
+    return this.http.get<ServerInfo>(this.getUrl('/'))
+      .pipe(catchError(err => this.handleError(err)));
+  }
+
+  getServerHealth() {
+    return this.http.get<HealthInfo>(this.getUrl('/health'))
+      .pipe(catchError(err => this.handleError(err)));
   }
 }

@@ -9,9 +9,11 @@ import { StarredComponent } from './components/starred/starred.component';
 import { WatchLaterComponent } from './components/watch-later/watch-later.component';
 import { QuickConnectComponent } from './components/quick-connect/quick-connect.component';
 import { AuthGuard } from './guards/auth.guard';
+import { FeedComponent } from './components/feed/feed.component';
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/subscriptions', pathMatch: 'full' },
+  { path: '', redirectTo: '/feed', pathMatch: 'full' },
+  { path: 'feed', component: FeedComponent, canActivate: [AuthGuard] },
   { path: 'quick-connect', component: QuickConnectComponent },
   { path: 'settings', component: SettingsComponent },
   { path: 'manage', component: ManageComponent },

@@ -10,6 +10,12 @@
 
     <ul class="sidebar-menu text-no-select">
       <li>
+        <a class="menu-item" routerLink="/feed" routerLinkActive="active" (click)="closeSidebarOnMobile()">
+          <i class="fas fa-rss"></i>
+          {{ i18nStrings['menuFeed'] }}
+        </a>
+      </li>
+      <li>
         <a class="menu-item" routerLink="/search" routerLinkActive="active" (click)="closeSidebarOnMobile()">
           <i class="fas fa-search"></i>
           {{ i18nStrings['menuSearch'] }}

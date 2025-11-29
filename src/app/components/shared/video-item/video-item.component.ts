@@ -52,7 +52,8 @@ import { Subject, takeUntil, tap } from 'rxjs';
             <i class="fas fa-eye me-1"></i>
             {{ formatViewCount(video.view_count) }}
           </span>
-          <span *ngIf="video.upload_date" class="ms-2">
+          <span *ngIf="video.view_count && video.upload_date" class="mx-1">•</span>
+          <span *ngIf="video.upload_date">
             <i class="fas fa-calendar me-1"></i>
             {{ formatDate(video.upload_date) }}
           </span>
@@ -194,6 +195,7 @@ import { Subject, takeUntil, tap } from 'rxjs';
       color: white;
       line-height: 1.3;
       transition: color 0.2s ease;
+      min-height: 2.6em; /* 2 lines * 1.3 line-height */
     }
 
     .card-title:hover {
@@ -262,35 +264,48 @@ export class VideoItemComponent implements I18nMultilingual, OnInit, OnDestroy {
     var hours = Math.floor(seconds / 3600);
     var minutes = Math.floor((seconds % 3600) / 60);
     var secs = seconds % 60;
-
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    var result = hours > 0
+      ? `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+      : `${minutes}:${secs.toString().padStart(2, '0')}`;
+    return result;
   }
 
   formatViewCount(count: string): string {
-    return count || '';
+    var result = count || '';
+    return result;
   }
 
   formatDate(dateString: string): string {
-    if (!dateString) return '';
+    var result = '';
 
-    // Handle YYYY-MM-DD format
-    if (dateString.includes('-')) {
+    if (dateString) {
       var date = new Date(dateString);
       var now = new Date();
-      var diff = now.getTime() - date.getTime();
-      var days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      var diffMs = now.getTime() - date.getTime();
+      var diffMinutes = Math.floor(diffMs / (1000 * 60));
+      var diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      var diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      var diffWeeks = Math.floor(diffDays / 7);
+      var diffMonths = Math.floor(diffDays / 30);
+      var diffYears = Math.floor(diffDays / 365);
 
-      if (days === 0) return this.i18nStrings['dateToday'] || 'Today';
-      if (days === 1) return this.i18nStrings['dateYesterday'] || 'Yesterday';
-      if (days < 7) return `${days} ${this.i18nStrings['dateDaysAgo'] || 'days ago'}`;
-      if (days < 30) return `${Math.floor(days / 7)} ${this.i18nStrings['dateWeeksAgo'] || 'weeks ago'}`;
-      if (days < 365) return `${Math.floor(days / 30)} ${this.i18nStrings['dateMonthsAgo'] || 'months ago'}`;
-      return `${Math.floor(days / 365)} ${this.i18nStrings['dateYearsAgo'] || 'years ago'}`;
+      result = diffMinutes < 1
+        ? (this.i18nStrings['dateJustNow'] || 'Just now')
+        : diffMinutes < 60
+          ? `${diffMinutes} ${this.i18nStrings['dateMinutesAgo'] || 'min ago'}`
+          : diffHours < 24
+            ? `${diffHours} ${this.i18nStrings['dateHoursAgo'] || 'hours ago'}`
+            : diffDays === 1
+              ? (this.i18nStrings['dateYesterday'] || 'Yesterday')
+              : diffDays < 7
+                ? `${diffDays} ${this.i18nStrings['dateDaysAgo'] || 'days ago'}`
+                : diffDays < 30
+                  ? `${diffWeeks} ${this.i18nStrings['dateWeeksAgo'] || 'weeks ago'}`
+                  : diffDays < 365
+                    ? `${diffMonths} ${this.i18nStrings['dateMonthsAgo'] || 'months ago'}`
+                    : `${diffYears} ${this.i18nStrings['dateYearsAgo'] || 'years ago'}`;
     }
 
-    return dateString;
+    return result;
   }
 }

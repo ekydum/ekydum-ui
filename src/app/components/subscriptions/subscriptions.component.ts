@@ -411,7 +411,7 @@ export class SubscriptionsComponent implements I18nMultilingual, OnInit, OnDestr
     });
   }
 
-  unsubscribe(id: number, event: Event): void {
+  unsubscribe(id: string, event: Event): void {
     event.stopPropagation();
     this.api.unsubscribe(id).subscribe({
       next: () => {

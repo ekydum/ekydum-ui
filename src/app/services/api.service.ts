@@ -130,7 +130,7 @@ export class ApiService {
     .pipe(catchError(err => this.handleError(err)));
   }
 
-  unsubscribe(subscriptionId: number): Observable<any> {
+  unsubscribe(subscriptionId: string): Observable<any> {
     return this.http.delete(this.getUrl(`/subscriptions/${subscriptionId}`), { headers: this.getHeaders() })
     .pipe(catchError(err => this.handleError(err)));
   }

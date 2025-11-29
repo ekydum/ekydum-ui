@@ -380,7 +380,7 @@ export class ChannelComponent implements I18nMultilingual, OnInit, OnDestroy {
 
   // Subscription state
   isSubscribed = false;
-  subscriptionId: number | null = null;
+  subscriptionId: string | null = null;
   subscriptionLoading = false;
 
   private alive$ = new Subject<void>();
@@ -425,7 +425,7 @@ export class ChannelComponent implements I18nMultilingual, OnInit, OnDestroy {
     ).subscribe({
       next: (data) => {
         this.isSubscribed = data.subscribed;
-        this.subscriptionId = data.subscription_id ? parseInt(data.subscription_id, 10) : null;
+        this.subscriptionId = data.subscription_id || null;
       },
       error: () => {
         this.isSubscribed = false;

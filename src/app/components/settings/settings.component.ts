@@ -96,22 +96,6 @@ import { settingsDict } from '../../i18n/dict/settings.dict';
               </select>
             </div>
 
-            <!-- decommission -->
-<!--            <div class="mb-3">-->
-<!--              <label class="form-label text-no-select">{{ i18nStrings['pageSize'] }}</label>-->
-<!--              <select class="form-select settings-select" [(ngModel)]="pageSize" (change)="updatePageSize()">-->
-<!--                <option [value]="10">10</option>-->
-<!--                <option [value]="20">20</option>-->
-<!--                <option [value]="30">30</option>-->
-<!--                <option [value]="50">50</option>-->
-<!--                <option [value]="100">100</option>-->
-<!--                <option [value]="200">200</option>-->
-<!--                <option [value]="300">300</option>-->
-<!--                <option [value]="500">500</option>-->
-<!--              </select>-->
-<!--              <small class="form-text text-muted-custom text-no-select">{{ i18nStrings['pageSizeHint'] }}</small>-->
-<!--            </div>-->
-
             <div class="mb-3">
               <label class="form-label text-no-select">{{ i18nStrings['relayProxyThumbnails'] }}</label>
               <select class="form-select settings-select" [(ngModel)]="relayProxyThumbnails"
@@ -312,7 +296,6 @@ export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
 
   loadingSettings = false;
   defaultQuality = '720p';
-  pageSize = 50;
   lang: LANG_CODE = LANG_CODE.en;
   relayProxyThumbnails = 0;
 
@@ -412,15 +395,11 @@ export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
     ).subscribe({
       next: (data) => {
         var qualitySetting = data.find((s: any) => s.key === 'DEFAULT_QUALITY');
-        var pageSizeSetting = data.find((s: any) => s.key === 'PAGE_SIZE');
         var langSetting = data.find((s: any) => s.key === 'LANG');
         var relayProxyThumbnailsSetting = data.find((s: any) => s.key === 'RELAY_PROXY_THUMBNAILS');
 
         if (qualitySetting) {
           this.defaultQuality = qualitySetting.value;
-        }
-        if (pageSizeSetting) {
-          this.pageSize = parseInt(pageSizeSetting.value);
         }
         if (langSetting) {
           var langValue = (langSetting.value + '').toLowerCase();
@@ -446,14 +425,6 @@ export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
     this.api.updateSetting('DEFAULT_QUALITY', this.defaultQuality).subscribe({
       next: () => {
         this.toast.success(this.i18nStrings['toastQualityUpdated'] || 'Quality updated');
-      }
-    });
-  }
-
-  updatePageSize(): void {
-    this.api.updateSetting('PAGE_SIZE', this.pageSize).subscribe({
-      next: () => {
-        this.toast.success(this.i18nStrings['toastPageSizeUpdated'] || 'Page size updated');
       }
     });
   }

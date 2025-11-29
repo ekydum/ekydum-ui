@@ -32,7 +32,7 @@ import { searchDict } from '../../i18n/dict/search.dict';
               [disabled]="loading"
             >
             <button
-              class="btn btn-blue-glass"
+              class="btn btn-blue-glass btn-search"
               type="button"
               (click)="search()"
               [disabled]="loading || !st.searchQuery.trim()"
@@ -138,7 +138,7 @@ import { searchDict } from '../../i18n/dict/search.dict';
       backdrop-filter: blur(10px);
       transition: all 0.2s ease;
       font-weight: 600;
-      border-radius: 0 12px 12px 0;
+      border-radius: 12px;
       padding: 12px 24px;
     }
 
@@ -153,6 +153,11 @@ import { searchDict } from '../../i18n/dict/search.dict';
     .btn-blue-glass:disabled {
       opacity: 0.5;
       cursor: not-allowed;
+    }
+
+    /* Search button in input group - override border-radius */
+    .btn-search {
+      border-radius: 0 12px 12px 0;
     }
 
     /* Spinner */

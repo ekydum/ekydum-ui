@@ -17,6 +17,7 @@ import { I18nDict, I18nLocalized, I18nMultilingual } from '../../../i18n/models/
 import { I18nService } from '../../../i18n/services/i18n.service';
 import { playerDict } from '../../../i18n/dict/player.dict';
 import { ApiService } from '../../../services/api.service';
+import { ConfigService, CONFIG_KEYS } from '../../../services/config.service';
 
 @Component({
   selector: 'app-ekydum-player',
@@ -80,6 +81,7 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
     private cdr: ChangeDetectorRef,
     private i18nService: I18nService,
     private api: ApiService,
+    private configService: ConfigService,
   ) {
   }
 
@@ -137,6 +139,11 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
     if (f) {
       this.setSelectedSource(f);
       this.loadSelectedSource();
+
+      if (f.height) {
+        var qualityValue = f.height + 'p';
+        this.configService.set(CONFIG_KEYS.DEFAULT_QUALITY, qualityValue).subscribe();
+      }
     }
   }
 

@@ -2,11 +2,12 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
-import { map, Subject, takeUntil, tap } from 'rxjs';
+import { Subject, takeUntil, tap } from 'rxjs';
 import { I18nService } from '../../i18n/services/i18n.service';
 import { LANG_CODE } from '../../i18n/models/lang-code.enum';
 import { I18nDict, I18nLocalized, I18nMultilingual } from '../../i18n/models/dict.models';
 import { settingsDict } from '../../i18n/dict/settings.dict';
+import { ConfigService, CONFIG_KEYS } from '../../services/config.service';
 
 @Component({
   selector: 'app-settings',
@@ -306,6 +307,7 @@ export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
     private auth: AuthService,
     private toast: ToastService,
     private i18nService: I18nService,
+    private configService: ConfigService,
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -330,11 +332,40 @@ export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
       this.loadAccountInfo();
       this.loadSettings();
     }
+
+    // Subscribe to config changes to keep UI in sync
+    this.subscribeToConfigChanges();
   }
 
   ngOnDestroy(): void {
     this.alive$.next();
     this.alive$.complete();
+  }
+
+  private subscribeToConfigChanges(): void {
+    this.configService.selectDistinct(CONFIG_KEYS.DEFAULT_QUALITY).pipe(
+      takeUntil(this.alive$)
+    ).subscribe((value) => {
+      if (value) {
+        this.defaultQuality = value;
+      }
+    });
+
+    this.configService.selectDistinct(CONFIG_KEYS.RELAY_PROXY_THUMBNAILS).pipe(
+      takeUntil(this.alive$)
+    ).subscribe((value) => {
+      if (value !== undefined) {
+        this.relayProxyThumbnails = +value || 0;
+      }
+    });
+
+    this.configService.selectDistinct(CONFIG_KEYS.LANG).pipe(
+      takeUntil(this.alive$)
+    ).subscribe((value) => {
+      if (value && Object.values(LANG_CODE).includes(value as LANG_CODE)) {
+        this.lang = value as LANG_CODE;
+      }
+    });
   }
 
   async checkQuickConnect(): Promise<void> {
@@ -377,6 +408,7 @@ export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
     this.accountToken = '';
     this.isConnected = false;
     this.accountInfo = null;
+    this.configService.reset();
     this.toast.info(this.i18nStrings['toastDisconnected'] || 'Disconnected');
   }
 
@@ -390,27 +422,18 @@ export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
 
   loadSettings(): void {
     this.loadingSettings = true;
-    this.api.getSettings().pipe(
-      map((r) => r.settings)
-    ).subscribe({
-      next: (data) => {
-        var qualitySetting = data.find((s: any) => s.key === 'DEFAULT_QUALITY');
-        var langSetting = data.find((s: any) => s.key === 'LANG');
-        var relayProxyThumbnailsSetting = data.find((s: any) => s.key === 'RELAY_PROXY_THUMBNAILS');
 
-        if (qualitySetting) {
-          this.defaultQuality = qualitySetting.value;
-        }
-        if (langSetting) {
-          var langValue = (langSetting.value + '').toLowerCase();
-          if (Object.values(LANG_CODE).includes(langValue as LANG_CODE)) {
-            this.lang = langValue as LANG_CODE;
-          } else {
-            this.lang = LANG_CODE.en;
-          }
-        }
-        if (relayProxyThumbnailsSetting) {
-          this.relayProxyThumbnails = +relayProxyThumbnailsSetting.value || 0;
+    // Use ConfigService to load settings
+    this.configService.init().subscribe({
+      next: () => {
+        this.defaultQuality = this.configService.getOrDefault(CONFIG_KEYS.DEFAULT_QUALITY, '720p');
+        this.relayProxyThumbnails = +(this.configService.get(CONFIG_KEYS.RELAY_PROXY_THUMBNAILS) || 0);
+
+        var langValue = this.configService.get(CONFIG_KEYS.LANG);
+        if (langValue && Object.values(LANG_CODE).includes(langValue as LANG_CODE)) {
+          this.lang = langValue as LANG_CODE;
+        } else {
+          this.lang = LANG_CODE.en;
         }
 
         this.loadingSettings = false;
@@ -422,7 +445,7 @@ export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
   }
 
   updateQuality(): void {
-    this.api.updateSetting('DEFAULT_QUALITY', this.defaultQuality).subscribe({
+    this.configService.set(CONFIG_KEYS.DEFAULT_QUALITY, this.defaultQuality).subscribe({
       next: () => {
         this.toast.success(this.i18nStrings['toastQualityUpdated'] || 'Quality updated');
       }
@@ -431,24 +454,17 @@ export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
 
   updateLang(): void {
     if (this.lang) {
+      // i18nService.setLang will also update configService
       this.i18nService.setLang(this.lang);
-      setTimeout(() => {
-        this.api.updateSetting('LANG', this.lang).subscribe({
-          next: () => {
-            this.toast.success(this.i18nStrings['toastLanguageUpdated'] || 'Language updated');
-          }
-        });
-      }, 500);
+      this.toast.success(this.i18nStrings['toastLanguageUpdated'] || 'Language updated');
     }
   }
 
   updateRelayProxyThumbnails(): void {
-    setTimeout(() => {
-      this.api.updateSetting('RELAY_PROXY_THUMBNAILS', this.relayProxyThumbnails).subscribe({
-        next: () => {
-          this.toast.success(this.i18nStrings['toastRelaySettingsUpdated'] || 'Relay settings updated');
-        }
-      });
-    }, 500);
+    this.configService.set(CONFIG_KEYS.RELAY_PROXY_THUMBNAILS, this.relayProxyThumbnails + '').subscribe({
+      next: () => {
+        this.toast.success(this.i18nStrings['toastRelaySettingsUpdated'] || 'Relay settings updated');
+      }
+    });
   }
 }

@@ -8,7 +8,6 @@ import {
   OnDestroy,
   ViewChild
 } from '@angular/core';
-import { AuthService } from '../../../services/auth.service';
 import Hls, { ErrorData, HlsConfig } from 'hls.js';
 import { YtVideo_Format, YtVideo_Chapter, YtVideo } from '../../../models/protocol/yt-video.model';
 import { UserPreference } from '../../../models/user-preference.model';
@@ -35,7 +34,6 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
   i18nStrings: I18nLocalized = {};
 
   private readonly FALLBACK_CONTENT_LANG = 'en';
-  private readonly SERVER_URL: string;
 
   private PREF_AUTOPLAY = true;
   private PREF_DEFAULT_QUALITY = 'max';
@@ -73,11 +71,9 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
   private readonly render$ = new Subject<void>();
 
   constructor(
-    private auth: AuthService,
     private cdr: ChangeDetectorRef,
     private i18nService: I18nService,
   ) {
-    this.SERVER_URL = this.auth.getServerUrl() || 'http://localhost:3000';
   }
 
   ngAfterViewInit() {
@@ -161,7 +157,7 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
   private loadSelectedSource(): void {
     var f = this.selectedFormat;
     if (f) {
-      this.sourceManifestUrl = this.getProxiedManifestUrl(f.url);
+      this.sourceManifestUrl = f.url;
       var playerState = this.capturePlayerState();
 
       if (this.hls) {
@@ -286,10 +282,6 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
       found = formats;
     }
     return found;
-  }
-
-  private getProxiedManifestUrl(url: string): string {
-    return `${this.SERVER_URL}/relay/hls/manifest?url=${encodeURIComponent(url)}&token=${this.auth.getAccountToken()}`;
   }
 
   private capturePlayerState() {

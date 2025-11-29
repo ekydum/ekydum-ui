@@ -32,6 +32,15 @@ import { searchDict } from '../../i18n/dict/search.dict';
               [disabled]="loading"
             >
             <button
+              *ngIf="st.searchQuery"
+              class="btn btn-clear"
+              type="button"
+              (click)="clearInput()"
+              [disabled]="loading"
+            >
+              <i class="fas fa-times"></i>
+            </button>
+            <button
               class="btn btn-blue-glass btn-search"
               type="button"
               (click)="search()"
@@ -160,6 +169,27 @@ import { searchDict } from '../../i18n/dict/search.dict';
       border-radius: 0 12px 12px 0;
     }
 
+    /* Clear button */
+    .btn-clear {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-left: none;
+      border-right: none;
+      color: rgba(255, 255, 255, 0.5);
+      padding: 12px 16px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-clear:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    .btn-clear:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     /* Spinner */
     .spinner-custom {
       color: rgba(13, 110, 253, 0.8);
@@ -214,6 +244,10 @@ export class SearchComponent implements I18nMultilingual, OnDestroy {
   ngOnDestroy(): void {
     this.alive$.next();
     this.alive$.complete();
+  }
+
+  clearInput(): void {
+    this.st.searchQuery = '';
   }
 
   search(): void {

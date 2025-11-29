@@ -6,6 +6,8 @@ import { Subject, takeUntil, tap } from 'rxjs';
 import { I18nDict, I18nLocalized, I18nMultilingual } from './i18n/models/dict.models';
 import { I18nService } from './i18n/services/i18n.service';
 import { dict } from './i18n/dict/main.dict';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { AboutModalComponent } from './components/about-modal/about-modal.component';
 
 @Component({
   selector: 'app-root',
@@ -31,6 +33,7 @@ export class AppComponent implements I18nMultilingual, OnInit, OnDestroy {
     private toastService: ToastService,
     private playerService: PlayerService,
     private i18nService: I18nService,
+    private modalService: NgbModal,
   ) {}
 
   ngOnInit(): void {
@@ -97,5 +100,12 @@ export class AppComponent implements I18nMultilingual, OnInit, OnDestroy {
 
   showPlayer(): void {
     this.playerService.uiUnhide();
+  }
+
+  openAboutModal(): void {
+    this.modalService.open(AboutModalComponent, {
+      centered: true,
+      windowClass: 'about-modal-window'
+    });
   }
 }

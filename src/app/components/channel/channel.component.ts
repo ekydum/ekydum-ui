@@ -7,6 +7,7 @@ import { Subject, takeUntil, tap } from 'rxjs';
 import { I18nDict, I18nLocalized, I18nMultilingual } from '../../i18n/models/dict.models';
 import { I18nService } from '../../i18n/services/i18n.service';
 import { dict } from '../../i18n/dict/main.dict';
+import { YtPlaylist } from '../../models/protocol/yt-playlist.model';
 
 @Component({
   selector: 'app-channel',
@@ -68,7 +69,7 @@ import { dict } from '../../i18n/dict/main.dict';
           </div>
 
           <div class="row" *ngIf="!loadingVideos && videos.length > 0">
-            <div class="col-md-6 col-lg-4 col-xl-3 mb-4" *ngFor="let video of videos">
+            <div class="col-md-6 col-lg-4 col-xl-3 mb-4" *ngFor="let video of videos; trackBy: trackByFn_Video">
               <app-video-item
                 [video]="video"
                 [showMetadata]="true"
@@ -104,13 +105,14 @@ import { dict } from '../../i18n/dict/main.dict';
           </div>
 
           <div class="row" *ngIf="!loadingPlaylists && playlists.length > 0">
-            <div class="col-md-6 col-lg-4 col-xl-3 mb-4" *ngFor="let playlist of playlists">
+            <div class="col-md-6 col-lg-4 col-xl-3 mb-4" *ngFor="let playlist of playlists; trackBy: trackByFn_Playlist">
               <div class="card playlist-card h-100 text-no-select" (click)="openPlaylist(playlist.yt_id, playlist.title)">
                 <div class="playlist-thumbnail">
                   <img [src]="playlist.thumbnail" [alt]="playlist.title" *ngIf="playlist.thumbnail">
                   <div class="playlist-badge">
                     <i class="fas fa-list me-1"></i>
-                    {{ playlist.video_count }} {{ i18nStrings['videosCount'] }}
+                    <!-- temp disable, display only playlist icon, no valid value -->
+<!--                    {{ playlist.video_count }} {{ i18nStrings['videosCount'] }}-->
                   </div>
                 </div>
                 <div class="card-body">
@@ -303,7 +305,7 @@ export class ChannelComponent implements I18nMultilingual, OnInit, OnDestroy {
   loadingMore = false;
   currentPage = 1;
 
-  playlists: any[] = [];
+  playlists: YtPlaylist[] = [];
   loadingPlaylists = false;
 
   private alive$ = new Subject<void>();
@@ -436,6 +438,14 @@ export class ChannelComponent implements I18nMultilingual, OnInit, OnDestroy {
 
   goBack(): void {
     history.back();
+  }
+
+  trackByFn_Playlist = function (_i: number, pl: YtPlaylist): string {
+    return pl.yt_id;
+  }
+
+  trackByFn_Video = function (_i: number, v: YtVideoListItem): string {
+    return v.yt_id;
   }
 
   private mapToVideoItemData(video: any): YtVideoListItem {

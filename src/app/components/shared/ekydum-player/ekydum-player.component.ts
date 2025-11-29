@@ -258,7 +258,7 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
       (f) => {
         var p = ((f?.protocol || '') + ''),
             isHls = p.includes('m3u8'),
-            l = (f.height + 'p' + (isHls ? ' HLS' : (' ' + p.toUpperCase())));
+            l = (f.height + 'p');
         return Object.assign({}, f, <Omit<Ekydum_SourceFormat, keyof YtVideo_Format>>{
           ekydum_sourceKind: Ekydum_SourceKind.COMBINED,
           ekydum_isCurrent: false,
@@ -266,6 +266,8 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
           ekydum_label: l,
         });
       }
+    ).filter(
+      (f) => f.ekydum_isHls
     );
   }
 

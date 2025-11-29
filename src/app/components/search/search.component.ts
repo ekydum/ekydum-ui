@@ -5,8 +5,8 @@ import { YtVideoListItem } from '../../models/protocol/yt-video-list-item.model'
 import { SearchStateService } from '../../services/search-state.service';
 import { I18nDict, I18nLocalized, I18nMultilingual } from '../../i18n/models/dict.models';
 import { I18nService } from '../../i18n/services/i18n.service';
-import { dict } from '../../i18n/dict/main.dict';
 import { Subject, takeUntil, tap } from 'rxjs';
+import { searchDict } from '../../i18n/dict/search.dict';
 
 @Component({
   selector: 'app-search',
@@ -186,7 +186,7 @@ import { Subject, takeUntil, tap } from 'rxjs';
   `]
 })
 export class SearchComponent implements I18nMultilingual, OnDestroy {
-  readonly i18nDict: I18nDict = dict['search'];
+  readonly i18nDict: I18nDict = searchDict;
   i18nStrings: I18nLocalized = {};
 
   loading = false;

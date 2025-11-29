@@ -5,9 +5,9 @@ import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 import { I18nDict, I18nLocalized, I18nMultilingual } from '../../i18n/models/dict.models';
 import { I18nService } from '../../i18n/services/i18n.service';
-import { dict } from '../../i18n/dict/main.dict';
 import { Subject, takeUntil, tap } from 'rxjs';
 import { YtChannelListItem } from '../../models/protocol/yt-channel-list-item.model';
+import { subscriptionsDict } from '../../i18n/dict/subscriptions.dict';
 
 @Component({
   selector: 'app-subscriptions',
@@ -333,7 +333,7 @@ import { YtChannelListItem } from '../../models/protocol/yt-channel-list-item.mo
   `]
 })
 export class SubscriptionsComponent implements I18nMultilingual, OnInit, OnDestroy {
-  readonly i18nDict: I18nDict = dict['subscriptions'];
+  readonly i18nDict: I18nDict = subscriptionsDict;
   i18nStrings: I18nLocalized = {};
 
   subscriptions: any[] = [];

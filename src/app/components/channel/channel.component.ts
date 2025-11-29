@@ -6,8 +6,8 @@ import { YtVideoListItem } from '../../models/protocol/yt-video-list-item.model'
 import { Subject, takeUntil, tap } from 'rxjs';
 import { I18nDict, I18nLocalized, I18nMultilingual } from '../../i18n/models/dict.models';
 import { I18nService } from '../../i18n/services/i18n.service';
-import { dict } from '../../i18n/dict/main.dict';
 import { YtPlaylist } from '../../models/protocol/yt-playlist.model';
+import { channelDict } from '../../i18n/dict/channel.dict';
 
 @Component({
   selector: 'app-channel',
@@ -366,7 +366,7 @@ export class ChannelComponent implements I18nMultilingual, OnInit, OnDestroy {
   channel: any = null;
   activeTab = 'videos';
 
-  readonly i18nDict: I18nDict = dict['channel'];
+  readonly i18nDict: I18nDict = channelDict;
   i18nStrings: I18nLocalized = {};
 
   videos: YtVideoListItem[] = [];

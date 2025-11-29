@@ -7,7 +7,7 @@ import { I18nService } from '../../i18n/services/i18n.service';
 import { LANG_CODE } from '../../i18n/models/lang-code.enum';
 import { interval, Subject, Subscription, switchMap, takeUntil, tap } from 'rxjs';
 import { I18nDict, I18nLocalized, I18nMultilingual } from '../../i18n/models/dict.models';
-import { dict } from '../../i18n/dict/main.dict';
+import { quickConnectDict } from '../../i18n/dict/quick-connect.dict';
 
 // Fun animal names for generating random account names (like Google Docs)
 const ANIMAL_NAMES = [
@@ -605,7 +605,7 @@ const ADJECTIVES = [
   `]
 })
 export class QuickConnectComponent implements I18nMultilingual, OnInit, OnDestroy {
-  readonly i18nDict: I18nDict = dict['quickConnect'];
+  readonly i18nDict: I18nDict = quickConnectDict;
   i18nStrings: I18nLocalized = {};
 
   readonly LANG_CODE = LANG_CODE;

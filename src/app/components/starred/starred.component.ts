@@ -5,8 +5,8 @@ import { PlayerService } from '../../services/player.service';
 import { YtVideoListItem } from '../../models/protocol/yt-video-list-item.model';
 import { I18nDict, I18nLocalized, I18nMultilingual } from '../../i18n/models/dict.models';
 import { I18nService } from '../../i18n/services/i18n.service';
-import { dict } from '../../i18n/dict/main.dict';
 import { Subject, takeUntil, tap } from 'rxjs';
+import { starredDict } from '../../i18n/dict/starred.dict';
 
 @Component({
   selector: 'app-starred',
@@ -124,7 +124,7 @@ import { Subject, takeUntil, tap } from 'rxjs';
   `]
 })
 export class StarredComponent implements I18nMultilingual, OnInit, OnDestroy {
-  readonly i18nDict: I18nDict = dict['starred'];
+  readonly i18nDict: I18nDict = starredDict;
   i18nStrings: I18nLocalized = {};
 
   videos: YtVideoListItem[] = [];

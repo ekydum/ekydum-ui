@@ -5,8 +5,8 @@ import { PlayerService } from '../../services/player.service';
 import { YtVideoListItem } from '../../models/protocol/yt-video-list-item.model';
 import { I18nDict, I18nLocalized, I18nMultilingual } from '../../i18n/models/dict.models';
 import { I18nService } from '../../i18n/services/i18n.service';
-import { dict } from '../../i18n/dict/main.dict';
 import { Subject, takeUntil, tap } from 'rxjs';
+import { playlistDict } from '../../i18n/dict/playlist.dict';
 
 @Component({
   selector: 'app-playlist',
@@ -138,7 +138,7 @@ import { Subject, takeUntil, tap } from 'rxjs';
   `]
 })
 export class PlaylistComponent implements I18nMultilingual, OnInit, OnDestroy {
-  readonly i18nDict: I18nDict = dict['playlist'];
+  readonly i18nDict: I18nDict = playlistDict;
   i18nStrings: I18nLocalized = {};
 
   playlistId = '';

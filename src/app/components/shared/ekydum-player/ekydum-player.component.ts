@@ -15,7 +15,7 @@ import { Ekydum_SourceFormat, Ekydum_SourceKind } from './models';
 import { Subject, takeUntil, tap, throttleTime } from 'rxjs';
 import { I18nDict, I18nLocalized, I18nMultilingual } from '../../../i18n/models/dict.models';
 import { I18nService } from '../../../i18n/services/i18n.service';
-import { dict } from '../../../i18n/dict/main.dict';
+import { playerDict } from '../../../i18n/dict/player.dict';
 
 @Component({
   selector: 'app-ekydum-player',
@@ -30,7 +30,7 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
   @Input() showCustomControls = true;
   @ViewChild('videoEl', { static: false }) videoElementRef!: ElementRef<HTMLVideoElement>;
 
-  readonly i18nDict: I18nDict = dict['player'];
+  readonly i18nDict: I18nDict = playerDict;
   i18nStrings: I18nLocalized = {};
 
   private readonly FALLBACK_CONTENT_LANG = 'en';

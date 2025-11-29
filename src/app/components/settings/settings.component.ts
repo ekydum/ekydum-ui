@@ -6,7 +6,7 @@ import { map, Subject, takeUntil, tap } from 'rxjs';
 import { I18nService } from '../../i18n/services/i18n.service';
 import { LANG_CODE } from '../../i18n/models/lang-code.enum';
 import { I18nDict, I18nLocalized, I18nMultilingual } from '../../i18n/models/dict.models';
-import { dict } from '../../i18n/dict/main.dict';
+import { settingsDict } from '../../i18n/dict/settings.dict';
 
 @Component({
   selector: 'app-settings',
@@ -298,7 +298,7 @@ import { dict } from '../../i18n/dict/main.dict';
   `]
 })
 export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
-  readonly i18nDict: I18nDict = dict['settings'];
+  readonly i18nDict: I18nDict = settingsDict;
   i18nStrings: I18nLocalized = {};
 
   readonly LANG_CODE = LANG_CODE;

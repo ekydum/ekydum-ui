@@ -5,9 +5,9 @@ import { YtVideoListItem } from './models/protocol/yt-video-list-item.model';
 import { Subject, takeUntil, tap } from 'rxjs';
 import { I18nDict, I18nLocalized, I18nMultilingual } from './i18n/models/dict.models';
 import { I18nService } from './i18n/services/i18n.service';
-import { dict } from './i18n/dict/main.dict';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { AboutModalComponent } from './components/about-modal/about-modal.component';
+import { appDict } from './i18n/dict/app.dict';
 
 @Component({
   selector: 'app-root',
@@ -18,7 +18,7 @@ import { AboutModalComponent } from './components/about-modal/about-modal.compon
 export class AppComponent implements I18nMultilingual, OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
-  readonly i18nDict: I18nDict = dict['app'];
+  readonly i18nDict: I18nDict = appDict;
   i18nStrings: I18nLocalized = {};
 
   sidebarCollapsed = false;

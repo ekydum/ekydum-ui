@@ -8,5 +8,5 @@ export class SearchStateService {
   videos: YtVideoListItem[] = [];
   searched = false;
   currentOffset = 0;
-  pageSize = 20;
+  pageSize = 50;
 }

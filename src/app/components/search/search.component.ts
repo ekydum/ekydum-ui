@@ -218,7 +218,7 @@ export class SearchComponent implements I18nMultilingual, OnDestroy {
     this.st.lastSearchQuery = this.st.searchQuery;
     this.st.currentOffset = 0;
 
-    this.api.searchVideos(this.st.searchQuery, 0, this.st.pageSize).subscribe({
+    this.api.searchVideos(this.st.searchQuery, 0).subscribe({
       next: (data) => {
         this.st.videos = data?.videos || [];
         this.loading = false;
@@ -236,7 +236,7 @@ export class SearchComponent implements I18nMultilingual, OnDestroy {
     this.loadingMore = true;
     this.st.currentOffset += this.st.pageSize;
 
-    this.api.searchVideos(this.st.lastSearchQuery, this.st.currentOffset, this.st.pageSize).subscribe({
+    this.api.searchVideos(this.st.lastSearchQuery, this.st.currentOffset).subscribe({
       next: (data) => {
         var newVideos = data?.videos || [];
         this.st.videos = [...this.st.videos, ...newVideos];

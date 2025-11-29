@@ -47,11 +47,8 @@ export class ApiService {
     return throwError(() => error);
   }
 
-  getFeed(page: number = 1, pageSize?: number): Observable<any> {
+  getFeed(page: number = 1): Observable<any> {
     var params = new HttpParams().set('page', page.toString());
-    if (pageSize) {
-      params = params.set('page_size', pageSize.toString());
-    }
     return this.http.get(this.getUrl('/feed'), { headers: this.getHeaders(), params })
     .pipe(catchError(err => this.handleError(err)));
   }
@@ -84,8 +81,8 @@ export class ApiService {
     .pipe(catchError(err => this.handleError(err)));
   }
 
-  searchVideos(query: string, offset: number = 0, limit: number = 20): Observable<any> {
-    return this.http.post(this.getUrl('/search/videos'), { q: query, offset, limit }, { headers: this.getHeaders() })
+  searchVideos(query: string, offset: number = 0): Observable<any> {
+    return this.http.post(this.getUrl('/search/videos'), { q: query, offset }, { headers: this.getHeaders() })
     .pipe(catchError(err => this.handleError(err)));
   }
 
@@ -94,11 +91,8 @@ export class ApiService {
     .pipe(catchError(err => this.handleError(err)));
   }
 
-  getChannelVideos(channelId: string, page: number = 1, pageSize?: number): Observable<any> {
+  getChannelVideos(channelId: string, page: number = 1): Observable<any> {
     var params = new HttpParams().set('page', page.toString());
-    if (pageSize) {
-      params = params.set('page_size', pageSize.toString());
-    }
     return this.http.get(this.getUrl(`/channels/${channelId}/videos`), { headers: this.getHeaders(), params })
     .pipe(catchError(err => this.handleError(err)));
   }
@@ -108,11 +102,8 @@ export class ApiService {
     .pipe(catchError(err => this.handleError(err)));
   }
 
-  getPlaylistVideos(playlistId: string, page: number = 1, pageSize?: number): Observable<any> {
+  getPlaylistVideos(playlistId: string, page: number = 1): Observable<any> {
     var params = new HttpParams().set('page', page.toString());
-    if (pageSize) {
-      params = params.set('page_size', pageSize.toString());
-    }
     return this.http.get(this.getUrl(`/playlists/${playlistId}/videos`), { headers: this.getHeaders(), params })
     .pipe(catchError(err => this.handleError(err)));
   }
@@ -255,11 +246,11 @@ export class ApiService {
 
   getServerInfo() {
     return this.http.get<ServerInfo>(this.getUrl('/'))
-      .pipe(catchError(err => this.handleError(err)));
+    .pipe(catchError(err => this.handleError(err)));
   }
 
   getServerHealth() {
     return this.http.get<HealthInfo>(this.getUrl('/health'))
-      .pipe(catchError(err => this.handleError(err)));
+    .pipe(catchError(err => this.handleError(err)));
   }
 }

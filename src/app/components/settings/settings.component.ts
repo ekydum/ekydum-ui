@@ -96,20 +96,21 @@ import { dict } from '../../i18n/dict/main.dict';
               </select>
             </div>
 
-            <div class="mb-3">
-              <label class="form-label text-no-select">{{ i18nStrings['pageSize'] }}</label>
-              <select class="form-select settings-select" [(ngModel)]="pageSize" (change)="updatePageSize()">
-                <option [value]="10">10</option>
-                <option [value]="20">20</option>
-                <option [value]="30">30</option>
-                <option [value]="50">50</option>
-                <option [value]="100">100</option>
-                <option [value]="200">200</option>
-                <option [value]="300">300</option>
-                <option [value]="500">500</option>
-              </select>
-              <small class="form-text text-muted-custom text-no-select">{{ i18nStrings['pageSizeHint'] }}</small>
-            </div>
+            <!-- decommission -->
+<!--            <div class="mb-3">-->
+<!--              <label class="form-label text-no-select">{{ i18nStrings['pageSize'] }}</label>-->
+<!--              <select class="form-select settings-select" [(ngModel)]="pageSize" (change)="updatePageSize()">-->
+<!--                <option [value]="10">10</option>-->
+<!--                <option [value]="20">20</option>-->
+<!--                <option [value]="30">30</option>-->
+<!--                <option [value]="50">50</option>-->
+<!--                <option [value]="100">100</option>-->
+<!--                <option [value]="200">200</option>-->
+<!--                <option [value]="300">300</option>-->
+<!--                <option [value]="500">500</option>-->
+<!--              </select>-->
+<!--              <small class="form-text text-muted-custom text-no-select">{{ i18nStrings['pageSizeHint'] }}</small>-->
+<!--            </div>-->
 
             <div class="mb-3">
               <label class="form-label text-no-select">{{ i18nStrings['relayProxyThumbnails'] }}</label>
@@ -311,7 +312,7 @@ export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
 
   loadingSettings = false;
   defaultQuality = '720p';
-  pageSize = 40;
+  pageSize = 50;
   lang: LANG_CODE = LANG_CODE.en;
   relayProxyThumbnails = 0;
 

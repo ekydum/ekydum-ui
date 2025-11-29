@@ -47,12 +47,7 @@ import { Subject, takeUntil, tap } from 'rxjs';
             (videoClick)="watchVideo($event)"
             (addToQueue)="addToQueue($event)"
             (addToWatchLater)="addToWatchLater($event)"
-          >
-            <button class="btn btn-sm btn-star-glass w-100 mt-2" (click)="addToStarred(video)">
-              <i class="fas fa-star me-1"></i>
-              {{ i18nStrings['btnAddToStarred'] }}
-            </button>
-          </app-video-item>
+          ></app-video-item>
         </div>
       </div>
 
@@ -97,23 +92,6 @@ import { Subject, takeUntil, tap } from 'rxjs';
     .btn-blue-glass:disabled {
       opacity: 0.5;
       cursor: not-allowed;
-    }
-
-    .btn-star-glass {
-      background: rgba(255, 193, 7, 0.15);
-      border: 1px solid rgba(255, 193, 7, 0.3);
-      color: white;
-      backdrop-filter: blur(10px);
-      transition: all 0.2s ease;
-      font-weight: 600;
-    }
-
-    .btn-star-glass:hover {
-      background: rgba(255, 193, 7, 0.25);
-      border-color: rgba(255, 193, 7, 0.5);
-      color: white;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 16px rgba(255, 193, 7, 0.4);
     }
 
     .spinner-custom {
@@ -206,17 +184,6 @@ export class FeedComponent implements I18nMultilingual, OnInit, OnDestroy {
 
   addToWatchLater(video: YtVideoListItem): void {
     this.api.addWatchLater(
-      video.yt_id,
-      video.title,
-      video.thumbnail_src,
-      video.duration,
-      video.channel_id,
-      video.channel_name
-    ).subscribe();
-  }
-
-  addToStarred(video: YtVideoListItem): void {
-    this.api.addStarred(
       video.yt_id,
       video.title,
       video.thumbnail_src,

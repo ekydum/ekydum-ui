@@ -44,7 +44,15 @@ import { Subject, takeUntil, tap } from 'rxjs';
 
         <p class="card-text video-channel small mb-1" *ngIf="video.channel_name">
           <i class="fas fa-user me-1"></i>
-          {{ video.channel_name }}
+          <a
+            *ngIf="video.channel_id"
+            [routerLink]="['/channel', video.channel_id]"
+            class="channel-link"
+            (click)="$event.stopPropagation()"
+          >
+            {{ video.channel_name }}
+          </a>
+          <span *ngIf="!video.channel_id">{{ video.channel_name }}</span>
         </p>
 
         <p class="card-text video-meta small mb-0" *ngIf="showMetadata">
@@ -204,6 +212,17 @@ import { Subject, takeUntil, tap } from 'rxjs';
 
     .video-channel {
       color: rgba(255, 255, 255, 0.6);
+    }
+
+    .channel-link {
+      color: rgba(255, 255, 255, 0.6);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .channel-link:hover {
+      color: rgb(66, 153, 225);
+      text-decoration: none;
     }
 
     .video-meta {

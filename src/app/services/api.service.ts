@@ -47,6 +47,15 @@ export class ApiService {
     return throwError(() => error);
   }
 
+  getFeed(page: number = 1, pageSize?: number): Observable<any> {
+    var params = new HttpParams().set('page', page.toString());
+    if (pageSize) {
+      params = params.set('page_size', pageSize.toString());
+    }
+    return this.http.get(this.getUrl('/feed'), { headers: this.getHeaders(), params })
+    .pipe(catchError(err => this.handleError(err)));
+  }
+
   // Quick Connect - create new account
   quickConnect(serverUrl: string, accountName: string): Observable<any> {
     return this.http.post(`${serverUrl}/quick-connect`, { account_name: accountName })

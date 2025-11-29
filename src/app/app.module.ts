@@ -22,10 +22,12 @@ import { FloatingPlayerModalComponent } from './components/shared/floating-playe
 import { AppInitializerService } from './services/app-initializer.service';
 import { QuickConnectComponent } from './components/quick-connect/quick-connect.component';
 import { AboutModalComponent } from './components/about-modal/about-modal.component';
+import { FeedComponent } from './components/feed/feed.component';
 
 @NgModule({
   declarations: [
     AppComponent,
+    FeedComponent,
     SearchComponent,
     SubscriptionsComponent,
     ChannelComponent,

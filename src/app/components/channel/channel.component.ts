@@ -95,9 +95,13 @@ import { channelDict } from '../../i18n/dict/channel.dict';
               <app-video-item
                 [video]="video"
                 [showMetadata]="true"
+                [showWatchLaterButton]="true"
+                [showStarredButton]="true"
+                [showQueueButton]="true"
                 (videoClick)="watchVideo(video)"
                 (addToQueue)="addToQueue(video)"
-                (addToWatchLater)="addToWatchLater(video)"
+                (toggleWatchLater)="toggleWatchLater($event)"
+                (toggleStarred)="toggleStarred($event)"
               ></app-video-item>
             </div>
           </div>
@@ -133,8 +137,6 @@ import { channelDict } from '../../i18n/dict/channel.dict';
                   <img [src]="playlist.thumbnail" [alt]="playlist.title" *ngIf="playlist.thumbnail">
                   <div class="playlist-badge">
                     <i class="fas fa-list me-1"></i>
-                    <!-- temp disable, display only playlist icon, no valid value -->
-                    <!--                    {{ playlist.video_count }} {{ i18nStrings['videosCount'] }}-->
                   </div>
                 </div>
                 <div class="card-body">
@@ -154,7 +156,6 @@ import { channelDict } from '../../i18n/dict/channel.dict';
       text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     }
 
-    /* Custom Tabs - Blue Glass */
     .nav-tabs-custom {
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
@@ -184,7 +185,6 @@ import { channelDict } from '../../i18n/dict/channel.dict';
       box-shadow: 0 -2px 8px rgba(13, 110, 253, 0.2);
     }
 
-    /* Buttons - Blue Glass */
     .btn-glass {
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(255, 255, 255, 0.15);
@@ -223,7 +223,6 @@ import { channelDict } from '../../i18n/dict/channel.dict';
       cursor: not-allowed;
     }
 
-    /* Subscribe Button - Red Glass */
     .btn-subscribe {
       background: rgba(198, 17, 32, 0.15);
       border: 1px solid rgba(198, 17, 32, 0.4);
@@ -247,7 +246,6 @@ import { channelDict } from '../../i18n/dict/channel.dict';
       cursor: not-allowed;
     }
 
-    /* Subscribed Button - Green Glass */
     .btn-subscribed {
       background: rgba(25, 135, 84, 0.15);
       border: 1px solid rgba(25, 135, 84, 0.4);
@@ -271,12 +269,10 @@ import { channelDict } from '../../i18n/dict/channel.dict';
       cursor: not-allowed;
     }
 
-    /* Spinners */
     .spinner-custom {
       color: rgba(13, 110, 253, 0.8);
     }
 
-    /* Alerts */
     .alert-custom {
       background: rgba(26, 26, 26, 0.8);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -296,7 +292,6 @@ import { channelDict } from '../../i18n/dict/channel.dict';
       color: rgba(255, 255, 255, 0.7) !important;
     }
 
-    /* Playlist Cards */
     .playlist-card {
       cursor: pointer;
       background: rgba(26, 26, 26, 0.8);
@@ -378,7 +373,6 @@ export class ChannelComponent implements I18nMultilingual, OnInit, OnDestroy {
   playlists: YtPlaylist[] = [];
   loadingPlaylists = false;
 
-  // Subscription state
   isSubscribed = false;
   subscriptionId: string | null = null;
   subscriptionLoading = false;
@@ -542,15 +536,42 @@ export class ChannelComponent implements I18nMultilingual, OnInit, OnDestroy {
     this.playerService.playVideo(video);
   }
 
-  addToWatchLater(video: YtVideoListItem): void {
-    this.api.addWatchLater(
-      video.yt_id,
-      video.title,
-      video.thumbnail_src,
-      video.duration,
-      video.channel_id,
-      video.channel_name
-    ).subscribe();
+  toggleWatchLater(video: YtVideoListItem): void {
+    if (video.is_watch_later) {
+      this.api.removeWatchLater(video.yt_id).subscribe({
+        next: () => { video.is_watch_later = false; }
+      });
+    } else {
+      this.api.addWatchLater(
+        video.yt_id,
+        video.title,
+        video.thumbnail_src,
+        video.duration,
+        video.channel_id,
+        video.channel_name
+      ).subscribe({
+        next: () => { video.is_watch_later = true; }
+      });
+    }
+  }
+
+  toggleStarred(video: YtVideoListItem): void {
+    if (video.is_starred) {
+      this.api.removeStarred(video.yt_id).subscribe({
+        next: () => { video.is_starred = false; }
+      });
+    } else {
+      this.api.addStarred(
+        video.yt_id,
+        video.title,
+        video.thumbnail_src,
+        video.duration,
+        video.channel_id,
+        video.channel_name
+      ).subscribe({
+        next: () => { video.is_starred = true; }
+      });
+    }
   }
 
   playAllVideos(): void {
@@ -583,7 +604,9 @@ export class ChannelComponent implements I18nMultilingual, OnInit, OnDestroy {
       view_count: video.view_count,
       channel_name: this.channel?.name,
       channel_id: this.channelId,
-      upload_date: video.upload_date
+      upload_date: video.upload_date,
+      is_watch_later: video.is_watch_later || false,
+      is_starred: video.is_starred || false
     };
   }
 }

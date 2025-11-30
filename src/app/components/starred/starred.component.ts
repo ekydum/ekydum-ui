@@ -43,10 +43,11 @@ import { starredDict } from '../../i18n/dict/starred.dict';
           <app-video-item
             [video]="video"
             [showWatchLaterButton]="true"
+            [showStarredButton]="false"
             [showQueueButton]="true"
             (videoClick)="watchVideo($event)"
             (addToQueue)="addToQueue($event)"
-            (addToWatchLater)="addToWatchLater($event)"
+            (toggleWatchLater)="toggleWatchLater($event)"
           >
             <button class="btn btn-sm btn-red-glass w-100 mt-2" (click)="removeStar(video.yt_id!)">
               <i class="fas fa-star me-1"></i>
@@ -170,15 +171,23 @@ export class StarredComponent implements I18nMultilingual, OnInit, OnDestroy {
     this.playerService.playVideo(video);
   }
 
-  addToWatchLater(video: YtVideoListItem): void {
-    this.api.addWatchLater(
-      video.yt_id || video.yt_id || '',
-      video.title,
-      video.thumbnail_src || '',
-      video.duration,
-      video.channel_id,
-      video.channel_name
-    ).subscribe();
+  toggleWatchLater(video: YtVideoListItem): void {
+    if (video.is_watch_later) {
+      this.api.removeWatchLater(video.yt_id!).subscribe({
+        next: () => { video.is_watch_later = false; }
+      });
+    } else {
+      this.api.addWatchLater(
+        video.yt_id || '',
+        video.title,
+        video.thumbnail_src || '',
+        video.duration,
+        video.channel_id,
+        video.channel_name
+      ).subscribe({
+        next: () => { video.is_watch_later = true; }
+      });
+    }
   }
 
   playAllVideos(): void {

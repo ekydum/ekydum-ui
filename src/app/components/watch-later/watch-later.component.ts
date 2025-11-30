@@ -42,9 +42,11 @@ import { watchLaterDict } from '../../i18n/dict/watch-later.dict';
           <app-video-item
             [video]="video"
             [showWatchLaterButton]="false"
+            [showStarredButton]="true"
             [showQueueButton]="true"
             (videoClick)="watchVideo($event)"
             (addToQueue)="addToQueue($event)"
+            (toggleStarred)="toggleStarred($event)"
           >
             <button class="btn btn-sm btn-red-glass w-100 mt-2" (click)="remove(video.yt_id!)">
               <i class="fas fa-clock me-1"></i>
@@ -165,6 +167,25 @@ export class WatchLaterComponent implements I18nMultilingual, OnInit, OnDestroy 
 
   watchVideo(video: YtVideoListItem): void {
     this.playerService.playVideo(video);
+  }
+
+  toggleStarred(video: YtVideoListItem): void {
+    if (video.is_starred) {
+      this.api.removeStarred(video.yt_id!).subscribe({
+        next: () => { video.is_starred = false; }
+      });
+    } else {
+      this.api.addStarred(
+        video.yt_id || '',
+        video.title,
+        video.thumbnail_src || '',
+        video.duration,
+        video.channel_id,
+        video.channel_name
+      ).subscribe({
+        next: () => { video.is_starred = true; }
+      });
+    }
   }
 
   playAllVideos(): void {

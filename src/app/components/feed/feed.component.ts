@@ -43,10 +43,12 @@ import { feedDict } from '../../i18n/dict/feed.dict';
             [video]="video"
             [showMetadata]="true"
             [showWatchLaterButton]="true"
+            [showStarredButton]="true"
             [showQueueButton]="true"
             (videoClick)="watchVideo($event)"
             (addToQueue)="addToQueue($event)"
-            (addToWatchLater)="addToWatchLater($event)"
+            (toggleWatchLater)="toggleWatchLater($event)"
+            (toggleStarred)="toggleStarred($event)"
           ></app-video-item>
         </div>
       </div>
@@ -182,15 +184,42 @@ export class FeedComponent implements I18nMultilingual, OnInit, OnDestroy {
     this.playerService.playVideo(video);
   }
 
-  addToWatchLater(video: YtVideoListItem): void {
-    this.api.addWatchLater(
-      video.yt_id,
-      video.title,
-      video.thumbnail_src,
-      video.duration,
-      video.channel_id,
-      video.channel_name
-    ).subscribe();
+  toggleWatchLater(video: YtVideoListItem): void {
+    if (video.is_watch_later) {
+      this.api.removeWatchLater(video.yt_id).subscribe({
+        next: () => { video.is_watch_later = false; }
+      });
+    } else {
+      this.api.addWatchLater(
+        video.yt_id,
+        video.title,
+        video.thumbnail_src,
+        video.duration,
+        video.channel_id,
+        video.channel_name
+      ).subscribe({
+        next: () => { video.is_watch_later = true; }
+      });
+    }
+  }
+
+  toggleStarred(video: YtVideoListItem): void {
+    if (video.is_starred) {
+      this.api.removeStarred(video.yt_id).subscribe({
+        next: () => { video.is_starred = false; }
+      });
+    } else {
+      this.api.addStarred(
+        video.yt_id,
+        video.title,
+        video.thumbnail_src,
+        video.duration,
+        video.channel_id,
+        video.channel_name
+      ).subscribe({
+        next: () => { video.is_starred = true; }
+      });
+    }
   }
 
   playAllVideos(): void {

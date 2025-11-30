@@ -86,6 +86,7 @@ import { ConfigService, CONFIG_KEYS } from '../../services/config.service';
             <div class="mb-3">
               <label class="form-label text-no-select">{{ i18nStrings['defaultQuality'] }}</label>
               <select class="form-select settings-select" [(ngModel)]="defaultQuality" (change)="updateQuality()">
+                <option *ngIf="isCustomQuality" [value]="defaultQuality">{{ defaultQuality }} ({{ i18nStrings['qualityCustom'] || 'Custom' }})</option>
                 <option value="min">{{ i18nStrings['qualityMinimum'] }}</option>
                 <option value="360p">360p</option>
                 <option value="480p">480p</option>
@@ -299,6 +300,12 @@ export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
   defaultQuality = '720p';
   lang: LANG_CODE = LANG_CODE.en;
   relayProxyThumbnails = 0;
+
+  readonly standardQualities = ['min', '360p', '480p', '720p', '1080p', '2k', '4k', 'max'];
+
+  get isCustomQuality(): boolean {
+    return !this.standardQualities.includes(this.defaultQuality);
+  }
 
   private alive$ = new Subject<void>();
 

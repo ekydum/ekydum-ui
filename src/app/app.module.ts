@@ -54,7 +54,7 @@ import { FeedComponent } from './components/feed/feed.component';
     provideHttpClient(),
     {
       provide: APP_INITIALIZER,
-      useFactory: (appInitializer: AppInitializerService) => () => appInitializer.loadServerConfig(),
+      useFactory: (appInitializer: AppInitializerService) => () => appInitializer.initialize(),
       deps: [AppInitializerService],
       multi: true
     }

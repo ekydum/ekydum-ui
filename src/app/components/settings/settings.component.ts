@@ -2,11 +2,12 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
-import { map, Subject, takeUntil, tap } from 'rxjs';
+import { Subject, takeUntil, tap } from 'rxjs';
 import { I18nService } from '../../i18n/services/i18n.service';
 import { LANG_CODE } from '../../i18n/models/lang-code.enum';
 import { I18nDict, I18nLocalized, I18nMultilingual } from '../../i18n/models/dict.models';
-import { dict } from '../../i18n/dict/main.dict';
+import { settingsDict } from '../../i18n/dict/settings.dict';
+import { ConfigService, CONFIG_KEYS } from '../../services/config.service';
 
 @Component({
   selector: 'app-settings',
@@ -85,6 +86,7 @@ import { dict } from '../../i18n/dict/main.dict';
             <div class="mb-3">
               <label class="form-label text-no-select">{{ i18nStrings['defaultQuality'] }}</label>
               <select class="form-select settings-select" [(ngModel)]="defaultQuality" (change)="updateQuality()">
+                <option *ngIf="isCustomQuality" [value]="defaultQuality">{{ defaultQuality }} ({{ i18nStrings['qualityCustom'] || 'Custom' }})</option>
                 <option value="min">{{ i18nStrings['qualityMinimum'] }}</option>
                 <option value="360p">360p</option>
                 <option value="480p">480p</option>
@@ -95,22 +97,6 @@ import { dict } from '../../i18n/dict/main.dict';
                 <option value="max">{{ i18nStrings['qualityMaximum'] }}</option>
               </select>
             </div>
-
-            <!-- decommission -->
-<!--            <div class="mb-3">-->
-<!--              <label class="form-label text-no-select">{{ i18nStrings['pageSize'] }}</label>-->
-<!--              <select class="form-select settings-select" [(ngModel)]="pageSize" (change)="updatePageSize()">-->
-<!--                <option [value]="10">10</option>-->
-<!--                <option [value]="20">20</option>-->
-<!--                <option [value]="30">30</option>-->
-<!--                <option [value]="50">50</option>-->
-<!--                <option [value]="100">100</option>-->
-<!--                <option [value]="200">200</option>-->
-<!--                <option [value]="300">300</option>-->
-<!--                <option [value]="500">500</option>-->
-<!--              </select>-->
-<!--              <small class="form-text text-muted-custom text-no-select">{{ i18nStrings['pageSizeHint'] }}</small>-->
-<!--            </div>-->
 
             <div class="mb-3">
               <label class="form-label text-no-select">{{ i18nStrings['relayProxyThumbnails'] }}</label>
@@ -298,7 +284,7 @@ import { dict } from '../../i18n/dict/main.dict';
   `]
 })
 export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
-  readonly i18nDict: I18nDict = dict['settings'];
+  readonly i18nDict: I18nDict = settingsDict;
   i18nStrings: I18nLocalized = {};
 
   readonly LANG_CODE = LANG_CODE;
@@ -312,9 +298,14 @@ export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
 
   loadingSettings = false;
   defaultQuality = '720p';
-  pageSize = 50;
   lang: LANG_CODE = LANG_CODE.en;
   relayProxyThumbnails = 0;
+
+  readonly standardQualities = ['min', '360p', '480p', '720p', '1080p', '2k', '4k', 'max'];
+
+  get isCustomQuality(): boolean {
+    return !this.standardQualities.includes(this.defaultQuality);
+  }
 
   private alive$ = new Subject<void>();
 
@@ -323,6 +314,7 @@ export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
     private auth: AuthService,
     private toast: ToastService,
     private i18nService: I18nService,
+    private configService: ConfigService,
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -347,11 +339,40 @@ export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
       this.loadAccountInfo();
       this.loadSettings();
     }
+
+    // Subscribe to config changes to keep UI in sync
+    this.subscribeToConfigChanges();
   }
 
   ngOnDestroy(): void {
     this.alive$.next();
     this.alive$.complete();
+  }
+
+  private subscribeToConfigChanges(): void {
+    this.configService.selectDistinct(CONFIG_KEYS.DEFAULT_QUALITY).pipe(
+      takeUntil(this.alive$)
+    ).subscribe((value) => {
+      if (value) {
+        this.defaultQuality = value;
+      }
+    });
+
+    this.configService.selectDistinct(CONFIG_KEYS.RELAY_PROXY_THUMBNAILS).pipe(
+      takeUntil(this.alive$)
+    ).subscribe((value) => {
+      if (value !== undefined) {
+        this.relayProxyThumbnails = +value || 0;
+      }
+    });
+
+    this.configService.selectDistinct(CONFIG_KEYS.LANG).pipe(
+      takeUntil(this.alive$)
+    ).subscribe((value) => {
+      if (value && Object.values(LANG_CODE).includes(value as LANG_CODE)) {
+        this.lang = value as LANG_CODE;
+      }
+    });
   }
 
   async checkQuickConnect(): Promise<void> {
@@ -394,6 +415,7 @@ export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
     this.accountToken = '';
     this.isConnected = false;
     this.accountInfo = null;
+    this.configService.reset();
     this.toast.info(this.i18nStrings['toastDisconnected'] || 'Disconnected');
   }
 
@@ -407,31 +429,18 @@ export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
 
   loadSettings(): void {
     this.loadingSettings = true;
-    this.api.getSettings().pipe(
-      map((r) => r.settings)
-    ).subscribe({
-      next: (data) => {
-        var qualitySetting = data.find((s: any) => s.key === 'DEFAULT_QUALITY');
-        var pageSizeSetting = data.find((s: any) => s.key === 'PAGE_SIZE');
-        var langSetting = data.find((s: any) => s.key === 'LANG');
-        var relayProxyThumbnailsSetting = data.find((s: any) => s.key === 'RELAY_PROXY_THUMBNAILS');
 
-        if (qualitySetting) {
-          this.defaultQuality = qualitySetting.value;
-        }
-        if (pageSizeSetting) {
-          this.pageSize = parseInt(pageSizeSetting.value);
-        }
-        if (langSetting) {
-          var langValue = (langSetting.value + '').toLowerCase();
-          if (Object.values(LANG_CODE).includes(langValue as LANG_CODE)) {
-            this.lang = langValue as LANG_CODE;
-          } else {
-            this.lang = LANG_CODE.en;
-          }
-        }
-        if (relayProxyThumbnailsSetting) {
-          this.relayProxyThumbnails = +relayProxyThumbnailsSetting.value || 0;
+    // Use ConfigService to load settings
+    this.configService.init().subscribe({
+      next: () => {
+        this.defaultQuality = this.configService.getOrDefault(CONFIG_KEYS.DEFAULT_QUALITY, '720p');
+        this.relayProxyThumbnails = +(this.configService.get(CONFIG_KEYS.RELAY_PROXY_THUMBNAILS) || 0);
+
+        var langValue = this.configService.get(CONFIG_KEYS.LANG);
+        if (langValue && Object.values(LANG_CODE).includes(langValue as LANG_CODE)) {
+          this.lang = langValue as LANG_CODE;
+        } else {
+          this.lang = LANG_CODE.en;
         }
 
         this.loadingSettings = false;
@@ -443,41 +452,26 @@ export class SettingsComponent implements I18nMultilingual, OnInit, OnDestroy {
   }
 
   updateQuality(): void {
-    this.api.updateSetting('DEFAULT_QUALITY', this.defaultQuality).subscribe({
+    this.configService.set(CONFIG_KEYS.DEFAULT_QUALITY, this.defaultQuality).subscribe({
       next: () => {
         this.toast.success(this.i18nStrings['toastQualityUpdated'] || 'Quality updated');
       }
     });
   }
 
-  updatePageSize(): void {
-    this.api.updateSetting('PAGE_SIZE', this.pageSize).subscribe({
-      next: () => {
-        this.toast.success(this.i18nStrings['toastPageSizeUpdated'] || 'Page size updated');
-      }
-    });
-  }
-
   updateLang(): void {
     if (this.lang) {
+      // i18nService.setLang will also update configService
       this.i18nService.setLang(this.lang);
-      setTimeout(() => {
-        this.api.updateSetting('LANG', this.lang).subscribe({
-          next: () => {
-            this.toast.success(this.i18nStrings['toastLanguageUpdated'] || 'Language updated');
-          }
-        });
-      }, 500);
+      this.toast.success(this.i18nStrings['toastLanguageUpdated'] || 'Language updated');
     }
   }
 
   updateRelayProxyThumbnails(): void {
-    setTimeout(() => {
-      this.api.updateSetting('RELAY_PROXY_THUMBNAILS', this.relayProxyThumbnails).subscribe({
-        next: () => {
-          this.toast.success(this.i18nStrings['toastRelaySettingsUpdated'] || 'Relay settings updated');
-        }
-      });
-    }, 500);
+    this.configService.set(CONFIG_KEYS.RELAY_PROXY_THUMBNAILS, this.relayProxyThumbnails + '').subscribe({
+      next: () => {
+        this.toast.success(this.i18nStrings['toastRelaySettingsUpdated'] || 'Relay settings updated');
+      }
+    });
   }
 }

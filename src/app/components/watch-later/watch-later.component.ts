@@ -4,8 +4,8 @@ import { PlayerService } from '../../services/player.service';
 import { YtVideoListItem } from '../../models/protocol/yt-video-list-item.model';
 import { I18nDict, I18nLocalized, I18nMultilingual } from '../../i18n/models/dict.models';
 import { I18nService } from '../../i18n/services/i18n.service';
-import { dict } from '../../i18n/dict/main.dict';
 import { Subject, takeUntil, tap } from 'rxjs';
+import { watchLaterDict } from '../../i18n/dict/watch-later.dict';
 
 @Component({
   selector: 'app-watch-later',
@@ -42,9 +42,11 @@ import { Subject, takeUntil, tap } from 'rxjs';
           <app-video-item
             [video]="video"
             [showWatchLaterButton]="false"
+            [showStarredButton]="true"
             [showQueueButton]="true"
             (videoClick)="watchVideo($event)"
             (addToQueue)="addToQueue($event)"
+            (toggleStarred)="toggleStarred($event)"
           >
             <button class="btn btn-sm btn-red-glass w-100 mt-2" (click)="remove(video.yt_id!)">
               <i class="fas fa-clock me-1"></i>
@@ -122,7 +124,7 @@ import { Subject, takeUntil, tap } from 'rxjs';
   `]
 })
 export class WatchLaterComponent implements I18nMultilingual, OnInit, OnDestroy {
-  readonly i18nDict: I18nDict = dict['watchLater'];
+  readonly i18nDict: I18nDict = watchLaterDict;
   i18nStrings: I18nLocalized = {};
 
   videos: YtVideoListItem[] = [];
@@ -165,6 +167,25 @@ export class WatchLaterComponent implements I18nMultilingual, OnInit, OnDestroy 
 
   watchVideo(video: YtVideoListItem): void {
     this.playerService.playVideo(video);
+  }
+
+  toggleStarred(video: YtVideoListItem): void {
+    if (video.is_starred) {
+      this.api.removeStarred(video.yt_id!).subscribe({
+        next: () => { video.is_starred = false; }
+      });
+    } else {
+      this.api.addStarred(
+        video.yt_id || '',
+        video.title,
+        video.thumbnail_src || '',
+        video.duration,
+        video.channel_id,
+        video.channel_name
+      ).subscribe({
+        next: () => { video.is_starred = true; }
+      });
+    }
   }
 
   playAllVideos(): void {

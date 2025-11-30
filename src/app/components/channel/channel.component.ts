@@ -6,8 +6,8 @@ import { YtVideoListItem } from '../../models/protocol/yt-video-list-item.model'
 import { Subject, takeUntil, tap } from 'rxjs';
 import { I18nDict, I18nLocalized, I18nMultilingual } from '../../i18n/models/dict.models';
 import { I18nService } from '../../i18n/services/i18n.service';
-import { dict } from '../../i18n/dict/main.dict';
 import { YtPlaylist } from '../../models/protocol/yt-playlist.model';
+import { channelDict } from '../../i18n/dict/channel.dict';
 
 @Component({
   selector: 'app-channel',
@@ -27,6 +27,28 @@ import { YtPlaylist } from '../../models/protocol/yt-playlist.model';
             </h2>
           </div>
           <div class="d-flex flex-row flex-grow-1"></div>
+
+          <!-- Subscribe button -->
+          <button
+            class="btn me-3"
+            [class.btn-subscribe]="!isSubscribed"
+            [class.btn-subscribed]="isSubscribed"
+            (click)="toggleSubscription()"
+            [disabled]="subscriptionLoading"
+          >
+            <span *ngIf="subscriptionLoading">
+              <span class="spinner-border spinner-border-sm me-2"></span>
+            </span>
+            <span *ngIf="!subscriptionLoading && !isSubscribed">
+              <i class="fas fa-plus me-2"></i>
+              {{ i18nStrings['btnSubscribe'] }}
+            </span>
+            <span *ngIf="!subscriptionLoading && isSubscribed">
+              <i class="fas fa-check me-2"></i>
+              {{ i18nStrings['btnSubscribed'] }}
+            </span>
+          </button>
+
           <button class="btn btn-glass me-3" (click)="goBack()">
             <i class="fas fa-arrow-left"></i>
           </button>
@@ -73,9 +95,13 @@ import { YtPlaylist } from '../../models/protocol/yt-playlist.model';
               <app-video-item
                 [video]="video"
                 [showMetadata]="true"
+                [showWatchLaterButton]="true"
+                [showStarredButton]="true"
+                [showQueueButton]="true"
                 (videoClick)="watchVideo(video)"
                 (addToQueue)="addToQueue(video)"
-                (addToWatchLater)="addToWatchLater(video)"
+                (toggleWatchLater)="toggleWatchLater($event)"
+                (toggleStarred)="toggleStarred($event)"
               ></app-video-item>
             </div>
           </div>
@@ -111,8 +137,6 @@ import { YtPlaylist } from '../../models/protocol/yt-playlist.model';
                   <img [src]="playlist.thumbnail" [alt]="playlist.title" *ngIf="playlist.thumbnail">
                   <div class="playlist-badge">
                     <i class="fas fa-list me-1"></i>
-                    <!-- temp disable, display only playlist icon, no valid value -->
-<!--                    {{ playlist.video_count }} {{ i18nStrings['videosCount'] }}-->
                   </div>
                 </div>
                 <div class="card-body">
@@ -132,7 +156,6 @@ import { YtPlaylist } from '../../models/protocol/yt-playlist.model';
       text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     }
 
-    /* Custom Tabs - Blue Glass */
     .nav-tabs-custom {
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
@@ -162,7 +185,6 @@ import { YtPlaylist } from '../../models/protocol/yt-playlist.model';
       box-shadow: 0 -2px 8px rgba(13, 110, 253, 0.2);
     }
 
-    /* Buttons - Blue Glass */
     .btn-glass {
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(255, 255, 255, 0.15);
@@ -201,12 +223,56 @@ import { YtPlaylist } from '../../models/protocol/yt-playlist.model';
       cursor: not-allowed;
     }
 
-    /* Spinners */
+    .btn-subscribe {
+      background: rgba(198, 17, 32, 0.15);
+      border: 1px solid rgba(198, 17, 32, 0.4);
+      color: white;
+      backdrop-filter: blur(10px);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      font-weight: 600;
+      padding: 8px 20px;
+    }
+
+    .btn-subscribe:hover:not(:disabled) {
+      background: rgba(198, 17, 32, 0.3);
+      border-color: rgba(198, 17, 32, 0.6);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(198, 17, 32, 0.4);
+    }
+
+    .btn-subscribe:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-subscribed {
+      background: rgba(25, 135, 84, 0.15);
+      border: 1px solid rgba(25, 135, 84, 0.4);
+      color: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      font-weight: 600;
+      padding: 8px 20px;
+    }
+
+    .btn-subscribed:hover:not(:disabled) {
+      background: rgba(220, 53, 69, 0.2);
+      border-color: rgba(220, 53, 69, 0.5);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(220, 53, 69, 0.3);
+    }
+
+    .btn-subscribed:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
     .spinner-custom {
       color: rgba(13, 110, 253, 0.8);
     }
 
-    /* Alerts */
     .alert-custom {
       background: rgba(26, 26, 26, 0.8);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -226,7 +292,6 @@ import { YtPlaylist } from '../../models/protocol/yt-playlist.model';
       color: rgba(255, 255, 255, 0.7) !important;
     }
 
-    /* Playlist Cards */
     .playlist-card {
       cursor: pointer;
       background: rgba(26, 26, 26, 0.8);
@@ -296,7 +361,7 @@ export class ChannelComponent implements I18nMultilingual, OnInit, OnDestroy {
   channel: any = null;
   activeTab = 'videos';
 
-  readonly i18nDict: I18nDict = dict['channel'];
+  readonly i18nDict: I18nDict = channelDict;
   i18nStrings: I18nLocalized = {};
 
   videos: YtVideoListItem[] = [];
@@ -307,6 +372,10 @@ export class ChannelComponent implements I18nMultilingual, OnInit, OnDestroy {
 
   playlists: YtPlaylist[] = [];
   loadingPlaylists = false;
+
+  isSubscribed = false;
+  subscriptionId: string | null = null;
+  subscriptionLoading = false;
 
   private alive$ = new Subject<void>();
 
@@ -335,12 +404,62 @@ export class ChannelComponent implements I18nMultilingual, OnInit, OnDestroy {
       this.loadChannel();
       this.loadVideos();
       this.loadPlaylists();
+      this.checkSubscriptionStatus();
     }
   }
 
   ngOnDestroy(): void {
     this.alive$.next();
     this.alive$.complete();
+  }
+
+  checkSubscriptionStatus(): void {
+    this.api.checkSubscription(this.channelId).pipe(
+      takeUntil(this.alive$)
+    ).subscribe({
+      next: (data) => {
+        this.isSubscribed = data.subscribed;
+        this.subscriptionId = data.subscription_id || null;
+      },
+      error: () => {
+        this.isSubscribed = false;
+        this.subscriptionId = null;
+      }
+    });
+  }
+
+  toggleSubscription(): void {
+    if (this.subscriptionLoading) return;
+
+    this.subscriptionLoading = true;
+
+    if (this.isSubscribed && this.subscriptionId) {
+      this.api.unsubscribe(this.subscriptionId).pipe(
+        takeUntil(this.alive$)
+      ).subscribe({
+        next: () => {
+          this.isSubscribed = false;
+          this.subscriptionId = null;
+          this.subscriptionLoading = false;
+        },
+        error: () => {
+          this.subscriptionLoading = false;
+        }
+      });
+    } else {
+      this.api.subscribe(this.channelId).pipe(
+        takeUntil(this.alive$)
+      ).subscribe({
+        next: (data) => {
+          this.isSubscribed = true;
+          this.subscriptionId = data?.subscription?.id || data?.id || null;
+          this.subscriptionLoading = false;
+        },
+        error: () => {
+          this.subscriptionLoading = false;
+        }
+      });
+    }
   }
 
   switchTab(tab: string): void {
@@ -417,15 +536,42 @@ export class ChannelComponent implements I18nMultilingual, OnInit, OnDestroy {
     this.playerService.playVideo(video);
   }
 
-  addToWatchLater(video: YtVideoListItem): void {
-    this.api.addWatchLater(
-      video.yt_id,
-      video.title,
-      video.thumbnail_src,
-      video.duration,
-      video.channel_id,
-      video.channel_name
-    ).subscribe();
+  toggleWatchLater(video: YtVideoListItem): void {
+    if (video.is_watch_later) {
+      this.api.removeWatchLater(video.yt_id).subscribe({
+        next: () => { video.is_watch_later = false; }
+      });
+    } else {
+      this.api.addWatchLater(
+        video.yt_id,
+        video.title,
+        video.thumbnail_src,
+        video.duration,
+        video.channel_id,
+        video.channel_name
+      ).subscribe({
+        next: () => { video.is_watch_later = true; }
+      });
+    }
+  }
+
+  toggleStarred(video: YtVideoListItem): void {
+    if (video.is_starred) {
+      this.api.removeStarred(video.yt_id).subscribe({
+        next: () => { video.is_starred = false; }
+      });
+    } else {
+      this.api.addStarred(
+        video.yt_id,
+        video.title,
+        video.thumbnail_src,
+        video.duration,
+        video.channel_id,
+        video.channel_name
+      ).subscribe({
+        next: () => { video.is_starred = true; }
+      });
+    }
   }
 
   playAllVideos(): void {
@@ -458,7 +604,9 @@ export class ChannelComponent implements I18nMultilingual, OnInit, OnDestroy {
       view_count: video.view_count,
       channel_name: this.channel?.name,
       channel_id: this.channelId,
-      upload_date: video.upload_date
+      upload_date: video.upload_date,
+      is_watch_later: video.is_watch_later || false,
+      is_starred: video.is_starred || false
     };
   }
 }

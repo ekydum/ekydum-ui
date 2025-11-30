@@ -118,12 +118,19 @@ export class ApiService {
     .pipe(catchError(err => this.handleError(err)));
   }
 
+  checkSubscription(channelId: string): Observable<{ subscribed: boolean; subscription_id: string | null }> {
+    return this.http.get<{ subscribed: boolean; subscription_id: string | null }>(
+      this.getUrl(`/subscriptions/check/${channelId}`),
+      { headers: this.getHeaders() }
+    ).pipe(catchError(err => this.handleError(err)));
+  }
+
   subscribe(channelId: string): Observable<any> {
     return this.http.post(this.getUrl('/subscriptions'), { yt_channel_id: channelId }, { headers: this.getHeaders() })
     .pipe(catchError(err => this.handleError(err)));
   }
 
-  unsubscribe(subscriptionId: number): Observable<any> {
+  unsubscribe(subscriptionId: string): Observable<any> {
     return this.http.delete(this.getUrl(`/subscriptions/${subscriptionId}`), { headers: this.getHeaders() })
     .pipe(catchError(err => this.handleError(err)));
   }

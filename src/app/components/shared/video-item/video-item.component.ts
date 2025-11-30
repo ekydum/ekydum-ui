@@ -2,8 +2,8 @@ import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angu
 import { YtVideoListItem } from '../../../models/protocol/yt-video-list-item.model';
 import { I18nDict, I18nLocalized, I18nMultilingual } from '../../../i18n/models/dict.models';
 import { I18nService } from '../../../i18n/services/i18n.service';
-import { dict } from '../../../i18n/dict/main.dict';
 import { Subject, takeUntil, tap } from 'rxjs';
+import { playerDict } from '../../../i18n/dict/player.dict';
 
 @Component({
   selector: 'app-video-item',
@@ -12,6 +12,16 @@ import { Subject, takeUntil, tap } from 'rxjs';
     <div class="card video-card h-100 text-no-select" [class.list-mode]="mode === 'list'">
       <div class="video-thumbnail" (click)="onVideoClick()">
         <img [src]="video.thumbnail" [alt]="video.title" *ngIf="video.thumbnail">
+
+        <!-- Status badges -->
+        <div class="status-badges" *ngIf="video.is_watch_later || video.is_starred">
+        <span class="status-badge status-watch-later" *ngIf="video.is_watch_later" [title]="i18nStrings['statusWatchLater'] || 'In Watch Later'">
+          <i class="fas fa-clock"></i>
+        </span>
+          <span class="status-badge status-starred" *ngIf="video.is_starred" [title]="i18nStrings['statusStarred'] || 'Starred'">
+          <i class="fas fa-star"></i>
+        </span>
+        </div>
 
         <!-- Action buttons overlay -->
         <div class="video-actions" *ngIf="showActions">
@@ -24,12 +34,22 @@ import { Subject, takeUntil, tap } from 'rxjs';
             <i class="fas fa-plus"></i>
           </button>
           <button
-            class="btn btn-sm video-action-btn video-action-later ms-1"
-            (click)="onAddToWatchLater($event)"
-            [title]="i18nStrings['btnAddToWatchLater']"
+            class="btn btn-sm video-action-btn video-action-later"
+            [class.active]="video.is_watch_later"
+            (click)="onToggleWatchLater($event)"
+            [title]="video.is_watch_later ? (i18nStrings['btnRemoveFromWatchLater'] || 'Remove from Watch Later') : (i18nStrings['btnAddToWatchLater'] || 'Add to Watch Later')"
             *ngIf="showWatchLaterButton"
           >
             <i class="fas fa-clock"></i>
+          </button>
+          <button
+            class="btn btn-sm video-action-btn video-action-star"
+            [class.active]="video.is_starred"
+            (click)="onToggleStarred($event)"
+            [title]="video.is_starred ? (i18nStrings['btnRemoveFromStarred'] || 'Remove from Starred') : (i18nStrings['btnAddToStarred'] || 'Add to Starred')"
+            *ngIf="showStarredButton"
+          >
+            <i class="fas fa-star"></i>
           </button>
         </div>
 
@@ -44,19 +64,22 @@ import { Subject, takeUntil, tap } from 'rxjs';
 
         <p class="card-text video-channel small mb-1" *ngIf="video.channel_name">
           <i class="fas fa-user me-1"></i>
-          {{ video.channel_name }}
+          <ng-container *ngIf="video.channel_id; else noLink">
+            <a [routerLink]="['/channel', video.channel_id]" class="channel-link" (click)="$event.stopPropagation()">{{ video.channel_name }}</a>
+          </ng-container>
+          <ng-template #noLink>{{ video.channel_name }}</ng-template>
         </p>
 
         <p class="card-text video-meta small mb-0" *ngIf="showMetadata">
-          <span *ngIf="video.view_count">
-            <i class="fas fa-eye me-1"></i>
-            {{ formatViewCount(video.view_count) }}
-          </span>
+        <span *ngIf="video.view_count">
+          <i class="fas fa-eye me-1"></i>
+          {{ formatViewCount(video.view_count) }}
+        </span>
           <span *ngIf="video.view_count && video.upload_date" class="mx-1">•</span>
           <span *ngIf="video.upload_date">
-            <i class="fas fa-calendar me-1"></i>
+          <i class="fas fa-calendar me-1"></i>
             {{ formatDate(video.upload_date) }}
-          </span>
+        </span>
         </p>
 
         <ng-content></ng-content>
@@ -119,6 +142,40 @@ import { Subject, takeUntil, tap } from 'rxjs';
       transform: scale(1.05);
     }
 
+    /* Status badges (top-left) */
+    .status-badges {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      display: flex;
+      gap: 4px;
+      z-index: 5;
+    }
+
+    .status-badge {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      font-size: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    }
+
+    .status-watch-later {
+      background: rgba(13, 110, 253, 0.9);
+      color: white;
+      border: 1px solid rgba(13, 110, 253, 0.5);
+    }
+
+    .status-starred {
+      background: rgba(255, 193, 7, 0.9);
+      color: #1a1a1a;
+      border: 1px solid rgba(255, 193, 7, 0.5);
+    }
+
+    /* Action buttons (top-right) */
     .video-actions {
       position: absolute;
       top: 8px;
@@ -164,6 +221,26 @@ import { Subject, takeUntil, tap } from 'rxjs';
       box-shadow: 0 6px 16px rgba(13, 110, 253, 0.6);
     }
 
+    .video-action-later.active {
+      background: rgba(13, 110, 253, 0.9);
+      border-color: rgba(13, 110, 253, 0.7);
+      color: white;
+    }
+
+    .video-action-star:hover {
+      background: rgba(255, 193, 7, 0.9);
+      border-color: rgba(255, 193, 7, 0.5);
+      color: #1a1a1a;
+      transform: scale(1.1);
+      box-shadow: 0 6px 16px rgba(255, 193, 7, 0.6);
+    }
+
+    .video-action-star.active {
+      background: rgba(255, 193, 7, 0.9);
+      border-color: rgba(255, 193, 7, 0.7);
+      color: #1a1a1a;
+    }
+
     .duration-badge {
       position: absolute;
       bottom: 8px;
@@ -206,6 +283,17 @@ import { Subject, takeUntil, tap } from 'rxjs';
       color: rgba(255, 255, 255, 0.6);
     }
 
+    .channel-link {
+      color: rgba(255, 255, 255, 0.6);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .channel-link:hover {
+      color: rgb(66, 153, 225);
+      text-decoration: none;
+    }
+
     .video-meta {
       color: rgba(255, 255, 255, 0.5);
     }
@@ -216,7 +304,7 @@ import { Subject, takeUntil, tap } from 'rxjs';
   `]
 })
 export class VideoItemComponent implements I18nMultilingual, OnInit, OnDestroy {
-  readonly i18nDict: I18nDict = dict['player'];
+  readonly i18nDict: I18nDict = playerDict;
   i18nStrings: I18nLocalized = {};
 
   @Input() video!: YtVideoListItem;
@@ -224,11 +312,13 @@ export class VideoItemComponent implements I18nMultilingual, OnInit, OnDestroy {
   @Input() showActions = true;
   @Input() showQueueButton = true;
   @Input() showWatchLaterButton = true;
+  @Input() showStarredButton = true;
   @Input() showMetadata = true;
 
   @Output() videoClick = new EventEmitter<YtVideoListItem>();
   @Output() addToQueue = new EventEmitter<YtVideoListItem>();
-  @Output() addToWatchLater = new EventEmitter<YtVideoListItem>();
+  @Output() toggleWatchLater = new EventEmitter<YtVideoListItem>();
+  @Output() toggleStarred = new EventEmitter<YtVideoListItem>();
 
   private alive$ = new Subject<void>();
 
@@ -255,9 +345,14 @@ export class VideoItemComponent implements I18nMultilingual, OnInit, OnDestroy {
     this.addToQueue.emit(this.video);
   }
 
-  onAddToWatchLater(event: Event): void {
+  onToggleWatchLater(event: Event): void {
     event.stopPropagation();
-    this.addToWatchLater.emit(this.video);
+    this.toggleWatchLater.emit(this.video);
+  }
+
+  onToggleStarred(event: Event): void {
+    event.stopPropagation();
+    this.toggleStarred.emit(this.video);
   }
 
   formatDuration(seconds: number): string {

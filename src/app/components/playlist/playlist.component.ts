@@ -5,8 +5,8 @@ import { PlayerService } from '../../services/player.service';
 import { YtVideoListItem } from '../../models/protocol/yt-video-list-item.model';
 import { I18nDict, I18nLocalized, I18nMultilingual } from '../../i18n/models/dict.models';
 import { I18nService } from '../../i18n/services/i18n.service';
-import { dict } from '../../i18n/dict/main.dict';
 import { Subject, takeUntil, tap } from 'rxjs';
+import { playlistDict } from '../../i18n/dict/playlist.dict';
 
 @Component({
   selector: 'app-playlist',
@@ -47,9 +47,13 @@ import { Subject, takeUntil, tap } from 'rxjs';
             <app-video-item
               [video]="video"
               [showMetadata]="true"
+              [showWatchLaterButton]="true"
+              [showStarredButton]="true"
+              [showQueueButton]="true"
               (videoClick)="watchVideo($event)"
               (addToQueue)="addToQueue($event)"
-              (addToWatchLater)="addToWatchLater($event)"
+              (toggleWatchLater)="toggleWatchLater($event)"
+              (toggleStarred)="toggleStarred($event)"
             ></app-video-item>
           </div>
         </div>
@@ -76,7 +80,6 @@ import { Subject, takeUntil, tap } from 'rxjs';
       text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     }
 
-    /* Buttons - Glass */
     .btn-glass {
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(255, 255, 255, 0.15);
@@ -115,12 +118,10 @@ import { Subject, takeUntil, tap } from 'rxjs';
       cursor: not-allowed;
     }
 
-    /* Spinner */
     .spinner-custom {
       color: rgba(13, 110, 253, 0.8);
     }
 
-    /* Alerts */
     .alert-custom {
       background: rgba(26, 26, 26, 0.8);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -138,7 +139,7 @@ import { Subject, takeUntil, tap } from 'rxjs';
   `]
 })
 export class PlaylistComponent implements I18nMultilingual, OnInit, OnDestroy {
-  readonly i18nDict: I18nDict = dict['playlist'];
+  readonly i18nDict: I18nDict = playlistDict;
   i18nStrings: I18nLocalized = {};
 
   playlistId = '';
@@ -212,15 +213,42 @@ export class PlaylistComponent implements I18nMultilingual, OnInit, OnDestroy {
     this.playerService.playVideo(video);
   }
 
-  addToWatchLater(video: YtVideoListItem): void {
-    this.api.addWatchLater(
-      video.yt_id || '',
-      video.title,
-      video.thumbnail_src || '',
-      video.duration,
-      video.channel_id,
-      video.channel_name
-    ).subscribe();
+  toggleWatchLater(video: YtVideoListItem): void {
+    if (video.is_watch_later) {
+      this.api.removeWatchLater(video.yt_id).subscribe({
+        next: () => { video.is_watch_later = false; }
+      });
+    } else {
+      this.api.addWatchLater(
+        video.yt_id || '',
+        video.title,
+        video.thumbnail_src || '',
+        video.duration,
+        video.channel_id,
+        video.channel_name
+      ).subscribe({
+        next: () => { video.is_watch_later = true; }
+      });
+    }
+  }
+
+  toggleStarred(video: YtVideoListItem): void {
+    if (video.is_starred) {
+      this.api.removeStarred(video.yt_id).subscribe({
+        next: () => { video.is_starred = false; }
+      });
+    } else {
+      this.api.addStarred(
+        video.yt_id || '',
+        video.title,
+        video.thumbnail_src || '',
+        video.duration,
+        video.channel_id,
+        video.channel_name
+      ).subscribe({
+        next: () => { video.is_starred = true; }
+      });
+    }
   }
 
   playAllVideos(): void {

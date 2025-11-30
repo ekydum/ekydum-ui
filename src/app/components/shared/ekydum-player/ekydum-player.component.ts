@@ -10,12 +10,13 @@ import {
 } from '@angular/core';
 import Hls, { ErrorData, HlsConfig } from 'hls.js';
 import { YtVideo_Format, YtVideo_Chapter, YtVideo } from '../../../models/protocol/yt-video.model';
-import { UserPreference } from '../../../models/user-preference.model';
 import { Ekydum_SourceFormat, Ekydum_SourceKind } from './models';
-import { Subject, takeUntil, tap, throttleTime } from 'rxjs';
+import { debounceTime, Subject, takeUntil, tap } from 'rxjs';
 import { I18nDict, I18nLocalized, I18nMultilingual } from '../../../i18n/models/dict.models';
 import { I18nService } from '../../../i18n/services/i18n.service';
-import { dict } from '../../../i18n/dict/main.dict';
+import { playerDict } from '../../../i18n/dict/player.dict';
+import { ApiService } from '../../../services/api.service';
+import { ConfigService, CONFIG_KEYS } from '../../../services/config.service';
 
 @Component({
   selector: 'app-ekydum-player',
@@ -26,17 +27,16 @@ import { dict } from '../../../i18n/dict/main.dict';
 })
 export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMultilingual {
   @Input() video!: YtVideo;
-  @Input() preferences!: UserPreference[];
   @Input() showCustomControls = true;
   @ViewChild('videoEl', { static: false }) videoElementRef!: ElementRef<HTMLVideoElement>;
 
-  readonly i18nDict: I18nDict = dict['player'];
+  readonly i18nDict: I18nDict = playerDict;
   i18nStrings: I18nLocalized = {};
 
   private readonly FALLBACK_CONTENT_LANG = 'en';
 
   private PREF_AUTOPLAY = true;
-  private PREF_DEFAULT_QUALITY = 'max';
+  private PREF_DEFAULT_QUALITY = '720p';
   private PREF_DEFAULT_CONTENT_LANG = 'en';
 
   private CAP_HAS_NATIVE_HLS_SUPPORT = false;
@@ -57,10 +57,15 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
   private get player(): HTMLVideoElement { return this.videoElementRef.nativeElement; }
 
   // quality selection strategy
-  qssStrategyMax = true;
+  qssStrategyMax = false;
   qssStrategyMin = false;
   qssStrategyClosest = 720;
   qssAvoidNonHls = true;
+
+  // subscription state
+  isSubscribed = false;
+  subscriptionId: string | null = null;
+  subscriptionLoading = false;
 
   private readonly hlsPlayerOptions: Readonly<Partial<HlsConfig>> = {
     debug: false,
@@ -73,8 +78,9 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
   constructor(
     private cdr: ChangeDetectorRef,
     private i18nService: I18nService,
-  ) {
-  }
+    private api: ApiService,
+    private configService: ConfigService,
+  ) {}
 
   ngAfterViewInit() {
     this.i18nService.translate(this.i18nDict).pipe(
@@ -87,9 +93,8 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
 
     this.discoverRuntimeCapabilities();
     this.setupRenderer();
-    if (this.preferences) {
-      this.applyPreferences();
-    }
+    this.applyPreferencesFromConfig();
+
     if (this.video) {
       this.posterUrl = this.video?.thumbnail || '';
       this.parseFormats();
@@ -98,6 +103,7 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
         this.initHlsPlayer();
       }
       this.loadSelectedSource();
+      this.checkSubscriptionStatus();
     }
     this.render$.next();
   }
@@ -125,10 +131,15 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
     this.render$.next();
   }
 
-  changeSource(f: Ekydum_SourceFormat|null): void {
+  changeSource(f: Ekydum_SourceFormat | null): void {
     if (f) {
       this.setSelectedSource(f);
       this.loadSelectedSource();
+
+      if (f.height) {
+        var qualityValue = f.height + 'p';
+        this.configService.set(CONFIG_KEYS.DEFAULT_QUALITY, qualityValue).subscribe();
+      }
     }
   }
 
@@ -138,7 +149,65 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
     this.changeSource(this.getDefaultSourceToPlay());
   }
 
-  private setSelectedSource(f: Ekydum_SourceFormat|null): void {
+  checkSubscriptionStatus(): void {
+    if (!this.video?.channel_id) return;
+
+    this.api.checkSubscription(this.video.channel_id).pipe(
+      takeUntil(this.alive$)
+    ).subscribe({
+      next: (data) => {
+        this.isSubscribed = data.subscribed;
+        this.subscriptionId = data.subscription_id || null;
+        this.render$.next();
+      },
+      error: () => {
+        this.isSubscribed = false;
+        this.subscriptionId = null;
+        this.render$.next();
+      }
+    });
+  }
+
+  toggleSubscription(): void {
+    if (this.subscriptionLoading || !this.video?.channel_id) return;
+
+    this.subscriptionLoading = true;
+    this.render$.next();
+
+    if (this.isSubscribed && this.subscriptionId) {
+      this.api.unsubscribe(this.subscriptionId).pipe(
+        takeUntil(this.alive$)
+      ).subscribe({
+        next: () => {
+          this.isSubscribed = false;
+          this.subscriptionId = null;
+          this.subscriptionLoading = false;
+          this.render$.next();
+        },
+        error: () => {
+          this.subscriptionLoading = false;
+          this.render$.next();
+        }
+      });
+    } else {
+      this.api.subscribe(this.video.channel_id).pipe(
+        takeUntil(this.alive$)
+      ).subscribe({
+        next: (data) => {
+          this.isSubscribed = true;
+          this.subscriptionId = data?.subscription?.id || data?.id || null;
+          this.subscriptionLoading = false;
+          this.render$.next();
+        },
+        error: () => {
+          this.subscriptionLoading = false;
+          this.render$.next();
+        }
+      });
+    }
+  }
+
+  private setSelectedSource(f: Ekydum_SourceFormat | null): void {
     if (f) {
       f.ekydum_isCurrent = true;
       this.localizedFormats.forEach((lf) => {
@@ -171,7 +240,7 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
         playerState.restore();
       }
 
-      if (f.language && ( !this.selectedLanguage || !f.language.startsWith(this.selectedLanguage))) {
+      if (f.language && (!this.selectedLanguage || !f.language.startsWith(this.selectedLanguage))) {
         this.selectedLanguage = f.language;
       }
 
@@ -179,39 +248,31 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
     }
   }
 
-  private applyPreferences(): void {
-    var prefArr = this.preferences;
-    if (Array.isArray(prefArr)) {
-      var dqPref = prefArr.find((p) => p.key === 'DEFAULT_QUALITY');
-      if (dqPref) {
-        this.PREF_DEFAULT_QUALITY = dqPref.value;
-        if (this.PREF_DEFAULT_QUALITY === 'max') {
-          this.qssStrategyMax = true;
-          this.qssStrategyMin = false;
-        } else if (this.PREF_DEFAULT_QUALITY === 'min') {
-          this.qssStrategyMax = false;
-          this.qssStrategyMin = true;
-        } else if (/^\d+p$/.test(this.PREF_DEFAULT_QUALITY + '')) {
-          var closestQuality = ~~+this.PREF_DEFAULT_QUALITY.replace('p', '');
-          if (closestQuality > 100 && closestQuality < 100_000) {
-            this.qssStrategyMax = false;
-            this.qssStrategyMin = false;
-            this.qssStrategyClosest = closestQuality;
-          }
-        }
-      }
+  private applyPreferencesFromConfig(): void {
+    // Default quality
+    var qualityValue = this.configService.getOrDefault(CONFIG_KEYS.DEFAULT_QUALITY, '720p');
+    this.applyQualityStrategy(qualityValue);
 
-      var langPref = prefArr.find((p) => p.key === 'LANG');
-      if (langPref) {
-        this.PREF_DEFAULT_CONTENT_LANG = (langPref.value + '').toLowerCase();
-        this.selectedLanguage = this.PREF_DEFAULT_CONTENT_LANG;
-      }
-
-      var autoPlayPref = prefArr.find((p) => p.key === 'AUTO_PLAY');
-      if (autoPlayPref) {
-        this.PREF_AUTOPLAY = !!(+autoPlayPref.value);
-      }
+    // Language
+    var langValue = this.configService.get(CONFIG_KEYS.LANG);
+    if (langValue) {
+      this.PREF_DEFAULT_CONTENT_LANG = langValue.toLowerCase();
+      this.selectedLanguage = this.PREF_DEFAULT_CONTENT_LANG;
     }
+  }
+
+  private applyQualityStrategy(quality: string): void {
+    this.PREF_DEFAULT_QUALITY = quality;
+
+    var isMax = quality === 'max',
+      isMin = quality === 'min',
+      isNumeric = /^\d+p?$/.test(quality),
+      closestQuality = isNumeric ? parseInt(quality.replace('p', ''), 10) : 0,
+      isValidClosest = closestQuality > 0 && closestQuality < 100000;
+
+    this.qssStrategyMax = isMax;
+    this.qssStrategyMin = isMin;
+    this.qssStrategyClosest = isValidClosest ? closestQuality : (!isMax && !isMin ? 720 : 0);
   }
 
   private initHlsPlayer(): void {
@@ -229,13 +290,14 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
     this.localizedFormats = this.getLocalizedFormats(this.combinedFormats);
   }
 
-  private getDefaultSourceToPlay(): Ekydum_SourceFormat|null {
+  private getDefaultSourceToPlay(): Ekydum_SourceFormat | null {
     var formats = this.localizedFormats;
     return (
       (this.qssStrategyMax && this.qssGetMaxQuality(formats)) ||
       (this.qssStrategyMin && this.qssGetMinQuality(formats)) ||
-      (this.qssStrategyClosest && this.qssGetClosestQuality(formats, this.qssStrategyClosest)) ||
-      (formats[0])
+      (this.qssStrategyClosest > 0 && this.qssGetClosestQuality(formats, this.qssStrategyClosest)) ||
+      (formats[0]) ||
+      null
     );
   }
 
@@ -247,14 +309,14 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
     );
   }
 
-  private getCombinedFormats(formats:YtVideo_Format[] ): Ekydum_SourceFormat[] {
+  private getCombinedFormats(formats: YtVideo_Format[]): Ekydum_SourceFormat[] {
     return formats.filter(
       (f) => (f.vcodec && f.vcodec !== 'none' && f.acodec && f.acodec !== 'none')
     ).map(
       (f) => {
         var p = ((f?.protocol || '') + ''),
-            isHls = p.includes('m3u8'),
-            l = (f.height + 'p');
+          isHls = p.includes('m3u8'),
+          l = (f.height + 'p');
         return Object.assign({}, f, <Omit<Ekydum_SourceFormat, keyof YtVideo_Format>>{
           ekydum_sourceKind: Ekydum_SourceKind.COMBINED,
           ekydum_isCurrent: false,
@@ -267,13 +329,13 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
     );
   }
 
-  private sortFormatsByHeight<F extends YtVideo_Format>(formats: F[] ): F[] {
+  private sortFormatsByHeight<F extends YtVideo_Format>(formats: F[]): F[] {
     return formats.sort((a, b) => (b.height || 0) - (a.height || 0));
   }
 
   private getLocalizedFormats(formats: Ekydum_SourceFormat[]): Ekydum_SourceFormat[] {
     var currentLang = this.selectedLanguage,
-        fallbackLang = this.FALLBACK_CONTENT_LANG;
+      fallbackLang = this.FALLBACK_CONTENT_LANG;
     var found = formats.filter((f) => f.language === currentLang);
     if (found.length === 0 && fallbackLang !== currentLang) {
       found = formats.filter((f) => f.language === fallbackLang);
@@ -323,22 +385,22 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
   }
 
   private discoverRuntimeCapabilities(): void {
-    this.CAP_HAS_NATIVE_HLS_SUPPORT = !!this.player.canPlayType('application/vnd.apple.mpegurl'); // "" | "maybe" | "probably"
+    this.CAP_HAS_NATIVE_HLS_SUPPORT = !!this.player.canPlayType('application/vnd.apple.mpegurl');
     this.CAP_HAS_HLS_PLAYER_SUPPORT = Hls.isSupported();
   }
 
   private setupRenderer(): void {
     this.render$.pipe(
       takeUntil(this.alive$),
-      throttleTime(100),
+      debounceTime(200),
       tap(() => this.cdr.detectChanges()),
     ).subscribe();
   }
 
-  private qssGetMaxQuality(formats: Ekydum_SourceFormat[]): Ekydum_SourceFormat|null {
+  private qssGetMaxQuality(formats: Ekydum_SourceFormat[]): Ekydum_SourceFormat | null {
     var maxHeight = 0,
-        maxQualityItem: Ekydum_SourceFormat|null = null,
-        avoidNonHls = this.qssAvoidNonHls;
+      maxQualityItem: Ekydum_SourceFormat | null = null,
+      avoidNonHls = this.qssAvoidNonHls;
     formats.forEach((f) => {
       if ((avoidNonHls ? f.ekydum_isHls : true) && f.height && (f.height > maxHeight)) {
         maxHeight = f.height;
@@ -348,9 +410,9 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
     return maxQualityItem;
   }
 
-  private qssGetMinQuality(formats: Ekydum_SourceFormat[]): Ekydum_SourceFormat|null {
+  private qssGetMinQuality(formats: Ekydum_SourceFormat[]): Ekydum_SourceFormat | null {
     var minHeight = Number.MAX_SAFE_INTEGER,
-      minQualityItem: Ekydum_SourceFormat|null = null,
+      minQualityItem: Ekydum_SourceFormat | null = null,
       avoidNonHls = this.qssAvoidNonHls;
     formats.forEach((f) => {
       if ((avoidNonHls ? f.ekydum_isHls : true) && f.height && (f.height < minHeight)) {
@@ -361,12 +423,12 @@ export class EkydumPlayerComponent implements AfterViewInit, OnDestroy, I18nMult
     return minQualityItem;
   }
 
-  private qssGetClosestQuality(formats: Ekydum_SourceFormat[], h: number): Ekydum_SourceFormat|null {
+  private qssGetClosestQuality(formats: Ekydum_SourceFormat[], h: number): Ekydum_SourceFormat | null {
     var minDelta = Number.MAX_SAFE_INTEGER,
-      minDeltaItem: Ekydum_SourceFormat|null = null,
+      minDeltaItem: Ekydum_SourceFormat | null = null,
       avoidNonHls = this.qssAvoidNonHls;
     formats.forEach((f) => {
-      if ((avoidNonHls ? f.ekydum_isHls : true)  && f.height) {
+      if ((avoidNonHls ? f.ekydum_isHls : true) && f.height) {
         var delta = Math.abs(f.height - h);
         if (delta < minDelta) {
           minDelta = delta;

@@ -3,12 +3,11 @@ import { PlayerService } from '../../../services/player.service';
 import { Subject, takeUntil, tap } from 'rxjs';
 import { ApiService } from '../../../services/api.service';
 import { YtVideo } from '../../../models/protocol/yt-video.model';
-import { UserPreference } from '../../../models/user-preference.model';
 import { PlayerDisplayMode } from '../../../models/player-display-mode.model';
 import { YtVideoListItem } from '../../../models/protocol/yt-video-list-item.model';
 import { I18nDict, I18nLocalized, I18nMultilingual } from '../../../i18n/models/dict.models';
 import { I18nService } from '../../../i18n/services/i18n.service';
-import { dict } from '../../../i18n/dict/main.dict';
+import { playerDict } from '../../../i18n/dict/player.dict';
 
 @Component({
   selector: 'app-floating-player-modal',
@@ -145,7 +144,6 @@ import { dict } from '../../../i18n/dict/main.dict';
                 *ngIf="videoInfo"
                 #ekydumPlayer
                 [video]="videoInfo"
-                [preferences]="preferences"
                 [showCustomControls]="displayMode === 'floating'"
               ></app-ekydum-player>
             </div>
@@ -313,7 +311,7 @@ import { dict } from '../../../i18n/dict/main.dict';
     }
 
     .player-container.mode-minimized .feature-controls {
-      display: none; /* Hide in minimized mode to save space */
+      display: none;
     }
 
     .feature-btn {
@@ -343,7 +341,6 @@ import { dict } from '../../../i18n/dict/main.dict';
       cursor: not-allowed;
     }
 
-    /* Star button active state */
     .feature-btn:nth-child(1).active {
       background: rgba(255, 215, 0, 0.2);
       border-color: rgba(255, 215, 0, 0.4);
@@ -356,7 +353,6 @@ import { dict } from '../../../i18n/dict/main.dict';
       box-shadow: 0 4px 16px rgba(255, 215, 0, 0.4);
     }
 
-    /* Watch Later button active state */
     .feature-btn:nth-child(2).active {
       background: rgba(59, 130, 246, 0.2);
       border-color: rgba(59, 130, 246, 0.4);
@@ -406,7 +402,6 @@ import { dict } from '../../../i18n/dict/main.dict';
       box-shadow: 0 4px 16px rgba(13, 110, 253, 0.4);
     }
 
-    /* Action buttons (queue/minimize/restore/close) */
     .player-actions {
       display: flex;
       gap: 6px;
@@ -439,7 +434,6 @@ import { dict } from '../../../i18n/dict/main.dict';
       border-color: rgba(13, 110, 253, 0.3);
     }
 
-    /* Content */
     .player-content {
       display: flex;
       flex: 1;
@@ -469,7 +463,6 @@ import { dict } from '../../../i18n/dict/main.dict';
       aspect-ratio: 16 / 9;
     }
 
-    /* Hidden mode - hide completely but keep in DOM */
     .player-container.mode-hidden {
       display: none;
     }
@@ -495,7 +488,6 @@ import { dict } from '../../../i18n/dict/main.dict';
       pointer-events: auto;
     }
 
-    /* Queue sidebar */
     .queue-section {
       width: 350px;
       flex-shrink: 0;
@@ -504,7 +496,6 @@ import { dict } from '../../../i18n/dict/main.dict';
       background: rgba(15, 15, 15, 0.5);
     }
 
-    /* Responsive */
     @media (max-width: 1200px) {
       .player-container.mode-floating.with-queue .player-wrapper {
         max-width: 100%;
@@ -552,7 +543,7 @@ import { dict } from '../../../i18n/dict/main.dict';
   `]
 })
 export class FloatingPlayerModalComponent implements I18nMultilingual, OnInit, OnDestroy {
-  readonly i18nDict: I18nDict = dict['player'];
+  readonly i18nDict: I18nDict = playerDict;
   i18nStrings: I18nLocalized = {};
 
   @ViewChild('ekydumPlayer') ekydumPlayer?: any;
@@ -562,7 +553,6 @@ export class FloatingPlayerModalComponent implements I18nMultilingual, OnInit, O
   displayMode: PlayerDisplayMode = PlayerDisplayMode.MODE_INACTIVE;
   currentVideo: YtVideoListItem | null = null;
   videoInfo: YtVideo | null = null;
-  preferences: UserPreference[] = [];
   loading = false;
   showQueue = false;
   isPlaying = false;
@@ -607,7 +597,6 @@ export class FloatingPlayerModalComponent implements I18nMultilingual, OnInit, O
       if (video && video.yt_id !== this.currentVideoId) {
         this.currentVideoId = video.yt_id;
 
-        // Cancel previous loading
         if (this.loadingSubscription) {
           this.loadingSubscription.unsubscribe();
         }
@@ -624,7 +613,6 @@ export class FloatingPlayerModalComponent implements I18nMultilingual, OnInit, O
     .subscribe(playing => {
       this.isPlaying = playing;
 
-      // Sync with actual player
       if (this.ekydumPlayer?.player) {
         if (playing && this.ekydumPlayer.player.paused) {
           this.ekydumPlayer.play();
@@ -651,15 +639,11 @@ export class FloatingPlayerModalComponent implements I18nMultilingual, OnInit, O
       this.hasPrevious = this.playerService.hasPrevious;
     });
 
-    // Load preferences
-    this.loadPreferences();
-
     // Setup player events listener
     this.setupPlayerEvents();
   }
 
   ngOnDestroy(): void {
-    // Cancel any pending loading
     if (this.loadingSubscription) {
       this.loadingSubscription.unsubscribe();
     }
@@ -820,16 +804,14 @@ export class FloatingPlayerModalComponent implements I18nMultilingual, OnInit, O
 
   private loadVideoInfo(videoId: string): void {
     this.loading = true;
-    this.videoInfo = null; // Clear old video immediately
+    this.videoInfo = null;
 
     this.loadingSubscription = this.api.getVideo(videoId).subscribe({
       next: (video) => {
-        // Check if this is still the current video (not cancelled)
         if (videoId === this.currentVideoId) {
           this.videoInfo = video;
           this.loading = false;
 
-          // Auto-play when video loads if supposed to be playing
           setTimeout(() => {
             if (this.ekydumPlayer && this.playerService.isPlaying) {
               this.ekydumPlayer.play();
@@ -845,33 +827,19 @@ export class FloatingPlayerModalComponent implements I18nMultilingual, OnInit, O
     });
   }
 
-  private loadPreferences(): void {
-    this.api.getSettings().subscribe({
-      next: (response) => {
-        this.preferences = response?.settings || [];
-      },
-      error: () => {
-        this.preferences = [];
-      }
-    });
-  }
-
   private setupPlayerEvents(): void {
     setInterval(() => {
       if (this.ekydumPlayer?.player) {
         var videoEl = this.ekydumPlayer.player;
 
-        // Update time
         if (!videoEl.paused) {
           this.playerService.updateTime(videoEl.currentTime, videoEl.duration);
         }
 
-        // Check if video ended
         if (videoEl.ended) {
           this.playerService.onVideoEnded();
         }
 
-        // Sync play/pause state
         var actuallyPlaying = !videoEl.paused;
         if (actuallyPlaying !== this.isPlaying) {
           if (actuallyPlaying) {

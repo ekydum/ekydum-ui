@@ -5,8 +5,8 @@ import { PlayerService } from '../../services/player.service';
 import { YtVideoListItem } from '../../models/protocol/yt-video-list-item.model';
 import { I18nDict, I18nLocalized, I18nMultilingual } from '../../i18n/models/dict.models';
 import { I18nService } from '../../i18n/services/i18n.service';
-import { dict } from '../../i18n/dict/main.dict';
 import { Subject, takeUntil, tap } from 'rxjs';
+import { starredDict } from '../../i18n/dict/starred.dict';
 
 @Component({
   selector: 'app-starred',
@@ -43,10 +43,11 @@ import { Subject, takeUntil, tap } from 'rxjs';
           <app-video-item
             [video]="video"
             [showWatchLaterButton]="true"
+            [showStarredButton]="false"
             [showQueueButton]="true"
             (videoClick)="watchVideo($event)"
             (addToQueue)="addToQueue($event)"
-            (addToWatchLater)="addToWatchLater($event)"
+            (toggleWatchLater)="toggleWatchLater($event)"
           >
             <button class="btn btn-sm btn-red-glass w-100 mt-2" (click)="removeStar(video.yt_id!)">
               <i class="fas fa-star me-1"></i>
@@ -124,7 +125,7 @@ import { Subject, takeUntil, tap } from 'rxjs';
   `]
 })
 export class StarredComponent implements I18nMultilingual, OnInit, OnDestroy {
-  readonly i18nDict: I18nDict = dict['starred'];
+  readonly i18nDict: I18nDict = starredDict;
   i18nStrings: I18nLocalized = {};
 
   videos: YtVideoListItem[] = [];
@@ -170,15 +171,23 @@ export class StarredComponent implements I18nMultilingual, OnInit, OnDestroy {
     this.playerService.playVideo(video);
   }
 
-  addToWatchLater(video: YtVideoListItem): void {
-    this.api.addWatchLater(
-      video.yt_id || video.yt_id || '',
-      video.title,
-      video.thumbnail_src || '',
-      video.duration,
-      video.channel_id,
-      video.channel_name
-    ).subscribe();
+  toggleWatchLater(video: YtVideoListItem): void {
+    if (video.is_watch_later) {
+      this.api.removeWatchLater(video.yt_id!).subscribe({
+        next: () => { video.is_watch_later = false; }
+      });
+    } else {
+      this.api.addWatchLater(
+        video.yt_id || '',
+        video.title,
+        video.thumbnail_src || '',
+        video.duration,
+        video.channel_id,
+        video.channel_name
+      ).subscribe({
+        next: () => { video.is_watch_later = true; }
+      });
+    }
   }
 
   playAllVideos(): void {

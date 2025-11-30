@@ -12,6 +12,7 @@
     display: flex;
     gap: 1rem;
     padding: 0.6rem 1rem 1rem 1rem;
+    align-items: center;
 
     .multi-column-dropdown {
       columns: 3;
@@ -22,6 +23,54 @@
       button {
         break-inside: avoid;
         page-break-inside: avoid;
+      }
+    }
+
+    // Subscribe Button - Red Glass
+    .btn-subscribe {
+      background: rgba(198, 17, 32, 0.15);
+      border: 1px solid rgba(198, 17, 32, 0.4);
+      color: white;
+      backdrop-filter: blur(10px);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      font-weight: 600;
+      padding: 4px 12px;
+
+      &:hover:not(:disabled) {
+        background: rgba(198, 17, 32, 0.3);
+        border-color: rgba(198, 17, 32, 0.6);
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(198, 17, 32, 0.4);
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+
+    // Subscribed Button - Green Glass
+    .btn-subscribed {
+      background: rgba(25, 135, 84, 0.15);
+      border: 1px solid rgba(25, 135, 84, 0.4);
+      color: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      font-weight: 600;
+      padding: 4px 12px;
+
+      &:hover:not(:disabled) {
+        background: rgba(220, 53, 69, 0.2);
+        border-color: rgba(220, 53, 69, 0.5);
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
       }
     }
   }

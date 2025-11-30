@@ -5,8 +5,8 @@ import { YtVideoListItem } from '../../models/protocol/yt-video-list-item.model'
 import { SearchStateService } from '../../services/search-state.service';
 import { I18nDict, I18nLocalized, I18nMultilingual } from '../../i18n/models/dict.models';
 import { I18nService } from '../../i18n/services/i18n.service';
-import { dict } from '../../i18n/dict/main.dict';
 import { Subject, takeUntil, tap } from 'rxjs';
+import { searchDict } from '../../i18n/dict/search.dict';
 
 @Component({
   selector: 'app-search',
@@ -32,7 +32,16 @@ import { Subject, takeUntil, tap } from 'rxjs';
               [disabled]="loading"
             >
             <button
-              class="btn btn-blue-glass"
+              *ngIf="st.searchQuery"
+              class="btn btn-clear"
+              type="button"
+              (click)="clearInput()"
+              [disabled]="loading"
+            >
+              <i class="fas fa-times"></i>
+            </button>
+            <button
+              class="btn btn-blue-glass btn-search"
               type="button"
               (click)="search()"
               [disabled]="loading || !st.searchQuery.trim()"
@@ -70,9 +79,13 @@ import { Subject, takeUntil, tap } from 'rxjs';
           <app-video-item
             [video]="video"
             [showMetadata]="true"
+            [showWatchLaterButton]="true"
+            [showStarredButton]="true"
+            [showQueueButton]="true"
             (videoClick)="watchVideo($event)"
             (addToQueue)="addToQueue($event)"
-            (addToWatchLater)="addToWatchLater($event)"
+            (toggleWatchLater)="toggleWatchLater($event)"
+            (toggleStarred)="toggleStarred($event)"
           ></app-video-item>
         </div>
       </div>
@@ -98,7 +111,6 @@ import { Subject, takeUntil, tap } from 'rxjs';
       text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     }
 
-    /* Search Input Group */
     .search-group {
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
     }
@@ -130,7 +142,6 @@ import { Subject, takeUntil, tap } from 'rxjs';
       cursor: not-allowed;
     }
 
-    /* Blue Glass Button */
     .btn-blue-glass {
       background: rgba(13, 110, 253, 0.15);
       border: 1px solid rgba(13, 110, 253, 0.3);
@@ -138,7 +149,7 @@ import { Subject, takeUntil, tap } from 'rxjs';
       backdrop-filter: blur(10px);
       transition: all 0.2s ease;
       font-weight: 600;
-      border-radius: 0 12px 12px 0;
+      border-radius: 12px;
       padding: 12px 24px;
     }
 
@@ -155,7 +166,30 @@ import { Subject, takeUntil, tap } from 'rxjs';
       cursor: not-allowed;
     }
 
-    /* Spinner */
+    .btn-search {
+      border-radius: 0 12px 12px 0;
+    }
+
+    .btn-clear {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-left: none;
+      border-right: none;
+      color: rgba(255, 255, 255, 0.5);
+      padding: 12px 16px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-clear:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    .btn-clear:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     .spinner-custom {
       color: rgba(13, 110, 253, 0.8);
     }
@@ -164,7 +198,6 @@ import { Subject, takeUntil, tap } from 'rxjs';
       color: rgba(255, 255, 255, 0.7) !important;
     }
 
-    /* Alerts */
     .alert-custom {
       background: rgba(26, 26, 26, 0.8);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -186,7 +219,7 @@ import { Subject, takeUntil, tap } from 'rxjs';
   `]
 })
 export class SearchComponent implements I18nMultilingual, OnDestroy {
-  readonly i18nDict: I18nDict = dict['search'];
+  readonly i18nDict: I18nDict = searchDict;
   i18nStrings: I18nLocalized = {};
 
   loading = false;
@@ -209,6 +242,10 @@ export class SearchComponent implements I18nMultilingual, OnDestroy {
   ngOnDestroy(): void {
     this.alive$.next();
     this.alive$.complete();
+  }
+
+  clearInput(): void {
+    this.st.searchQuery = '';
   }
 
   search(): void {
@@ -253,15 +290,42 @@ export class SearchComponent implements I18nMultilingual, OnDestroy {
     this.playerService.playVideo(video);
   }
 
-  addToWatchLater(video: YtVideoListItem): void {
-    this.api.addWatchLater(
-      video.yt_id || '',
-      video.title,
-      video.thumbnail_src || '',
-      video.duration,
-      video.channel_id,
-      video.channel_name
-    ).subscribe();
+  toggleWatchLater(video: YtVideoListItem): void {
+    if (video.is_watch_later) {
+      this.api.removeWatchLater(video.yt_id).subscribe({
+        next: () => { video.is_watch_later = false; }
+      });
+    } else {
+      this.api.addWatchLater(
+        video.yt_id || '',
+        video.title,
+        video.thumbnail_src || '',
+        video.duration,
+        video.channel_id,
+        video.channel_name
+      ).subscribe({
+        next: () => { video.is_watch_later = true; }
+      });
+    }
+  }
+
+  toggleStarred(video: YtVideoListItem): void {
+    if (video.is_starred) {
+      this.api.removeStarred(video.yt_id).subscribe({
+        next: () => { video.is_starred = false; }
+      });
+    } else {
+      this.api.addStarred(
+        video.yt_id || '',
+        video.title,
+        video.thumbnail_src || '',
+        video.duration,
+        video.channel_id,
+        video.channel_name
+      ).subscribe({
+        next: () => { video.is_starred = true; }
+      });
+    }
   }
 
   playAllVideos(): void {

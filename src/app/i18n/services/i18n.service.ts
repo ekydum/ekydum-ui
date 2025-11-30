@@ -1,14 +1,8 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { LANG_CODE } from '../models/lang-code.enum';
-import { BehaviorSubject, map, Observable, Subject, takeUntil, tap } from 'rxjs';
+import { BehaviorSubject, map, Observable, Subject, takeUntil, filter, distinctUntilChanged } from 'rxjs';
 import { I18nDict, I18nLocalized } from '../models/dict.models';
-import { ApiService } from '../../services/api.service';
-
-export interface UserPreference {
-  id: string;
-  key: string;
-  value: string;
-}
+import { ConfigService, CONFIG_KEYS } from '../../services/config.service';
 
 @Injectable({ providedIn: 'root' })
 export class I18nService implements OnDestroy {
@@ -19,10 +13,8 @@ export class I18nService implements OnDestroy {
   readonly lang$ = new BehaviorSubject<LANG_CODE>(LANG_CODE.en);
   private readonly alive$ = new Subject<void>();
 
-  constructor(
-    private readonly apiService: ApiService
-  ) {
-    this.loadLangFromSettings();
+  constructor(private configService: ConfigService) {
+    this.subscribeToConfigChanges();
   }
 
   ngOnDestroy(): void {
@@ -30,21 +22,21 @@ export class I18nService implements OnDestroy {
     this.alive$.complete();
   }
 
-  private loadLangFromSettings(): void {
-    this.apiService.getSettings().pipe(
+  private subscribeToConfigChanges(): void {
+    this.configService.select(CONFIG_KEYS.LANG).pipe(
       takeUntil(this.alive$),
-      map((r) => r.settings || []),
-      tap((settings: UserPreference[]) => {
-        var langPref = settings.find(s => s.key === 'LANG');
-        if (langPref && Object.values(LANG_CODE).includes(langPref.value as LANG_CODE)) {
-          this.lang$.next(langPref.value as LANG_CODE);
-        }
-      })
-    ).subscribe();
+      filter((langValue): langValue is string =>
+        langValue !== undefined && Object.values(LANG_CODE).includes(langValue as LANG_CODE)
+      ),
+      distinctUntilChanged()
+    ).subscribe((langValue) => {
+      this.lang$.next(langValue as LANG_CODE);
+    });
   }
 
   setLang(lang: LANG_CODE): void {
     this.lang$.next(lang);
+    this.configService.set(CONFIG_KEYS.LANG, lang).subscribe();
   }
 
   translate(dict: I18nDict): Observable<I18nLocalized> {
@@ -57,6 +49,6 @@ export class I18nService implements OnDestroy {
         });
         return translated as I18nLocalized;
       })
-    )
+    );
   }
 }

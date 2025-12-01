@@ -1,11 +1,15 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, debounceTime, filter, of, tap, throttleTime } from 'rxjs';
 import { Router } from '@angular/router';
 import { PlayerDisplayMode } from '../models/player-display-mode.model';
 import { YtVideoListItem } from '../models/protocol/yt-video-list-item.model';
+import { ApiService } from './api.service';
+import { catchError } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
 export class PlayerService {
+  QUEUE_PRE_CACHE_TIME_SEC = 30;
+
   // State subjects
   private readonly queueSubject$ = new BehaviorSubject<YtVideoListItem[]>([]);
   private readonly currentIndexSubject$ = new BehaviorSubject<number>(-1);
@@ -33,7 +37,12 @@ export class PlayerService {
   get isPlaying(): boolean { return this.isPlayingSubject$.value; }
   get displayMode(): PlayerDisplayMode { return this.displayModeSubject$.value; }
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private api: ApiService,
+  ) {
+    this.initNextVideoPreCache();
+  }
 
   // Queue Management
   queueAdd(video: YtVideoListItem): void {
@@ -208,5 +217,24 @@ export class PlayerService {
 
   get hasPrevious(): boolean {
     return this.currentIndexSubject$.value > 0;
+  }
+
+  private initNextVideoPreCache(): void {
+    this.currentTime$.pipe(
+      filter((t) => (t > 0)),
+      throttleTime(1000),
+      tap((t) => {
+        var currentIndex = this.currentIndexSubject$.value,
+          duration = this.duration,
+          nextVideo = ((currentIndex > -1) ? this.queueSubject$.value[currentIndex + 1] : null);
+
+        if (nextVideo && !nextVideo.is_cached && nextVideo.yt_id && (duration > 0) && ((duration - t) < this.QUEUE_PRE_CACHE_TIME_SEC)) {
+          nextVideo.is_cached = true;
+          this.api.preCacheVideo(nextVideo.yt_id).pipe(
+            catchError(() => of(null)),
+          ).subscribe();
+        }
+      })
+    ).subscribe();
   }
 }

@@ -11,4 +11,6 @@ export interface YtVideoListItem {
 
   is_watch_later?: boolean;
   is_starred?: boolean;
+
+  is_cached?: boolean;
 }

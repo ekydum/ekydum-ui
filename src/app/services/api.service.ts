@@ -113,6 +113,11 @@ export class ApiService {
     .pipe(catchError(err => this.handleError(err)));
   }
 
+  preCacheVideo(videoId: string) {
+    return this.http.head(this.getUrl(`/videos/pre-cache/${videoId}`), { headers: this.getHeaders() })
+    .pipe(catchError(err => this.handleError(err)));
+  }
+
   getSubscriptions(): Observable<any> {
     return this.http.get(this.getUrl('/subscriptions'), { headers: this.getHeaders() })
     .pipe(catchError(err => this.handleError(err)));

@@ -116,7 +116,7 @@ import { HealthInfo, ServerInfo } from '../../models/protocol/server.models';
         <!-- Description -->
         <div class="description-section">
           <p class="description-text">Free Media Server</p>
-          <p class="copyright">© 2025 Ekydum Project</p>
+          <p class="copyright">© 2026 Ekydum Project</p>
         </div>
 
         <!-- Links -->

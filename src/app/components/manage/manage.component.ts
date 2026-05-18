@@ -567,7 +567,10 @@ export class ManageComponent implements OnInit, OnDestroy {
   editingId: string | null = null;
   editingName = '';
 
-  private autoRefreshSubscription?: Subscription;
+  private accountsRefreshSubscription?: Subscription;
+  private loginRequestsRefreshSubscription?: Subscription;
+  private knownInactiveAccountIds = new Set<string>();
+  private knownLoginRequestIds = new Set<string>();
   private alive$ = new Subject<void>();
 
   constructor(
@@ -601,21 +604,34 @@ export class ManageComponent implements OnInit, OnDestroy {
   startAutoRefresh(): void {
     this.stopAutoRefresh();
 
-    // Refresh every 8 seconds
-    this.autoRefreshSubscription = interval(8000)
+    // Keep pending login requests near-real-time for the admin screen.
+    this.loginRequestsRefreshSubscription = interval(3000)
     .pipe(takeUntil(this.alive$))
     .subscribe(() => {
       if (this.isAdmin) {
-        this.loadAccounts();
-        this.loadLoginRequests();
+        this.loadLoginRequests(true);
+      }
+    });
+
+    // Accounts can refresh a bit less frequently.
+    this.accountsRefreshSubscription = interval(5000)
+    .pipe(takeUntil(this.alive$))
+    .subscribe(() => {
+      if (this.isAdmin) {
+        this.loadAccounts(true);
       }
     });
   }
 
   stopAutoRefresh(): void {
-    if (this.autoRefreshSubscription) {
-      this.autoRefreshSubscription.unsubscribe();
-      this.autoRefreshSubscription = undefined;
+    if (this.accountsRefreshSubscription) {
+      this.accountsRefreshSubscription.unsubscribe();
+      this.accountsRefreshSubscription = undefined;
+    }
+
+    if (this.loginRequestsRefreshSubscription) {
+      this.loginRequestsRefreshSubscription.unsubscribe();
+      this.loginRequestsRefreshSubscription = undefined;
     }
   }
 
@@ -659,11 +675,13 @@ export class ManageComponent implements OnInit, OnDestroy {
     this.toast.info('Admin logged out');
   }
 
-  loadAccounts(): void {
+  loadAccounts(notifyOnNewPending: boolean = false): void {
     this.loading = true;
     this.api.getAccounts().subscribe({
       next: (data) => {
-        this.accounts = data?.accounts || [];
+        const accounts = data?.accounts || [];
+        this.notifyAboutNewPendingAccounts(accounts, notifyOnNewPending);
+        this.accounts = accounts;
         this.loading = false;
       },
       error: () => {
@@ -672,10 +690,12 @@ export class ManageComponent implements OnInit, OnDestroy {
     });
   }
 
-  loadLoginRequests(): void {
+  loadLoginRequests(notifyOnNewPending: boolean = false): void {
     this.api.getLoginRequests().subscribe({
       next: (data) => {
-        this.loginRequests = data?.requests || [];
+        const requests = data?.requests || [];
+        this.notifyAboutNewLoginRequests(requests, notifyOnNewPending);
+        this.loginRequests = requests;
       },
       error: () => {
         // Silent error
@@ -822,5 +842,34 @@ export class ManageComponent implements OnInit, OnDestroy {
       const days = Math.floor(seconds / 86400);
       return `${days}d ago`;
     }
+  }
+
+  private notifyAboutNewPendingAccounts(accounts: any[], notifyOnNewPending: boolean): void {
+    const inactiveAccounts = accounts.filter((account) => account.status === 1);
+    const nextInactiveIds = new Set<string>(inactiveAccounts.map((account) => account.id));
+
+    if (notifyOnNewPending) {
+      inactiveAccounts
+        .filter((account) => !this.knownInactiveAccountIds.has(account.id))
+        .forEach((account) => {
+          this.toast.info(`New pending account: ${account.name}`);
+        });
+    }
+
+    this.knownInactiveAccountIds = nextInactiveIds;
+  }
+
+  private notifyAboutNewLoginRequests(requests: any[], notifyOnNewPending: boolean): void {
+    const nextRequestIds = new Set<string>(requests.map((request) => request.request_id));
+
+    if (notifyOnNewPending) {
+      requests
+        .filter((request) => !this.knownLoginRequestIds.has(request.request_id))
+        .forEach((request) => {
+          this.toast.info(`New login request: ${request.account_name}`);
+        });
+    }
+
+    this.knownLoginRequestIds = nextRequestIds;
   }
 }

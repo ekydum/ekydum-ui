@@ -34,9 +34,13 @@ export class I18nService implements OnDestroy {
     });
   }
 
-  setLang(lang: LANG_CODE): void {
+  setLang(lang: LANG_CODE, persist: boolean = true): void {
     this.lang$.next(lang);
-    this.configService.set(CONFIG_KEYS.LANG, lang).subscribe();
+    if (persist) {
+      this.configService.set(CONFIG_KEYS.LANG, lang).subscribe();
+    } else {
+      this.configService.setLocal(CONFIG_KEYS.LANG, lang);
+    }
   }
 
   translate(dict: I18nDict): Observable<I18nLocalized> {

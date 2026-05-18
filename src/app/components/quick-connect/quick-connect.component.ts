@@ -899,7 +899,9 @@ export class QuickConnectComponent implements I18nMultilingual, OnInit, OnDestro
 
   updateLang(): void {
     if (this.lang) {
-      this.i18nService.setLang(this.lang);
+      // Quick connect is available before authentication, so language changes
+      // must stay local until the user has an approved account session.
+      this.i18nService.setLang(this.lang, false);
       this.toast.success(this.i18nStrings['toastLanguageUpdated'] || 'Language updated');
     }
   }
